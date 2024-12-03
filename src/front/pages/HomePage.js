@@ -1,88 +1,85 @@
-import React, { useState, useEffect } from 'react'
+import React, { useRef } from 'react'
 import TopNav from '../components/common/TopNav'
 import HeroSection from '../sections/HeroSection'
 import AboutSection from '../sections/AboutSection'
 import StatsSection from '../sections/StatsSection'
 import ServicesSection from '../sections/ServicesSection'
 import ClientSection from '../sections/ClientSection'
+import PricingSection from '../sections/PricingSection'
 import FaqSection from '../sections/FaqSection'
 import ContactSection from '../sections/ContactSection'
 import NewFooter from '../components/common/NewFooter'
-import { motion } from 'framer-motion'
-import { FaArrowUp } from 'react-icons/fa'
-import './home.scss'
-import PricingSection from '../sections/PricingSection'
 
 const HomePage = () => {
-  const [showScrollTop, setShowScrollTop] = useState(false)
+  const heroRef = useRef(null)
+  const aboutRef = useRef(null)
+  const statsRef = useRef(null)
+  const servicesRef = useRef(null)
+  const clientsRef = useRef(null)
+  const pricingRef = useRef(null)
+  const faqRef = useRef(null)
+  const contactRef = useRef(null)
 
-  // Handle scroll to show or hide the button
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 200) {
-        setShowScrollTop(true)
-      } else {
-        setShowScrollTop(false)
-      }
+  const scrollToSection = (section) => {
+    switch (section) {
+      case 'hero':
+        heroRef.current?.scrollIntoView({ behavior: 'smooth' })
+        break
+      case 'about':
+        aboutRef.current?.scrollIntoView({ behavior: 'smooth' })
+        break
+      case 'stats':
+        statsRef.current?.scrollIntoView({ behavior: 'smooth' })
+        break
+      case 'services':
+        servicesRef.current?.scrollIntoView({ behavior: 'smooth' })
+        break
+      case 'clients':
+        clientsRef.current?.scrollIntoView({ behavior: 'smooth' })
+        break
+      case 'pricing':
+        pricingRef.current?.scrollIntoView({ behavior: 'smooth' })
+        break
+      case 'faqs':
+        faqRef.current?.scrollIntoView({ behavior: 'smooth' })
+        break
+      case 'contact':
+        contactRef.current?.scrollIntoView({ behavior: 'smooth' })
+        break
+      default:
+        break
     }
-
-    window.addEventListener('scroll', handleScroll)
-
-    // Cleanup event listener on unmount
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-    }
-  }, [])
-
-  // Scroll back to top
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    })
   }
 
   return (
     <div>
-      <TopNav />
+      <TopNav onNavigate={scrollToSection} />
 
-      <HeroSection />
-      <AboutSection />
-      <StatsSection />
-      <ServicesSection />
-      <ClientSection />
-      <PricingSection />
-      <FaqSection />
-      <ContactSection />
+      <div ref={heroRef}>
+        <HeroSection />
+      </div>
+      <div ref={aboutRef}>
+        <AboutSection />
+      </div>
+      <div ref={statsRef}>
+        <StatsSection />
+      </div>
+      <div ref={servicesRef}>
+        <ServicesSection />
+      </div>
+      <div ref={clientsRef}>
+        <ClientSection />
+      </div>
+      <div ref={pricingRef}>
+        <PricingSection />
+      </div>
+      <div ref={faqRef}>
+        <FaqSection />
+      </div>
+      <div ref={contactRef}>
+        <ContactSection />
+      </div>
       <NewFooter />
-
-      {/* Scroll to Top Button */}
-      {showScrollTop && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={scrollToTop}
-          style={{
-            position: 'fixed',
-            bottom: '2rem',
-            right: '2rem',
-            width: '50px',
-            height: '50px',
-            backgroundColor: '#2487ce',
-            color: '#fff',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
-            zIndex: 1000,
-          }}
-        >
-          <FaArrowUp />
-        </motion.div>
-      )}
     </div>
   )
 }

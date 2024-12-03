@@ -1,11 +1,15 @@
 import React from 'react'
-import { CNavbar, CNavbarBrand, CNavLink, CNavbarNav, CNavItem, CContainer } from '@coreui/react'
-import { CButton } from '@coreui/react'
-import { Link } from 'react-router-dom'
+import {
+  CNavbar,
+  CNavbarBrand,
+  CNavLink,
+  CNavbarNav,
+  CNavItem,
+  CContainer,
+} from '@coreui/react'
 import logo from '../../../assets/images/logo-dark.png'
-import { IoLogIn } from 'react-icons/io5'
 
-const TopNav = () => {
+const TopNav = ({ onNavigate }) => {
   return (
     <CNavbar
       expand="md"
@@ -18,59 +22,36 @@ const TopNav = () => {
       }}
     >
       <CContainer>
-        <CNavbarBrand href="#">
+        <CNavbarBrand href="#hero">
           <img src={logo} alt="Beta PMS" width="100" height="auto" />
         </CNavbarBrand>
 
         <CNavbarNav className="ml-auto">
           <CNavItem>
-            <CNavLink href="#hero">Home</CNavLink>
+            <CNavLink onClick={() => onNavigate('hero')}>Home</CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink href="#about">About</CNavLink>
+            <CNavLink onClick={() => onNavigate('about')}>About</CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink href="#services">Services</CNavLink>
+            <CNavLink onClick={() => onNavigate('stats')}>Stats</CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink href="#clients">Clients</CNavLink>
+            <CNavLink onClick={() => onNavigate('services')}>Services</CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink href="#pricing">Pricing</CNavLink>
+            <CNavLink onClick={() => onNavigate('clients')}>Clients</CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink href="#faqs">FAQs</CNavLink>
+            <CNavLink onClick={() => onNavigate('pricing')}>Pricing</CNavLink>
           </CNavItem>
-          {/* <CNavItem>
-            <CNavLink href="#team">Team</CNavLink>
-          </CNavItem> */}
-
-          {/* <CDropdown variant="nav-item">
-            <CDropdownToggle color="secondary">Dropdown</CDropdownToggle>
-            <CDropdownMenu>
-              <CDropdownItem href="#">Dropdown 1</CDropdownItem>
-              <CDropdown>
-                <CDropdownToggle>Deep Dropdown</CDropdownToggle>
-                <CDropdownMenu>
-                  <CDropdownItem href="#">Deep Dropdown 1</CDropdownItem>
-                  <CDropdownItem href="#">Deep Dropdown 2</CDropdownItem>
-                  <CDropdownItem href="#">Deep Dropdown 3</CDropdownItem>
-                  <CDropdownItem href="#">Deep Dropdown 4</CDropdownItem>
-                </CDropdownMenu>
-              </CDropdown>
-              <CDropdownItem href="#">Dropdown 2</CDropdownItem>
-            </CDropdownMenu>
-          </CDropdown> */}
-
           <CNavItem>
-            <CNavLink href="#contact">Contact</CNavLink>
+            <CNavLink onClick={() => onNavigate('faqs')}>FAQs</CNavLink>
+          </CNavItem>
+          <CNavItem>
+            <CNavLink onClick={() => onNavigate('contact')}>Contact</CNavLink>
           </CNavItem>
         </CNavbarNav>
-
-        <CButton color="primary" href="#about">
-          <IoLogIn size={25} style={{ paddingRight: 5 }} />
-          Login
-        </CButton>
       </CContainer>
     </CNavbar>
   )
