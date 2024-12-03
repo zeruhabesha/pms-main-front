@@ -1,0 +1,19 @@
+.table-responsive {
+    overflow-x: auto;
+  }
+  
+  .table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f9f9f9;
+  }
+  
+  .table-striped tbody tr:hover {
+    background-color: #f1f1f1;
+  }
+  
+  .table td, .table th {
+    vertical-align: middle; /* Center align content vertically */
+  }
+  
+  .table img {
+    object-fit: cover; /* Ensure photos fit well */
+  }

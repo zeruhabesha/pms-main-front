@@ -1,0 +1,202 @@
+// _services.scss
+@import 'services';
+
+// Variables
+$primary-color: #0d6efd;
+$success-color: #198754;
+$hover-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+$card-border-radius: 12px;
+$transition-duration: 0.3s;
+
+// Main container styles
+.services-container {
+  background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+  min-height: 100vh;
+  padding: 3rem 0;
+
+  .page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    
+    &::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 4px;
+      background: $primary-color;
+      margin: 1rem auto;
+      border-radius: 2px;
+    }
+  }
+
+  .page-description {
+    font-size: 1.1rem;
+    color: #6c757d;
+    max-width: 800px;
+    margin: 0 auto 3rem;
+    line-height: 1.6;
+  }
+}
+
+// Card styles
+.service-card {
+  border: none;
+  border-radius: $card-border-radius;
+  transition: all $transition-duration ease;
+  background: #ffffff;
+  height: 100%;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: $hover-shadow;
+  }
+
+  .card-header {
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 1.25rem;
+    border-radius: $card-border-radius $card-border-radius 0 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #2c3e50;
+
+    svg {
+      font-size: 1.5rem;
+      color: $success-color;
+      margin-right: 0.75rem;
+    }
+  }
+
+  .card-body {
+    padding: 1.5rem;
+
+    p {
+      color: #6c757d;
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.75rem;
+      font-weight: 500;
+      transition: all $transition-duration ease;
+      
+      &:hover {
+        transform: translateY(-2px);
+      }
+    }
+  }
+}
+
+// Modal styles
+.service-modal {
+  .modal-header {
+    background: $primary-color;
+    color: #ffffff;
+    border-radius: $card-border-radius $card-border-radius 0 0;
+    
+    .modal-title {
+      font-weight: 600;
+    }
+
+    .btn-close {
+      color: #ffffff;
+      opacity: 1;
+      
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 2rem;
+    
+    p {
+      color: #4a5568;
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn {
+      padding: 0.75rem 2rem;
+    }
+  }
+}
+
+// Responsive styles
+@media (max-width: 768px) {
+  .services-container {
+    padding: 2rem 1rem;
+
+    .page-title {
+      font-size: 2rem;
+    }
+
+    .page-description {
+      font-size: 1rem;
+      padding: 0 1rem;
+    }
+  }
+
+  .service-card {
+    margin-bottom: 1.5rem;
+
+    .card-header {
+      padding: 1rem;
+      font-size: 1rem;
+
+      svg {
+        font-size: 1.25rem;
+      }
+    }
+
+    .card-body {
+      padding: 1.25rem;
+    }
+  }
+}
+
+// Animation keyframes
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Utility classes
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+// Custom scrollbar
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $primary-color;
+  border-radius: 4px;
+  
+  &:hover {
+    background: darken($primary-color, 10%);
+  }
+}
+
+// Add these class names to your JSX components:

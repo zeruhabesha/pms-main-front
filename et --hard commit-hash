@@ -1,0 +1,34 @@
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{0}: reset: moving to fdd8560
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{1}: checkout: moving from fdd85606e49e347bb664f1664da2a8c319012b0b to new-branch
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{2}: reset: moving to fdd8560
+[33m4e93626[m[33m ([m[1;31morigion/main[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m HEAD@{3}: checkout: moving from main to 4e93626
+[33m4e93626[m[33m ([m[1;31morigion/main[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m HEAD@{4}: reset: moving to HEAD~1
+[33maf66c65[m HEAD@{5}: reset: moving to HEAD~1
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{6}: checkout: moving from 4e93626fae0ae66e3a591fec83fa7645fb4059e3 to main
+[33m4e93626[m[33m ([m[1;31morigion/main[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m HEAD@{7}: reset: moving to 4e93626
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{8}: reset: moving to fdd8560
+[33maf66c65[m HEAD@{9}: reset: moving to af66c65
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{10}: checkout: moving from main to fdd8560
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{11}: checkout: moving from af66c659b8b9f39961b5860881567bf5c9784701 to main
+[33maf66c65[m HEAD@{12}: checkout: moving from main to af66c65
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{13}: reset: moving to HEAD~1
+[33ma8c88b8[m HEAD@{14}: reset: moving to origin/main
+[33m4e93626[m[33m ([m[1;31morigion/main[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m HEAD@{15}: reset: moving to HEAD
+[33m4e93626[m[33m ([m[1;31morigion/main[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m HEAD@{16}: reset: moving to HEAD
+[33m4e93626[m[33m ([m[1;31morigion/main[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m HEAD@{17}: reset: moving to HEAD~1
+[33maf66c65[m HEAD@{18}: reset: moving to HEAD~1
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{19}: reset: moving to HEAD~1
+[33ma8c88b8[m HEAD@{20}: reset: moving to HEAD
+[33ma8c88b8[m HEAD@{21}: pull origin main: Fast-forward
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{22}: checkout: moving from update to main
+[33m97cd8f4[m[33m ([m[1;32mupdate[m[33m)[m HEAD@{23}: pull origin main: Merge made by the 'ort' strategy.
+[33m11f4dbc[m HEAD@{24}: commit: updated
+[33m302a22d[m[33m ([m[1;31morigion/update[m[33m)[m HEAD@{25}: commit: update
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{26}: checkout: moving from main to update
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{27}: reset: moving to origin/main
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{28}: merge update: Fast-forward
+[33maf66c65[m HEAD@{29}: checkout: moving from update to main
+[33mfdd8560[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mnew-branch[m[33m)[m HEAD@{30}: commit: Add updates to project
+[33maf66c65[m HEAD@{31}: checkout: moving from main to update
+[33maf66c65[m HEAD@{32}: commit: updated
+[33m4e93626[m[33m ([m[1;31morigion/main[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m HEAD@{33}: commit (initial): updated

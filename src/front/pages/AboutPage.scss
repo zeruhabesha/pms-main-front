@@ -1,0 +1,277 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Roboto:wght@300;400;500&family=Lora:wght@400;700&display=swap');
+
+// Base Styles
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: 'Poppins', sans-serif;
+}
+
+p, ul {
+  font-family: 'Lora', serif;
+}
+
+// Layout Utilities
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.bg-cover {
+  background-size: cover;
+}
+
+.bg-center {
+  background-position: center;
+}
+
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+// Spacing & Sizing
+.h-60 {
+  height: 60vh;
+}
+
+.h-1\/3 {
+  height: 50%;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.mt-6 {
+  margin-top: 1.5rem;
+}
+
+.mt-8 {
+  margin-top: 2rem;
+}
+
+.p-6 {
+  padding: 1.5rem;
+}
+
+// Typography
+.text-white {
+  color: white;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+.text-4xl {
+  font-size: 2.25rem;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+// Background Styles
+.bg-black {
+  background-color: black;
+}
+
+.opacity-50 {
+  opacity: 0.5;
+}
+
+.bg-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-blue-symbol {
+  background: url('https://cdn-icons-png.flaticon.com/512/60/60583.png') no-repeat center center;
+  background-size: contain;
+  opacity: 0.2;
+}
+
+// Container
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+// Transition & Animation Utilities
+.transition-transform {
+  transition: transform 0.3s ease-in-out;
+}
+
+.transition-all {
+  transition: all 1s ease-in-out;
+}
+
+.duration-1000 {
+  transition-duration: 1s;
+}
+
+.ease-in-out {
+  transition-timing-function: ease-in-out;
+}
+
+// Shadows & Borders
+.shadow-lg {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+// Animation Classes
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  opacity: 0; 
+  animation: fadeInUp 1s forwards;
+}
+
+.animate-fade-in-up:nth-child(1) {
+  animation-delay: 0.2s;
+}
+
+.animate-fade-in-up:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.animate-fade-in-up:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+// Fade-in animation
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 1s ease-out;
+}
+
+// Pulse animation for emphasis
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+}
+
+// Hover Effects
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}
+
+.opacity-0 {
+  opacity: 0;
+}
+
+.opacity-100 {
+  opacity: 1;
+}
+
+.translate-y-0 {
+  transform: translateY(0);
+}
+
+.-translate-y-full {
+  transform: translateY(-100%);
+}
+
+// Additional Keyframes for Extra Animations
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 1s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 1s ease-out;
+}
+
+// Button Styles
+.button-primary {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+  color: white;
+  background-color: #5cb85c;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+
+  &:hover {
+    background-color: #4cae4c;
+    transform: scale(1.05);
+  }
+}

@@ -1,0 +1,127 @@
+.tenant-photo-modal {
+    .modal-content {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+  
+    .modal-header {
+      background: #f8f9fa;
+      border-bottom: 2px solid #e9ecef;
+      padding: 1.5rem;
+  
+      .modal-title {
+        font-weight: 600;
+        color: #2c3e50;
+      }
+    }
+  
+    .modal-body {
+      padding: 2rem;
+    }
+  
+    .upload-section {
+      margin-bottom: 2rem;
+  
+      .upload-label {
+        font-weight: 500;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+      }
+  
+      .upload-wrapper {
+        position: relative;
+        
+        .photo-input {
+          padding: 1rem;
+          border: 2px dashed #dee2e6;
+          border-radius: 8px;
+          background: #f8f9fa;
+          transition: all 0.3s ease;
+  
+          &:hover {
+            border-color: #6c757d;
+          }
+  
+          &:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+          }
+        }
+      }
+    }
+  
+    .preview-section {
+      .preview-card {
+        border: none;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  
+        .preview-image {
+          width: 100%;
+          height: 300px;
+          object-fit: cover;
+          border-radius: 8px;
+        }
+      }
+  
+      .no-preview {
+        text-align: center;
+        padding: 3rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 2px dashed #dee2e6;
+  
+        i {
+          font-size: 3rem;
+          color: #adb5bd;
+          margin-bottom: 1rem;
+        }
+  
+        p {
+          color: #6c757d;
+          margin: 0;
+        }
+      }
+    }
+  
+    .modal-footer {
+      background: #f8f9fa;
+      border-top: 2px solid #e9ecef;
+      padding: 1.5rem;
+  
+      .btn {
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+  
+        &.btn-cancel {
+          background: transparent;
+          border: 2px solid #6c757d;
+          color: #6c757d;
+  
+          &:hover {
+            background: #6c757d;
+            color: white;
+          }
+        }
+  
+        &.btn-save {
+          background: #0d6efd;
+          border: 2px solid #0d6efd;
+  
+          &:hover {
+            background: #0b5ed7;
+            border-color: #0b5ed7;
+          }
+  
+          &:disabled {
+            background: #e9ecef;
+            border-color: #dee2e6;
+          }
+        }
+      }
+    }
+  }

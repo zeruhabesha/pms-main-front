@@ -1,0 +1,73 @@
+.services-section {
+  padding: 3rem 0;
+  text-align: center;
+}
+
+.services-section h2 {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.services-section p {
+  color: #777;
+  margin-bottom: 2rem;
+}
+
+.service-item {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.service-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.icon-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.icon-background {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.service-icon {
+  position: relative;
+  color: var(--iconColor);
+  transition: color 0.3s ease;
+}
+
+.service-item:hover .icon-background {
+  background-color: var(--iconColor);
+}
+
+.service-item:hover .service-icon {
+  color: #fff;
+}
+
+.service-item h3 {
+  font-weight: 700;
+}
+
+.service-item p {
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}

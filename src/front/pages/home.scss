@@ -1,0 +1,192 @@
+// home.scss
+
+// Carousel Item Styling
+.carousel-item {
+    position: relative;
+  
+    img {
+      transition: transform 1.5s ease-in-out, opacity 1.5s ease-in-out;
+      opacity: 0.9;
+      &:hover {
+        transform: scale(1.05);
+        opacity: 1;
+      }
+    }
+  
+    .carousel-caption {
+      position: absolute;
+      bottom: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      color: #fff;
+  
+      h3, p {
+        transition: color 0.3s ease, transform 0.5s ease;
+      }
+  
+      h3:hover {
+        color: #f8f9fa;
+        transform: translateY(-5px);
+      }
+  
+      p:hover {
+        color: #adb5bd;
+        transform: translateY(-3px);
+      }
+    }
+  }
+  
+  // Button Hover Animation
+  .hover-animation {
+    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    &:hover {
+      background-color: #5cb85c;
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+  }
+  
+  // Client Logo Section Styling
+  .client-logo {
+    transition: all 0.3s ease, filter 0.5s ease;
+    width: 120px;
+    margin: 0 10px;
+    &:hover {
+      transform: scale(1.15);
+      filter: brightness(1.25) contrast(1.1);
+    }
+  }
+  
+  // Services Card Styling
+  .services-card {
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
+    &:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+  
+    .card-icon {
+      font-size: 2rem;
+      color: #007bff;
+      margin-bottom: 1rem;
+    }
+  
+    .card-title {
+      font-weight: bold;
+      color: #333;
+    }
+  
+    .card-text {
+      font-size: 1rem;
+      color: #555;
+    }
+  }
+  
+  // CTA Section Styling
+  .cta-section {
+    background-image: url('../image/register-now-banner.png');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    padding: 4rem 0;
+    color: #fff;
+    text-align: center;
+  
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.6);
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      transition: background-color 0.5s ease;
+      z-index: 1;
+  
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.8);
+      }
+    }
+  
+    .cta-content {
+      position: relative;
+      z-index: 2;
+  
+      h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s ease;
+  
+        &:hover {
+          transform: translateY(-5px);
+        }
+      }
+  
+      .cta-button {
+        background-color: #28a745;
+        font-size: 1.25rem;
+        padding: 0.75rem 2.5rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+  
+        &:hover {
+          transform: scale(1.05);
+          box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+      }
+    }
+  }
+  
+  // Responsive Adjustments
+  @media (max-width: 768px) {
+    .carousel-caption {
+      h3 {
+        font-size: 1.5rem;
+      }
+      p {
+        font-size: 1rem;
+      }
+    }
+  
+    .client-logo {
+      width: 100px;
+    }
+  
+    .cta-section h2 {
+      font-size: 2rem;
+    }
+  
+    .hover-animation {
+      font-size: 1rem;
+      padding: 0.5rem 1.2rem;
+    }
+  }
+  
+
+
+
+  .hover-animation {
+    transition: transform 0.3s ease;
+  
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+  
+  .clients-container {
+    img {
+      transition: transform 0.3s;
+  
+      &:hover {
+        transform: scale(1.1);
+      }
+    }
+  }
+  

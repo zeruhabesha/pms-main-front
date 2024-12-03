@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Custom style to override text-muted color in dark mode */
+[data-coreui-theme="dark"] .text-muted {
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+  
