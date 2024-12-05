@@ -28,24 +28,31 @@ const ViewAgreement = () => {
 
   const itemsPerPage = 5;
 
-  const fetchAgreements = async (page = 1) => {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await axios.get("http://localhost:4000/api/v1/lease", {
-        params: { page, limit: itemsPerPage, search: searchTerm },
-      });
+ const fetchAgreements = async (page = 1) => {
+  setLoading(true);
+  setError("");
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No token found. Please log in.");
 
-      const { leases: fetchedAgreements, totalPages } = response.data?.data || {};
-      setAgreements(fetchedAgreements || []);
-      setTotalPages(totalPages || 0);
-    } catch (error) {
-      console.error("Error fetching agreements:", error);
-      setError("Failed to fetch agreements. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const response = await axios.get("http://localhost:4000/api/v1/lease", {
+      params: { page, limit: itemsPerPage, search: searchTerm },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const { leases: fetchedAgreements, totalPages } = response.data?.data || {};
+    setAgreements(fetchedAgreements || []);
+    setTotalPages(totalPages || 0);
+  } catch (error) {
+    console.error("Error fetching agreements:", error);
+    setError(error.response?.data?.message || "Failed to fetch agreements. Please try again later.");
+  } finally {
+    setLoading(false);
+  }
+};
+  
 
   useEffect(() => {
     fetchAgreements(currentPage);

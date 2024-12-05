@@ -1,0 +1,94 @@
+/* body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+  } */
+  
+  .coming-soon {
+    text-align: center;
+  }
+  
+  .content {
+    max-width: 100%;
+    background: #bfbdbd24;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    align-items: center;
+  }
+  
+  .logo {
+    font-size: 60px;
+    margin-bottom: 20px;
+  }
+  
+  h1 {
+    font-size: 2.5rem;
+    margin: 20px 0;
+  }
+  
+  p {
+    font-size: 1rem;
+    margin-bottom: 30px;
+    line-height: 1.6;
+  }
+  
+  .timer {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  
+  .time-box {
+    text-align: center;
+  }
+  
+  .time-value {
+    font-size: 2rem;
+    font-weight: bold;
+  }
+  
+  .time-label {
+    font-size: 0.75rem;
+    color: red;
+  }
+  
+  .subscribe-form {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .email-input {
+    padding: 10px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    flex: 1;
+    max-width: 300px;
+  }
+  
+  .subscribe-button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    background-color: #18161a;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .subscribe-button:hover {
+    background-color: #2575fc;
+  }
+  

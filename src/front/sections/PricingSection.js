@@ -130,7 +130,7 @@ const PricingSection = () => {
               </div>
               <CButton
                 href="#"
-                color={plan.featured ? 'light' : 'primary'}
+                color={plan.featured ? 'light' : 'dark'}
                 style={{
                   marginTop: '1rem',
                   padding: '0.75rem 1.5rem',

@@ -1,6 +1,7 @@
 // store/actions/propertyActions.js
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import propertyService from '../services/property.service';
+import axios from 'axios';
 
 export const fetchProperties = createAsyncThunk(
   'property/fetchProperties',
@@ -67,7 +68,7 @@ export const updatePropertyPhoto = createAsyncThunk(
   async ({ propertyId, formData }, { rejectWithValue }) => {
     try {
       const response = await axios.put(
-        `/api/v1/properties/${propertyId}/photos`,
+        `http://localhost:4000/api/v1/properties/${propertyId}/photos`,
         formData,
         {
           headers: {

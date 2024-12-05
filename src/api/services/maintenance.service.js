@@ -15,21 +15,22 @@ class MaintenanceService {
       const response = await httpCommon.get(this.baseURL, {
         params: { page, limit, search: searchTerm.trim() },
       });
-      if (!response.data || !response.data.data) {
-        throw new Error('Invalid response format');
-      }
-      return response.data.data; // Ensure we return the "data" key from the response
+      const data = response?.data?.data;
+      if (!data) throw new Error('Invalid response format from server');
+      return data;
     } catch (error) {
-      throw error.response?.data?.message || error.message || 'Failed to fetch maintenance requests';
+      throw this.handleError(error);
     }
   }
   
   
+  
 
   async updateMaintenancePhoto(id, photoData) {
+    if (!photoData) throw new Error('Photo data is required');
     const formData = new FormData();
     formData.append('photo', photoData);
-
+  
     try {
       const response = await httpCommon.put(`${this.baseURL}/${id}/photo`, formData, {
         headers: {
@@ -37,12 +38,12 @@ class MaintenanceService {
           'Content-Type': 'multipart/form-data',
         },
       });
-
-      return response.data;
+      return response?.data;
     } catch (error) {
-      throw error.response?.data?.message || error.message || 'Failed to update maintenance photo';
+      throw this.handleError(error);
     }
   }
+  
   createMediaFormData(mediaFiles, fieldName = 'media') {
     const formData = new FormData();
     mediaFiles.forEach((file) => formData.append(fieldName, file));
@@ -179,9 +180,11 @@ class MaintenanceService {
   //   );
   // }
   handleError(error) {
-    console.error('API Error:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || 'An unknown error occurred');
+    const message = error?.response?.data?.message || error.message || 'An unknown error occurred';
+    console.error('API Error:', message);
+    throw new Error(message);
   }
+  
   
 }
 

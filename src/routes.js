@@ -10,11 +10,12 @@ const Agreement = React.lazy(() => import('./views/agreement/Agreement'));
 const Tenant = React.lazy(() => import('./views/tenant/Tenant'));
 const Maintenance = React.lazy(() => import('./views/maintenance/Maintenance'));
 const Property = React.lazy(() => import('./views/property/Property'));
-const Report = React.lazy(() => import('./views/report/Report'));
+const Report = React.lazy(() => import('./views/report/ComingSoon'));
 const About = React.lazy(() => import('./front/pages/AboutPage'));
 const HomePage = React.lazy(() => import('./front/pages/HomePage'));
 const ContactPage = React.lazy(() => import('./front/pages/ContactPage'));
 const Widgets = React.lazy(() => import('./views/widgets/Widgets'));
+const Profile = React.lazy(() => import('./views/Profile/ViewProfile'));
 
 const routes = [
   // Public routes (no authentication required)
@@ -33,6 +34,7 @@ const routes = [
   { path: '/property', name: 'Property', element: () => <ProtectedRoute element={Property} /> },
   { path: '/report', name: 'Report', element: () => <ProtectedRoute element={Report} /> },
   { path: '/widgets', name: 'Widgets', element: () => <ProtectedRoute element={Widgets} /> },
+  { path: '/profile', name: 'Profile', element: () => <ProtectedRoute element={Profile} /> },
 ];
 
 export default routes;

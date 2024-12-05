@@ -1,18 +1,13 @@
 import { createSlice } from '@reduxjs/toolkit';
-import {
-  fetchMaintenance,
-  addMaintenance,
-  updateMaintenance,
-  deleteMaintenance,
-} from '../actions/MaintenanceActions';
+import { fetchMaintenance, addMaintenance, updateMaintenance, deleteMaintenance } from '../actions/MaintenanceActions';
 
 const initialState = {
-  maintenanceRequests: [], // Updated field
+  maintenanceRequests: [],
   loading: false,
   error: null,
   totalPages: 1,
   currentPage: 1,
-  totalMaintenanceRequests: 0, // Total count from the response
+  totalMaintenanceRequests: 0,
 };
 
 const maintenanceSlice = createSlice({
@@ -30,27 +25,26 @@ const maintenanceSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchMaintenance.fulfilled, (state, action) => {
+        const { maintenanceRequests, totalPages, currentPage, totalMaintenanceRequests } = action.payload;
         state.loading = false;
-        state.maintenanceRequests = action.payload.maintenanceRequests;
-        state.totalPages = action.payload.totalPages;
-        state.currentPage = action.payload.currentPage;
-        state.totalMaintenanceRequests = action.payload.totalMaintenanceRequests;
-        state.error = null;
+        state.maintenanceRequests = maintenanceRequests;
+        state.totalPages = totalPages;
+        state.currentPage = currentPage;
+        state.totalMaintenanceRequests = totalMaintenanceRequests;
       })
       .addCase(fetchMaintenance.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-        state.maintenanceRequests = [];
       })
       .addCase(addMaintenance.fulfilled, (state, action) => {
-        state.maintenanceRequests = [action.payload, ...state.maintenanceRequests];
+        state.maintenanceRequests.unshift(action.payload);
         state.totalMaintenanceRequests += 1;
       })
       .addCase(updateMaintenance.fulfilled, (state, action) => {
         const index = state.maintenanceRequests.findIndex(
           (request) => request._id === action.payload._id
         );
-        if (index !== -1) {
+        if (index >= 0) {
           state.maintenanceRequests[index] = action.payload;
         }
       })

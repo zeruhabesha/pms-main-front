@@ -1,88 +1,73 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import {
-  CTableRow,
-  CTableHeaderCell,
-  CTableDataCell,
-  CButton,
-} from '@coreui/react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
+import React, { useState } from 'react';
+import { CTableRow, CTableDataCell, CButton, CBadge, CModal, CModalHeader, CModalBody, CModalFooter } from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { cilZoom, cilPencil, cilTrash, cilInfo } from '@coreui/icons';
 
 const MaintenanceTableRow = ({ maintenance, index, onEdit, onDelete, onViewDetails }) => {
-  const {
-    tenant = 'N/A',
-    property = 'N/A',
-    typeOfRequest = 'N/A',
-    urgencyLevel = 'N/A',
-    status = 'Unknown',
-  } = maintenance || {};
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
 
-  // Dynamic style for status
-  const statusStyles = {
-    Pending: { backgroundColor: 'orange', color: 'white' },
-    'In Progress': { backgroundColor: '#212121', color: 'white' },
-    Completed: { backgroundColor: 'green', color: 'white' },
-    default: { backgroundColor: 'gray', color: 'white' },
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return 'warning';
+      case 'in progress':
+        return 'info';
+      case 'completed':
+        return 'success';
+      default:
+        return 'secondary';
+    }
   };
 
-  const statusStyle = statusStyles[status] || statusStyles.default;
+  const toggleModal = () => setDetailsModalVisible(!detailsModalVisible);
 
   return (
-    <CTableRow>
-      <CTableHeaderCell scope="row">{index + 1}</CTableHeaderCell>
-      <CTableDataCell>{tenant}</CTableDataCell>
-      <CTableDataCell>{property}</CTableDataCell>
-      <CTableDataCell>{typeOfRequest}</CTableDataCell>
-      <CTableDataCell>{urgencyLevel}</CTableDataCell>
-      <CTableDataCell>
-        <span
-          style={{
-            ...statusStyle,
-            padding: '5px 10px',
-            borderRadius: '5px',
-            fontSize: '12px',
-          }}
-        >
-          {status}
-        </span>
-      </CTableDataCell>
-      <CTableDataCell>
-        <CButton
-          color="light"
-          size="sm"
-          onClick={() => onViewDetails(maintenance)}
-          className="me-2"
-        >
-          <FontAwesomeIcon icon={faEye} />
-        </CButton>
-        <CButton
-          color="light"
-          size="sm"
-          onClick={() => onEdit(maintenance)}
-          className="me-2"
-        >
-          <FontAwesomeIcon icon={faEdit} />
-        </CButton>
-        <CButton
-          color="light"
-          style={{color:`red`}}
-          size="sm"
-          onClick={() => onDelete(maintenance)}
-        >
-          <FontAwesomeIcon icon={faTrash} />
-        </CButton>
-      </CTableDataCell>
-    </CTableRow>
-  );
-};
+    <>
+      <CTableRow>
+        <CTableDataCell>{index + 1}</CTableDataCell>
+        <CTableDataCell>{maintenance.tenant?.tenantName || 'N/A'}</CTableDataCell>
+        <CTableDataCell>{maintenance.tenant?.contactInformation?.email || 'N/A'}</CTableDataCell>
+        <CTableDataCell>{maintenance.tenant?.contactInformation?.phoneNumber || 'N/A'}</CTableDataCell>
+        <CTableDataCell>
+          <CBadge color={getStatusColor(maintenance.status)}>
+            {maintenance.status || 'N/A'}
+          </CBadge>
+        </CTableDataCell>
+        <CTableDataCell>
+          <CButton
+            color="light"
+            size="sm"
+            onClick={() => onViewDetails(maintenance)}
+            className="me-1"
+            title="View Details"
+          >
+            <CIcon icon={cilZoom} />
+          </CButton>
+          <CButton
+            color="light"
+            size="sm"
+            onClick={() => onEdit(maintenance)}
+            className="me-1"
+            title="Edit"
+          >
+            <CIcon icon={cilPencil} />
+          </CButton>
+          <CButton
+            color="light"
+            size="sm"
+            style={{ color: 'red' }}
+            onClick={() => onDelete(maintenance)}
+            title="Delete"
+          >
+            <CIcon icon={cilTrash} />
+          </CButton>
 
-MaintenanceTableRow.propTypes = {
-  maintenance: PropTypes.object.isRequired,
-  index: PropTypes.number.isRequired,
-  onEdit: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
-  onViewDetails: PropTypes.func.isRequired,
+        </CTableDataCell>
+      </CTableRow>
+
+ 
+    </>
+  );
 };
 
 export default MaintenanceTableRow;

@@ -56,7 +56,7 @@ function HeroSection() {
         </CRow>
         <div className="text-center mt-4">
           <CButton
-            color="primary"
+            color="dark"
             size="lg"
             href="#about"
             style={{ padding: '0.75rem 1.5rem', fontSize: '1rem' }}

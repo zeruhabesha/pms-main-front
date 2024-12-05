@@ -28,31 +28,36 @@ const Login = () => {
   const { loading, error } = auth
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    const errors = {}
-    if (!email) errors.email = 'Email is required'
-    if (!password) errors.password = 'Password is required'
-
+    e.preventDefault();
+    const errors = {};
+    if (!email) errors.email = 'Email is required';
+    if (!password) errors.password = 'Password is required';
+  
     if (Object.keys(errors).length > 0) {
-      setErrors(errors)
+      setErrors(errors);
     } else {
-      setErrors({})
+      setErrors({});
       try {
-        const result = await dispatch(login({ email, password })).unwrap()
-        toast.success('Login successful!', { autoClose: 2000, position: 'top-right' })
-
+        const result = await dispatch(login({ email, password })).unwrap();
+        toast.success('Login successful!', { autoClose: 2000, position: 'top-right' });
+  
         if (result.token) {
-          navigate('/dashboard', { replace: true })
+          navigate('/dashboard', { replace: true });
+          // Refresh the page after navigation
+          setTimeout(() => {
+            window.location.reload();
+          }, 100); // Adding a slight delay ensures navigation completes before reload
         } else {
-          throw new Error('Login failed: No token returned')
+          throw new Error('Login failed: No token returned');
         }
       } catch (error) {
-        const errorMessage = error.response?.data?.message || 'An error occurred during login'
-        setErrors({ general: errorMessage })
-        toast.error(errorMessage, { autoClose: 3000, position: 'top-right' })
+        const errorMessage = error.response?.data?.message || 'An error occurred during login';
+        setErrors({ general: errorMessage });
+        toast.error(errorMessage, { autoClose: 3000, position: 'top-right' });
       }
     }
-  }
+  };
+  
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>

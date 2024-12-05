@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import {
   CNavbar,
   CNavbarBrand,
@@ -6,8 +6,11 @@ import {
   CNavbarNav,
   CNavItem,
   CContainer,
-} from '@coreui/react'
-import logo from '../../../assets/images/logo-dark.png'
+  CButton,
+} from '@coreui/react';
+import { Link } from 'react-router-dom'; // Import the Link component
+import { IoLogIn } from 'react-icons/io5'; // Import the IoLogIn icon
+import logo from '../../../assets/images/logo-dark.png';
 
 const TopNav = ({ onNavigate }) => {
   return (
@@ -52,9 +55,13 @@ const TopNav = ({ onNavigate }) => {
             <CNavLink onClick={() => onNavigate('contact')}>Contact</CNavLink>
           </CNavItem>
         </CNavbarNav>
+        <CButton color="dark" to="/login" as={Link}>
+          <IoLogIn size={25} style={{ paddingRight: 5 }} />
+          Login
+        </CButton>
       </CContainer>
     </CNavbar>
-  )
-}
+  );
+};
 
-export default TopNav
+export default TopNav;

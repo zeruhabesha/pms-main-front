@@ -6,12 +6,11 @@ export const fetchMaintenance = createAsyncThunk(
   async ({ page = 1, limit = 5, search = '' }, { rejectWithValue }) => {
     try {
       const response = await MaintenanceService.fetchMaintenance(page, limit, search);
-      return {
-        maintenanceRequests: response.maintenanceRequests,
-        totalPages: response.totalPages,
-        currentPage: response.currentPage,
-        totalMaintenanceRequests: response.totalMaintenanceRequests,
-      };
+      const { maintenanceRequests, totalPages, currentPage, totalMaintenanceRequests } = response || {};
+      if (!maintenanceRequests) {
+        throw new Error('No maintenance requests found');
+      }
+      return { maintenanceRequests, totalPages, currentPage, totalMaintenanceRequests };
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || error.message || 'Failed to fetch maintenance requests'
@@ -22,21 +21,23 @@ export const fetchMaintenance = createAsyncThunk(
 
 
 
-// Add a new maintenance record
+
 export const addMaintenance = createAsyncThunk(
   'maintenance/addMaintenance',
   async (maintenanceData, { rejectWithValue }) => {
     try {
-      const response = await MaintenanceService.addMaintenance(maintenanceData);
-      return response.data;
+      const response = await MaintenanceService.createMaintenance(maintenanceData);
+      if (!response) throw new Error('Invalid response from server');
+      return response;
     } catch (error) {
-      console.error('Add maintenance error:', error.response || error); // Log detailed error
+      console.error('Add Maintenance Error:', error.response || error);
       return rejectWithValue(
         error.response?.data || { message: 'Failed to add maintenance record' }
       );
     }
   }
 );
+
 
 // Update an existing maintenance record
 export const updateMaintenance = createAsyncThunk(

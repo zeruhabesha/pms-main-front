@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { addProperty, updateProperty, fetchProperties } from '../../api/actions/PropertyAction';
+import axios from 'axios';
 import {
   CModal,
   CModalBody,
@@ -18,7 +17,6 @@ import {
   CCard,
   CCardBody,
   CAlert,
-  // CIcon,
 } from '@coreui/react';
 
 const PROPERTY_TYPES = [
@@ -28,8 +26,7 @@ const PROPERTY_TYPES = [
   { value: 'land', label: 'Land' },
 ];
 
-const AddProperty = ({ visible, setVisible, editingProperty }) => {
-  const dispatch = useDispatch();
+const AddProperty = ({ visible, setVisible, editingProperty, refreshProperties }) => {
   const initialState = {
     title: '',
     description: '',
@@ -69,7 +66,7 @@ const AddProperty = ({ visible, setVisible, editingProperty }) => {
     if (!formData.price || formData.price <= 0) newErrors.price = 'Valid price is required';
     if (!formData.numberOfUnits || formData.numberOfUnits <= 0) newErrors.numberOfUnits = 'Valid number of units is required';
     if (!formData.propertyType) newErrors.propertyType = 'Property type is required';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -100,22 +97,42 @@ const AddProperty = ({ visible, setVisible, editingProperty }) => {
     }
   
     try {
-      const propertyData = { ...formData, amenities: formData.amenities.split(',').map(item => item.trim()) };
+      const propertyData = {
+        ...formData,
+        amenities: formData.amenities.split(',').map((item) => item.trim()),
+      };
+  
+      const formDataToSend = new FormData();
+      for (const key in propertyData) {
+        if (key === 'photos') {
+          propertyData.photos.forEach((photo) => formDataToSend.append('photos', photo));
+        } else {
+          formDataToSend.append(key, propertyData[key]);
+        }
+      }
+  
+      const config = {
+        headers: {
+          Authorization: `Bearer ${yourAccessToken}`, // Replace with your actual token
+          'Content-Type': 'multipart/form-data',
+        },
+      };
   
       if (editingProperty) {
-        await dispatch(updateProperty({ id: editingProperty._id, propertyData })).unwrap();
+        await axios.put(`http://localhost:4000/api/v1/properties/${editingProperty._id}`, formDataToSend, config);
       } else {
-        await dispatch(addProperty(propertyData)).unwrap();
+        await axios.post('http://localhost:4000/api/v1/properties', formDataToSend, config);
       }
   
       setVisible(false);
-      await dispatch(fetchProperties({ page: 1, limit: 5, search: '' })).unwrap(); // Adjust parameters as needed
+      refreshProperties();
     } catch (error) {
-      setErrorMessage(error.message || 'Failed to save property');
+      setErrorMessage(error.response?.data?.message || 'Failed to save property');
     } finally {
       setIsSubmitting(false);
     }
   };
+  
 
   const handleClose = () => {
     setFormData(initialState);
@@ -152,8 +169,6 @@ const AddProperty = ({ visible, setVisible, editingProperty }) => {
                   />
                   {errors.title && <div className="invalid-feedback d-block">{errors.title}</div>}
                 </CCol>
-
-                {/* Updated Description (Text Area) */}
                 <CCol xs={12}>
                   <CFormLabel htmlFor="description">Description</CFormLabel>
                   <CFormTextarea
@@ -167,7 +182,6 @@ const AddProperty = ({ visible, setVisible, editingProperty }) => {
                   />
                   {errors.description && <div className="invalid-feedback d-block">{errors.description}</div>}
                 </CCol>
-
                 <CCol xs={12}>
                   <CFormLabel htmlFor="address">Address</CFormLabel>
                   <CFormInput
@@ -181,7 +195,6 @@ const AddProperty = ({ visible, setVisible, editingProperty }) => {
                   />
                   {errors.address && <div className="invalid-feedback d-block">{errors.address}</div>}
                 </CCol>
-
                 <CCol xs={12}>
                   <CFormLabel htmlFor="price">Price</CFormLabel>
                   <CFormInput
@@ -195,7 +208,6 @@ const AddProperty = ({ visible, setVisible, editingProperty }) => {
                   />
                   {errors.price && <div className="invalid-feedback d-block">{errors.price}</div>}
                 </CCol>
-
                 <CCol xs={12}>
                   <CFormLabel htmlFor="rentPrice">Rent Price (optional)</CFormLabel>
                   <CFormInput
@@ -207,7 +219,6 @@ const AddProperty = ({ visible, setVisible, editingProperty }) => {
                     placeholder="Enter Rent Price"
                   />
                 </CCol>
-
                 <CCol xs={12}>
                   <CFormLabel htmlFor="numberOfUnits">Number of Units</CFormLabel>
                   <CFormInput
@@ -221,7 +232,6 @@ const AddProperty = ({ visible, setVisible, editingProperty }) => {
                   />
                   {errors.numberOfUnits && <div className="invalid-feedback d-block">{errors.numberOfUnits}</div>}
                 </CCol>
-
                 <CCol xs={12}>
                   <CFormLabel htmlFor="propertyType">Property Type</CFormLabel>
                   <CFormSelect
@@ -240,7 +250,6 @@ const AddProperty = ({ visible, setVisible, editingProperty }) => {
                   </CFormSelect>
                   {errors.propertyType && <div className="invalid-feedback d-block">{errors.propertyType}</div>}
                 </CCol>
-
                 <CCol xs={12}>
                   <CFormLabel htmlFor="floorPlan">Floor Plan (optional)</CFormLabel>
                   <CFormInput
@@ -252,7 +261,6 @@ const AddProperty = ({ visible, setVisible, editingProperty }) => {
                     placeholder="Enter Floor Plan URL or Description"
                   />
                 </CCol>
-
                 <CCol xs={12}>
                   <CFormLabel htmlFor="amenities">Amenities</CFormLabel>
                   <CFormInput
@@ -264,7 +272,6 @@ const AddProperty = ({ visible, setVisible, editingProperty }) => {
                     placeholder="Enter amenities, separated by commas"
                   />
                 </CCol>
-
                 <CCol xs={12}>
                   <CFormLabel htmlFor="photos">Photos (max 5)</CFormLabel>
                   <CFormInput
@@ -279,7 +286,6 @@ const AddProperty = ({ visible, setVisible, editingProperty }) => {
                   {errors.photos && <div className="invalid-feedback d-block">{errors.photos}</div>}
                 </CCol>
               </CRow>
-
               <CModalFooter className="border-top-0">
                 <CButton color="secondary" variant="" onClick={handleClose}>
                   Cancel

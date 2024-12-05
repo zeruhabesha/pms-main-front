@@ -113,7 +113,7 @@ const ContactSection = () => {
                 <h3 style={{ marginBottom: '0.5rem', fontSize: '1.1rem', fontWeight: 'bold' }}>
                   Email Us
                 </h3>
-                <p style={{ margin: 0 }}>info@example.com</p>
+                <p style={{ margin: 0 }}>info@betatechhub.com</p>
               </div>
             </div>
           </CCol>
@@ -168,7 +168,7 @@ const ContactSection = () => {
                   {status.success && (
                     <p style={{ color: 'green' }}>Your message has been sent. Thank you!</p>
                   )}
-                  <CButton type="submit" color="primary" disabled={status.loading}>
+                  <CButton type="submit" color="dark" disabled={status.loading}>
                     Send Message
                   </CButton>
                 </CCol>
