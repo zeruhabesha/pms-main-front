@@ -119,9 +119,9 @@ const AddProperty = ({ visible, setVisible, editingProperty, refreshProperties }
       };
   
       if (editingProperty) {
-        await axios.put(`http://localhost:4000/api/v1/properties/${editingProperty._id}`, formDataToSend, config);
+        await axios.put(`https://pms-backend-sncw.onrender.com/api/v1//properties/${editingProperty._id}`, formDataToSend, config);
       } else {
-        await axios.post('http://localhost:4000/api/v1/properties', formDataToSend, config);
+        await axios.post('https://pms-backend-sncw.onrender.com/api/v1//properties', formDataToSend, config);
       }
   
       setVisible(false);

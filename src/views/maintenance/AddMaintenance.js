@@ -138,8 +138,8 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
       });
 
       const url = editingTenant
-        ? `http://localhost:4000/api/v1/tenants/${editingTenant._id}`
-        : 'http://localhost:4000/api/v1/tenants';
+        ? `https://pms-backend-sncw.onrender.com/api/v1//tenants/${editingTenant._id}`
+        : 'https://pms-backend-sncw.onrender.com/api/v1//tenants';
 
       const method = editingTenant ? 'put' : 'post';
 

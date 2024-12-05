@@ -28,7 +28,7 @@ const PropertyPhotoModal = ({
         <CModalBody>
           {expandedImage && (
             <img
-              src={`http://localhost:4000/api/v1/properties/${viewingProperty._id}/photos/${expandedImage}`}
+              src={`https://pms-backend-sncw.onrender.com/api/v1//properties/${viewingProperty._id}/photos/${expandedImage}`}
               alt="Expanded Property Photo"
               style={{ width: '100%' }}
             /> 
@@ -58,7 +58,7 @@ const PropertyPhotoModal = ({
         viewingProperty.photos.map((photo, index) => (
           <div key={index} className="photo-container" style={{ marginBottom: '10px' }}>
             <img
-              src={`http://localhost:4000/api/v1/properties/${viewingProperty._id}/photos/${photo}`}
+              src={`https://pms-backend-sncw.onrender.com/api/v1//properties/${viewingProperty._id}/photos/${photo}`}
               alt={`Property Photo ${index + 1}`}
               style={{ width: '100%', maxWidth: '200px', margin: '5px' }}
             />

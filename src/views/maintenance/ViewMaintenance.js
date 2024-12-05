@@ -38,7 +38,7 @@ const ViewMaintenance = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.get('http://localhost:4000/api/v1/maintenances', {
+      const response = await axios.get('https://pms-backend-sncw.onrender.com/api/v1//maintenances', {
         params: { page: currentPage, limit: itemsPerPage, search: searchTerm },
       });
       const { maintenanceRequests = [], totalPages = 0, totalMaintenanceRequests = 0 } =
@@ -83,7 +83,7 @@ const ViewMaintenance = () => {
     if (!maintenanceToDelete?._id) return;
 
     try {
-      await axios.delete(`http://localhost:4000/api/v1/maintenances/${maintenanceToDelete._id}`);
+      await axios.delete(`https://pms-backend-sncw.onrender.com/api/v1//maintenances/${maintenanceToDelete._id}`);
       fetchMaintenance();
       setDeleteModalVisible(false);
     } catch (err) {
@@ -94,7 +94,7 @@ const ViewMaintenance = () => {
   const handleUpdateMaintenance = async (formData) => {
     try {
       await axios.put(
-        `http://localhost:4000/api/v1/maintenances/${editingMaintenance._id}`,
+        `https://pms-backend-sncw.onrender.com/api/v1//maintenances/${editingMaintenance._id}`,
         formData
       );
       fetchMaintenance();
@@ -108,11 +108,11 @@ const ViewMaintenance = () => {
     try {
       if (editingMaintenance?._id) {
         await axios.put(
-          `http://localhost:4000/api/v1/maintenances/${editingMaintenance._id}`,
+          `https://pms-backend-sncw.onrender.com/api/v1//maintenances/${editingMaintenance._id}`,
           formData
         );
       } else {
-        await axios.post('http://localhost:4000/api/v1/maintenances', formData);
+        await axios.post('https://pms-backend-sncw.onrender.com/api/v1//maintenances', formData);
       }
       fetchMaintenance();
     } catch (err) {

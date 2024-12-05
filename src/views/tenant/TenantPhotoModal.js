@@ -175,7 +175,7 @@ const TenantPhotoModal = ({ visible, setVisible, admin, onSavePhoto, isLoading, 
 
   useEffect(() => {
     // Set the preview to the current admin photo if it exists, or to the placeholder
-    setPreviewUrl(admin?.photo ? `http://localhost:4000/api/v1/users/${admin._id}/photo` : placeholder);
+    setPreviewUrl(admin?.photo ? `https://pms-backend-sncw.onrender.com/api/v1//users/${admin._id}/photo` : placeholder);
     setSelectedFile(null); // Reset selected file when admin changes
   }, [admin]);
 

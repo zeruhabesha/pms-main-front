@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { encryptData, decryptData } from './utils/crypto';
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+const baseURL = import.meta.env.VITE_API_URL || 'https://pms-backend-sncw.onrender.com/api/v1/';
 
 const httpCommon = axios.create({
   baseURL,

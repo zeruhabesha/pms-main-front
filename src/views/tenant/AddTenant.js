@@ -167,7 +167,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:4000/api/v1/tenants', tenantData);
+      const response = await axios.post('https://pms-backend-sncw.onrender.com/api/v1//tenants', tenantData);
 
       if (response.status === 201 || response.status === 200) {
         showNotification('Tenant added successfully');
