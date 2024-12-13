@@ -12,6 +12,7 @@ import {
   CRow,
   CCol,
   CSpinner,
+  CAlert,
 } from '@coreui/react';
 
 const MaintenanceEditForm = ({ visible, setVisible, maintenance, onSubmit }) => {
@@ -23,6 +24,7 @@ const MaintenanceEditForm = ({ visible, setVisible, maintenance, onSubmit }) => 
     photosOrVideos: [],
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
     if (maintenance) {
@@ -46,8 +48,24 @@ const MaintenanceEditForm = ({ visible, setVisible, maintenance, onSubmit }) => 
     setFormData((prev) => ({ ...prev, photosOrVideos: files }));
   };
 
+  const validateForm = () => {
+    if (!formData.urgencyLevel) {
+      setErrorMessage('Urgency level is required.');
+      return false;
+    }
+    if (!formData.status) {
+      setErrorMessage('Status is required.');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) return;
+
     setIsLoading(true);
+    setErrorMessage(null);
+
     try {
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
@@ -62,6 +80,7 @@ const MaintenanceEditForm = ({ visible, setVisible, maintenance, onSubmit }) => 
       setVisible(false);
     } catch (error) {
       console.error('Failed to update maintenance:', error);
+      setErrorMessage('Failed to update maintenance. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +92,7 @@ const MaintenanceEditForm = ({ visible, setVisible, maintenance, onSubmit }) => 
         <CModalTitle>Edit Maintenance Request</CModalTitle>
       </CModalHeader>
       <CModalBody>
+        {errorMessage && <CAlert color="danger">{errorMessage}</CAlert>}
         <CRow className="g-4">
           <CCol xs={12}>
             <CFormLabel htmlFor="urgencyLevel">Urgency Level</CFormLabel>

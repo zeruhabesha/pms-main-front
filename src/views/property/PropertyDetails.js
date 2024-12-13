@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CModal, CModalHeader, CModalBody, CModalTitle } from '@coreui/react';
+import { CModal, CModalHeader, CModalBody, CModalTitle, CButton } from '@coreui/react';
 import PropertyPhotoModal from './PropertyPhotoModal';
 
 const PropertyDetails = ({
@@ -11,8 +11,6 @@ const PropertyDetails = ({
 }) => {
   const [expandedImage, setExpandedImage] = useState(null);
   const [isFullscreenModalVisible, setFullscreenModalVisible] = useState(false);
-  const [photoToUpdate, setPhotoToUpdate] = useState(null);
-  const [newPhoto, setNewPhoto] = useState(null);
 
   // Handle image expansion
   const handleExpandImage = (photo) => {
@@ -26,11 +24,6 @@ const PropertyDetails = ({
     setExpandedImage(null);
   };
 
-  // Handle new photo selection
-  const handlePhotoChange = (e) => {
-    setNewPhoto(e.target.files[0]);
-  };
-
   if (!viewingProperty) return null;
 
   return (
@@ -41,32 +34,52 @@ const PropertyDetails = ({
           <CModalTitle>Property Details</CModalTitle>
         </CModalHeader>
         <CModalBody>
-          <p><strong>Title:</strong> {viewingProperty.title}</p>
-          <p><strong>Description:</strong> {viewingProperty.description}</p>
-          <p><strong>Address:</strong> {viewingProperty.address}</p>
-          <p><strong>Property Type:</strong> {viewingProperty.propertyType}</p>
-          <p><strong>Price:</strong> ${viewingProperty.price}</p>
+          <p><strong>Title:</strong> {viewingProperty.title || 'N/A'}</p>
+          <p><strong>Description:</strong> {viewingProperty.description || 'N/A'}</p>
+          <p><strong>Address:</strong> {viewingProperty.address || 'N/A'}</p>
+          <p><strong>Property Type:</strong> {viewingProperty.propertyType || 'N/A'}</p>
+          <p><strong>Price:</strong> ${viewingProperty.price || 'N/A'}</p>
           <p><strong>Rent Price:</strong> ${viewingProperty.rentPrice || 'N/A'}</p>
-          <p><strong>Number of Units:</strong> {viewingProperty.numberOfUnits}</p>
+          <p><strong>Number of Units:</strong> {viewingProperty.numberOfUnits || 'N/A'}</p>
           <p><strong>Floor Plan:</strong> {viewingProperty.floorPlan || 'N/A'}</p>
           <p><strong>Amenities:</strong> {viewingProperty.amenities?.join(', ') || 'None'}</p>
           <p><strong>Photos:</strong></p>
-          <PropertyPhotoModal
-            isFullscreenModalVisible={isFullscreenModalVisible}
-            expandedImage={expandedImage}
-            viewingProperty={viewingProperty}
-            handleCloseFullscreen={handleCloseFullscreen}
-            handleExpandImage={handleExpandImage}
-            handlePhotoDelete={handlePhotoDelete}
-            handlePhotoUpdate={handlePhotoUpdate}
-            photoToUpdate={photoToUpdate}
-            setPhotoToUpdate={setPhotoToUpdate}
-            newPhoto={newPhoto}
-            setNewPhoto={setNewPhoto}
-            handlePhotoChange={handlePhotoChange}
-          />
+          <div className="d-flex flex-wrap">
+            {viewingProperty.photos?.length ? (
+              viewingProperty.photos.map((photo, index) => (
+                <div key={index} className="m-2" style={{ position: 'relative' }}>
+                  <img
+                    src={photo.url}
+                    alt={`Property Photo ${index + 1}`}
+                    style={{ width: 100, height: 100, objectFit: 'cover', cursor: 'pointer' }}
+                    onClick={() => handleExpandImage(photo)}
+                  />
+                  <CButton
+                    color="danger"
+                    size="sm"
+                    style={{ position: 'absolute', top: 0, right: 0 }}
+                    onClick={() => handlePhotoDelete(photo.id)}
+                  >
+                    Delete
+                  </CButton>
+                </div>
+              ))
+            ) : (
+              <p>No photos available.</p>
+            )}
+          </div>
         </CModalBody>
       </CModal>
+
+      {/* Fullscreen Photo Modal */}
+      {isFullscreenModalVisible && (
+        <PropertyPhotoModal
+          visible={isFullscreenModalVisible}
+          photo={expandedImage}
+          onClose={handleCloseFullscreen}
+          handlePhotoUpdate={handlePhotoUpdate}
+        />
+      )}
     </>
   );
 };

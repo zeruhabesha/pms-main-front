@@ -48,28 +48,27 @@ const AddAgreement = ({ visible, setVisible, editingAgreement, handleSave }) => 
     try {
       setIsSubmitting(true);
       setFormError("");
-  
+
       await handleSave(formData);
-  
+
       toast.success(
         editingAgreement
           ? "Agreement updated successfully."
           : "Agreement added successfully."
       );
-  
+
       setVisible(false);
     } catch (error) {
       const errorMsg =
         error.response?.data?.message ||
         error.message ||
         "Failed to save the agreement.";
-      setFormError(errorMsg); // Ensure this is a string
+      setFormError(errorMsg);
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
   };
-  
 
   const handleClose = useCallback(() => {
     setFormError("");
@@ -84,8 +83,8 @@ const AddAgreement = ({ visible, setVisible, editingAgreement, handleSave }) => 
   );
 
   const renderErrorState = (error) => (
-    <CAlert color="danger" dismissible onClose={() => setFormError("")}>
-      {error}
+    <CAlert color="danger" dismissible onClose={() => setFormError("")}> 
+      {typeof error === "object" ? error.message || JSON.stringify(error) : error}
     </CAlert>
   );
 
@@ -105,10 +104,9 @@ const AddAgreement = ({ visible, setVisible, editingAgreement, handleSave }) => 
 
       <CModalBody>
         {/* Display errors */}
-        {formError && renderErrorState(typeof formError === "object" ? formError.message || JSON.stringify(formError) : formError)}
-{tenantsError && renderErrorState(typeof tenantsError === "object" ? tenantsError.message || JSON.stringify(tenantsError) : tenantsError)}
-{propertiesError && renderErrorState(typeof propertiesError === "object" ? propertiesError.message || JSON.stringify(propertiesError) : propertiesError)}
-
+        {formError && renderErrorState(formError)}
+        {tenantsError && renderErrorState(tenantsError)}
+        {propertiesError && renderErrorState(propertiesError)}
 
         {/* Display loading state */}
         {tenantsLoading || propertiesLoading ? (

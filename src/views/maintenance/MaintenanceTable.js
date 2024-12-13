@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CTable,
   CTableHead,
@@ -19,6 +19,7 @@ import { CopyToClipboard } from 'react-copy-to-clipboard';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { cilFile, cilClipboard, cilCloudDownload } from '@coreui/icons';
+import { decryptData } from '../../api/utils/crypto';
 
 const MaintenanceTable = ({
   maintenanceList = [],
@@ -109,37 +110,58 @@ const MaintenanceTable = ({
     doc.save('maintenance_requests.pdf');
   };
 
+  const [userPermissions, setUserPermissions] = useState(null);
+  const [role, setRole] = useState(null);
+
+  useEffect(() => {
+    const encryptedUser = localStorage.getItem('user');
+    if (encryptedUser) {
+      const decryptedUser = decryptData(encryptedUser);
+      if (decryptedUser && decryptedUser.permissions) {
+        setUserPermissions(decryptedUser.permissions);
+      }
+      if (decryptedUser && decryptedUser.role) {
+        setRole(decryptedUser.role);
+      }
+    }
+  }, []);
+
   return (
     <div>
       {/* Export and Search */}
       <div className="d-flex mb-3 gap-2">
-      <div className="d-flex gap-2">
-  <CSVLink
-    data={csvData}
-    headers={[
-      { label: '#', key: 'index' },
-      { label: 'Tenant Name', key: 'tenantName' },
-      { label: 'Email', key: 'email' },
-      { label: 'Phone', key: 'phone' },
-      { label: 'Status', key: 'status' },
-    ]}
-    filename="maintenance_requests.csv"
-    className="btn btn-dark"
-    title="Export CSV"
-  >
-    <CIcon icon={cilFile} size="lg" />
-  </CSVLink>
-  <CopyToClipboard text={clipboardData}>
-    <CButton color="dark" title="Copy to Clipboard">
-      <CIcon icon={cilClipboard} size="lg" />
-    </CButton>
-  </CopyToClipboard>
-  <CButton color="dark" onClick={exportToPDF} title="Export PDF">
-    <CIcon icon={cilCloudDownload} size="lg" />
-  </CButton>
-</div>
-
-
+        <CFormInput
+          type="text"
+          placeholder="Search by tenant name or status"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="me-2"
+        />
+        <div className="d-flex gap-2">
+          <CSVLink
+            data={csvData}
+            headers={[
+              { label: '#', key: 'index' },
+              { label: 'Tenant Name', key: 'tenantName' },
+              { label: 'Email', key: 'email' },
+              { label: 'Phone', key: 'phone' },
+              { label: 'Status', key: 'status' },
+            ]}
+            filename="maintenance_requests.csv"
+            className="btn btn-dark"
+            title="Export CSV"
+          >
+            <CIcon icon={cilFile} size="lg" />
+          </CSVLink>
+          <CopyToClipboard text={clipboardData}>
+            <CButton color="dark" title="Copy to Clipboard">
+              <CIcon icon={cilClipboard} size="lg" />
+            </CButton>
+          </CopyToClipboard>
+          <CButton color="dark" onClick={exportToPDF} title="Export PDF">
+            <CIcon icon={cilCloudDownload} size="lg" />
+          </CButton>
+        </div>
       </div>
 
       {/* Maintenance Table */}
@@ -176,33 +198,36 @@ const MaintenanceTable = ({
                 </CTableDataCell>
                 <CTableDataCell>
                   <CButton
-  color="light"
-  size="sm"
-  className="me-2"
-  onClick={() => handleViewDetails(maintenance)} // Correct function call
-  title="View Details"
->
-  <CIcon icon={cilZoom} />
-</CButton>
-
-                  <CButton
                     color="light"
                     size="sm"
                     className="me-2"
-                    onClick={() => handleEdit(maintenance)}
-                    title="Edit"
+                    onClick={() => handleViewDetails(maintenance)}
+                    title="View Details"
                   >
-                    <CIcon icon={cilPencil} />
+                    <CIcon icon={cilZoom} />
                   </CButton>
-                  <CButton
-                    color="light"
-                    style={{ color: `red` }}
-                    size="sm"
-                    onClick={() => handleDelete(maintenance)}
-                    title="Delete"
-                  >
-                    <CIcon icon={cilTrash} />
-                  </CButton>
+                  {role === 'User' && userPermissions?.editMaintenance && (
+                    <CButton
+                      color="light"
+                      size="sm"
+                      className="me-2"
+                      onClick={() => handleEdit(maintenance)}
+                      title="Edit"
+                    >
+                      <CIcon icon={cilPencil} />
+                    </CButton>
+                  )}
+                  {role === 'User' && userPermissions?.deleteMaintenance && (
+                    <CButton
+                      color="light"
+                      style={{ color: `red` }}
+                      size="sm"
+                      onClick={() => handleDelete(maintenance)}
+                      title="Delete"
+                    >
+                      <CIcon icon={cilTrash} />
+                    </CButton>
+                  )}
                 </CTableDataCell>
               </CTableRow>
             ))}

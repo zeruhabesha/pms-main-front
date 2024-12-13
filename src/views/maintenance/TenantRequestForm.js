@@ -58,7 +58,7 @@ const TenantRequestForm = ({ visible, setVisible, onSubmit, editingRequest = nul
 
   const fetchProperties = async () => {
     try {
-      const response = await axios.get('https://pms-backend-sncw.onrender.com/api/v1//properties');
+      const response = await axios.get('http://localhost:4000/api/v1/properties');
       console.log('Raw Property Response:', response.data); // Debugging
   
       // Access the properties array correctly

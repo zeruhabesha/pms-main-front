@@ -132,14 +132,16 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
       Object.entries(tenantData).forEach(([key, value]) => {
         if (key === 'idProof' && value.length) {
           value.forEach((file) => formData.append('idProof', file));
-        } else {
+        } else if (typeof value === 'object') {
           formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, value);
         }
       });
 
       const url = editingTenant
-        ? `https://pms-backend-sncw.onrender.com/api/v1//tenants/${editingTenant._id}`
-        : 'https://pms-backend-sncw.onrender.com/api/v1//tenants';
+        ? `http://localhost:4000/api/v1/tenants/${editingTenant._id}`
+        : 'http://localhost:4000/api/v1/tenants';
 
       const method = editingTenant ? 'put' : 'post';
 
@@ -198,7 +200,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                 />
               </CCol>
 
-              <CCol xs={12}>
+              <CCol xs={12} md={6}>
                 <CFormLabel htmlFor="email">Email</CFormLabel>
                 <CFormInput
                   id="email"
@@ -210,7 +212,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                 />
               </CCol>
 
-              <CCol xs={12}>
+              <CCol xs={12} md={6}>
                 <CFormLabel htmlFor="phoneNumber">Phone Number</CFormLabel>
                 <CFormInput
                   id="phoneNumber"
@@ -222,13 +224,24 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                 />
               </CCol>
 
-              <CCol xs={12}>
+              <CCol xs={12} md={6}>
                 <CFormLabel htmlFor="startDate">Lease Start Date</CFormLabel>
                 <CFormInput
                   id="startDate"
                   type="date"
                   value={tenantData.leaseAgreement.startDate}
                   onChange={(e) => handleNestedChange('leaseAgreement', 'startDate', e.target.value)}
+                  required
+                />
+              </CCol>
+
+              <CCol xs={12} md={6}>
+                <CFormLabel htmlFor="endDate">Lease End Date</CFormLabel>
+                <CFormInput
+                  id="endDate"
+                  type="date"
+                  value={tenantData.leaseAgreement.endDate}
+                  onChange={(e) => handleNestedChange('leaseAgreement', 'endDate', e.target.value)}
                   required
                 />
               </CCol>

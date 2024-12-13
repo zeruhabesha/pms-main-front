@@ -1,4 +1,4 @@
-import React, { useState, useMemo,useEffect  } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   CTable,
   CTableBody,
@@ -27,20 +27,34 @@ import { CopyToClipboard } from 'react-copy-to-clipboard';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import placeholder from '../image/placeholder.png';
+import { decryptData } from '../../api/utils/crypto';
 
 const TenantTable = ({
   tenants = [],
   currentPage,
   totalPages,
   searchTerm,
-  setSearchTerm,
+  setSearchTerm, // Ensure this is destructured correctly
   handleEditPhoto,
   handleEdit,
   handleDelete,
   handlePageChange,
+  handleViewDetails,
+  handleFetchTenants,
   itemsPerPage = 5,
 }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [userPermissions, setUserPermissions] = useState(null);
+
+  useEffect(() => {
+    const encryptedUser = localStorage.getItem('user');
+    if (encryptedUser) {
+      const decryptedUser = decryptData(encryptedUser);
+      if (decryptedUser && decryptedUser.permissions) {
+        setUserPermissions(decryptedUser.permissions);
+      }
+    }
+  }, []);
 
   const handleSort = (key) => {
     setSortConfig((prevConfig) => {
@@ -105,27 +119,27 @@ const TenantTable = ({
     doc.save('tenant_data.pdf');
   };
 
-  const filteredTenants = useMemo(() => {
-    if (!searchTerm) return tenants;
-  
-    return tenants.filter((tenant) =>
-      `${tenant?.tenantName || ''} ${tenant?.contactInformation?.email || ''}`
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    );
-  }, [tenants, searchTerm]);
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      handleFetchTenants({ searchTerm });
-    }, 500); // Debounce time
+      if (typeof handleFetchTenants === 'function') {
+        handleFetchTenants({ search: searchTerm });
+      }
+    }, 500);
   
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm]);
+  }, [searchTerm, handleFetchTenants]);
+  
   
   return (
     <div>
       <div className="d-flex mb-3 gap-2">
-        <div className="d-flex gap-2">
+      <CFormInput
+      type="text"
+      placeholder="Search by name or email"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)} // Use setSearchTerm correctly
+    />
+    <div className="d-flex gap-2">
           <CSVLink
             data={csvData}
             headers={[
@@ -149,12 +163,12 @@ const TenantTable = ({
             <CIcon icon={cilCloudDownload} />
           </CButton>
         </div>
-        <CFormInput
+        {/* <CFormInput
           type="text"
           placeholder="Search by name or email"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        /> */}
       </div>
 
       <div className="table-responsive">
@@ -176,8 +190,8 @@ const TenantTable = ({
             </CTableRow>
           </CTableHead>
           <CTableBody>
-          {filteredTenants.map((tenant, index) => (
-  <CTableRow key={tenant._id}>
+            {sortedTenants.map((tenant, index) => (
+              <CTableRow key={tenant._id}>
                 <CTableDataCell>{(currentPage - 1) * itemsPerPage + index + 1}</CTableDataCell>
                 <CTableDataCell>
                   <img
@@ -185,48 +199,55 @@ const TenantTable = ({
                     alt="Tenant"
                     style={{ width: '50px', height: '50px', borderRadius: '50%' }}
                   />
-                  <CButton
-                    color="light"
-                    size="sm"
-                    onClick={() => handleEditPhoto(tenant)}
-                    title="Edit photo"
-                    className="ms-2"
-                  >
-                    <CIcon icon={cilPencil} />
-                  </CButton>
+                  {userPermissions?.editTenantPhotos && (
+                    <CButton
+                      color="light"
+                      size="sm"
+                      onClick={() => handleEditPhoto(tenant)}
+                      title="Edit photo"
+                      className="ms-2"
+                    >
+                      <CIcon icon={cilPencil} />
+                    </CButton>
+                  )}
                 </CTableDataCell>
                 <CTableDataCell>{tenant?.tenantName || 'N/A'}</CTableDataCell>
                 <CTableDataCell>{tenant.contactInformation?.email || 'N/A'}</CTableDataCell>
                 <CTableDataCell>{tenant.leaseAgreement?.startDate || 'N/A'}</CTableDataCell>
                 <CTableDataCell>{tenant.leaseAgreement?.endDate || 'N/A'}</CTableDataCell>
                 <CTableDataCell>
+                  {userPermissions?.editTenant && (
+                    <CButton
+                      color="light"
+                      size="sm"
+                      onClick={() => handleEdit(tenant)}
+                      title="Edit"
+                      className="ms-2"
+                    >
+                      <CIcon icon={cilPencil} />
+                    </CButton>
+                  )}
+                  {userPermissions?.deleteTenant && (
+                    <CButton
+                      color="light"
+                      size="sm"
+                      className="ms-2"
+                      onClick={() => handleDelete(tenant._id)}
+                      title="Delete"
+                      style={{ color: 'red' }}
+                    >
+                      <CIcon icon={cilTrash} />
+                    </CButton>
+                  )}
                   <CButton
-                    color="light"
-                    size="sm"
-                    onClick={() => handleEdit(tenant)}
-                    title="Edit"
-                    className="ms-2"
-                  >
-                    <CIcon icon={cilPencil} />
-                  </CButton>
-                  <CButton
-                    color="light"
-                    size="sm"
-                    className="ms-2"
-                    onClick={() => handleDelete(tenant._id)}
-                    title="Delete"
-                    style={{ color: 'red' }}
-                  >
-                    <CIcon icon={cilTrash} />
-                  </CButton>
-                  <CButton
-                    color="light"
-                    size="sm"
-                    className="ms-2"
-                    title="View Details"
-                  >
-                    <CIcon icon={cilZoom} />
-                  </CButton>
+  color="light"
+  size="sm"
+  className="ms-2"
+  title="View Details"
+  onClick={() => handleViewDetails(tenant._id)} // Pass tenant ID to fetch details
+>
+  <CIcon icon={cilZoom} />
+</CButton>
                 </CTableDataCell>
               </CTableRow>
             ))}

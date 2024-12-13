@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  fetchMaintenance,
+  addMaintenance,
+  updateMaintenance,
+  deleteMaintenance,
+} from '../../api/actions/MaintenanceActions';
 import {
   CRow,
   CCol,
@@ -16,14 +22,19 @@ import TenantRequestForm from './TenantRequestForm';
 import MaintenanceDeleteModal from './MaintenanceDeleteModal';
 import MaintenanceEditForm from './MaintenanceEditForm';
 import '../Super.scss';
+import { decryptData } from '../../api/utils/crypto';
 
 const ViewMaintenance = () => {
-  const [maintenanceList, setMaintenanceList] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalMaintenanceRequests, setTotalMaintenanceRequests] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const dispatch = useDispatch();
+  const {
+    maintenanceRequests,
+    loading,
+    error,
+    totalPages,
+    totalMaintenanceRequests,
+    currentPage,
+  } = useSelector((state) => state.maintenance);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [selectedMaintenance, setSelectedMaintenance] = useState(null);
@@ -31,36 +42,28 @@ const ViewMaintenance = () => {
   const [editingMaintenance, setEditingMaintenance] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [maintenanceToDelete, setMaintenanceToDelete] = useState(null);
-  const [tenantRequestVisible, setTenantRequestVisible] = useState(false); // Track TenantRequestForm visibility
+  const [tenantRequestVisible, setTenantRequestVisible] = useState(false);
   const itemsPerPage = 5;
 
-  const fetchMaintenance = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await axios.get('https://pms-backend-sncw.onrender.com/api/v1//maintenances', {
-        params: { page: currentPage, limit: itemsPerPage, search: searchTerm },
-      });
-      const { maintenanceRequests = [], totalPages = 0, totalMaintenanceRequests = 0 } =
-        response.data?.data || {};
-
-      setMaintenanceList(maintenanceRequests);
-      setTotalPages(totalPages);
-      setTotalMaintenanceRequests(totalMaintenanceRequests);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch maintenance records.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [userPermissions, setUserPermissions] = useState(null);
 
   useEffect(() => {
-    fetchMaintenance();
-  }, [currentPage, searchTerm]);
+    const encryptedUser = localStorage.getItem('user');
+    if (encryptedUser) {
+      const decryptedUser = decryptData(encryptedUser);
+      if (decryptedUser && decryptedUser.permissions) {
+        setUserPermissions(decryptedUser.permissions);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    dispatch(fetchMaintenance({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
+  }, [dispatch, currentPage, searchTerm]);
 
   const handlePageChange = (page) => {
     if (page !== currentPage) {
-      setCurrentPage(page);
+      dispatch(fetchMaintenance({ page, limit: itemsPerPage, search: searchTerm }));
     }
   };
 
@@ -80,44 +83,26 @@ const ViewMaintenance = () => {
   };
 
   const confirmDelete = async () => {
-    if (!maintenanceToDelete?._id) return;
-
-    try {
-      await axios.delete(`https://pms-backend-sncw.onrender.com/api/v1//maintenances/${maintenanceToDelete._id}`);
-      fetchMaintenance();
+    if (maintenanceToDelete?._id) {
+      await dispatch(deleteMaintenance(maintenanceToDelete._id));
       setDeleteModalVisible(false);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete maintenance record.');
     }
   };
 
   const handleUpdateMaintenance = async (formData) => {
-    try {
-      await axios.put(
-        `https://pms-backend-sncw.onrender.com/api/v1//maintenances/${editingMaintenance._id}`,
-        formData
-      );
-      fetchMaintenance();
+    if (editingMaintenance?._id) {
+      await dispatch(updateMaintenance({ id: editingMaintenance._id, maintenanceData: formData }));
       setEditModalVisible(false);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update maintenance record.');
     }
   };
 
   const handleFormSubmit = async (formData) => {
-    try {
-      if (editingMaintenance?._id) {
-        await axios.put(
-          `https://pms-backend-sncw.onrender.com/api/v1//maintenances/${editingMaintenance._id}`,
-          formData
-        );
-      } else {
-        await axios.post('https://pms-backend-sncw.onrender.com/api/v1//maintenances', formData);
-      }
-      fetchMaintenance();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit maintenance form.');
+    if (editingMaintenance?._id) {
+      await dispatch(updateMaintenance({ id: editingMaintenance._id, maintenanceData: formData }));
+    } else {
+      await dispatch(addMaintenance(formData));
     }
+    setTenantRequestVisible(false);
   };
 
   return (
@@ -126,17 +111,19 @@ const ViewMaintenance = () => {
         <CCard className="mb-4">
           <CCardHeader className="d-flex justify-content-between align-items-center">
             <strong>Maintenance Records</strong>
-            <div id="container">
-              <button
-                className="learn-more"
-                onClick={() => setTenantRequestVisible(true)} // Open TenantRequestForm
-              >
-                <span className="circle" aria-hidden="true">
-                  <span className="icon arrow"></span>
-                </span>
-                <span className="button-text">Add Request</span>
-              </button>
-            </div>
+            {userPermissions?.addMaintenanceRecord && (
+              <div id="container">
+                <button
+                  className="learn-more"
+                  onClick={() => setTenantRequestVisible(true)}
+                >
+                  <span className="circle" aria-hidden="true">
+                    <span className="icon arrow"></span>
+                  </span>
+                  <span className="button-text">Add Request</span>
+                </button>
+              </div>
+            )}
           </CCardHeader>
           <CCardBody>
             <CFormInput
@@ -150,9 +137,9 @@ const ViewMaintenance = () => {
               <CSpinner />
             ) : error ? (
               <div className="text-danger">{error}</div>
-            ) : maintenanceList.length > 0 ? (
+            ) : maintenanceRequests.length > 0 ? (
               <MaintenanceTable
-                maintenanceList={maintenanceList}
+                maintenanceList={maintenanceRequests}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 searchTerm={searchTerm}
@@ -191,9 +178,9 @@ const ViewMaintenance = () => {
       />
 
       <TenantRequestForm
-        visible={tenantRequestVisible} // Control visibility
-        setVisible={setTenantRequestVisible} // Pass setter
-        onSubmit={() => setTenantRequestVisible(false)} // Close modal on submit
+        visible={tenantRequestVisible}
+        setVisible={setTenantRequestVisible}
+        onSubmit={handleFormSubmit}
         editingRequest={null}
       />
 

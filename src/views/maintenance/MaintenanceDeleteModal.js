@@ -8,7 +8,7 @@ const MaintenanceDeleteModal = ({
   maintenanceToDelete,
   confirmDelete,
 }) => {
-  const maintenanceTitle = maintenanceToDelete?.title || "Untitled Maintenance";
+  const maintenanceTitle = maintenanceToDelete?.title || maintenanceToDelete?.property?.title || "Untitled Maintenance";
 
   return (
     <CModal
@@ -17,12 +17,12 @@ const MaintenanceDeleteModal = ({
       aria-labelledby="delete-modal-title"
       aria-describedby="delete-modal-description"
     >
-      <CModalHeader onClose={() => setDeleteModalVisible(false)}>
+      <CModalHeader closeButton>
         <CModalTitle id="delete-modal-title">Confirm Delete</CModalTitle>
       </CModalHeader>
       <CModalBody id="delete-modal-description">
-        Are you sure you want to delete the maintenance record titled:{" "}
-        <strong>{maintenanceTitle}</strong>? This action cannot be undone.
+        Are you sure you want to delete the maintenance record titled: <strong>{maintenanceTitle}</strong>?<br />
+        <small className="text-danger">This action cannot be undone.</small>
       </CModalBody>
       <CModalFooter>
         <CButton color="secondary" onClick={() => setDeleteModalVisible(false)}>
@@ -42,6 +42,9 @@ MaintenanceDeleteModal.propTypes = {
   setDeleteModalVisible: PropTypes.func.isRequired,
   maintenanceToDelete: PropTypes.shape({
     title: PropTypes.string,
+    property: PropTypes.shape({
+      title: PropTypes.string,
+    }),
   }),
   confirmDelete: PropTypes.func.isRequired,
 };

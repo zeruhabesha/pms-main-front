@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   CRow,
   CCol,
@@ -16,88 +16,53 @@ import {
 import { CChartBar, CChartLine, CChartDoughnut } from '@coreui/react-chartjs';
 
 const Dashboard = () => {
-  const [stats, setStats] = useState({
-    admins: 0,
-    properties: 0,
-    tenants: 0,
-    revenue: '0',
-  });
-  const [propertyDistribution, setPropertyDistribution] = useState({
+  const stats = {
+    admins: 5,
+    properties: 20,
+    tenants: 50,
+    revenue: '12,000',
+  };
+
+  const propertyDistribution = {
     labels: ['Available', 'Rented', 'Maintenance'],
-    datasets: [{ data: [0, 0, 0], backgroundColor: ['#4CAF50', '#FF9800', '#F44336'] }],
-  });
-  const [monthlyRevenue, setMonthlyRevenue] = useState({
-    labels: [],
-    datasets: [{ label: 'Revenue (in $)', backgroundColor: '#42A5F5', data: [] }],
-  });
-  const [recentProperties, setRecentProperties] = useState([]);
-  const [recentTenants, setRecentTenants] = useState([]);
+    datasets: [
+      {
+        data: [10, 8, 2],
+        backgroundColor: ['#4CAF50', '#FF9800', '#F44336'],
+      },
+    ],
+  };
 
-  // Fetch data dynamically
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Example API endpoints, replace with actual endpoints
-        const statsResponse = await fetch('http://localhost:4000/api/v1/users/user/report');
-        const propertyResponse = await fetch('http://localhost:4000/api/v1/properties/report');
-        const tenantsResponse = await fetch('http://localhost:4000/api/v1/tenants/report');
-        const revenueResponse = await fetch('http://localhost:4000/api/v1/properties/report');
+  const monthlyRevenue = {
+    labels: ['January', 'February', 'March', 'April', 'May'],
+    datasets: [
+      {
+        label: 'Revenue (in $)',
+        backgroundColor: '#42A5F5',
+        data: [2000, 3000, 2500, 4000, 5000],
+      },
+    ],
+  };
 
-        const statsData = await statsResponse.json();
-        const propertyData = await propertyResponse.json();
-        const tenantsData = await tenantsResponse.json();
-        const revenueData = await revenueResponse.json();
+  const recentProperties = [
+    { id: 1, name: 'Green Villas', status: 'Rented', price: '$1500' },
+    { id: 2, name: 'Sunny Apartments', status: 'Available', price: '$1200' },
+    { id: 3, name: 'Luxury Homes', status: 'Maintenance', price: '$1800' },
+  ];
 
-        // Update stats widget
-        setStats({
-          admins: statsData.admins,
-          properties: statsData.properties,
-          tenants: statsData.tenants,
-          revenue: statsData.revenue,
-        });
-
-        // Update property distribution chart
-        setPropertyDistribution({
-          labels: ['Available', 'Rented', 'Maintenance'],
-          datasets: [
-            {
-              data: propertyData.distribution,
-              backgroundColor: ['#4CAF50', '#FF9800', '#F44336'],
-            },
-          ],
-        });
-
-        // Update monthly revenue chart
-        setMonthlyRevenue({
-          labels: revenueData.labels,
-          datasets: [
-            {
-              label: 'Revenue (in $)',
-              backgroundColor: '#42A5F5',
-              data: revenueData.values,
-            },
-          ],
-        });
-
-        // Update recent properties and tenants
-        setRecentProperties(propertyData.recent);
-        setRecentTenants(tenantsData.recent);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const recentTenants = [
+    { id: 1, name: 'John Doe', email: 'john@example.com', phone: '123-456-7890' },
+    { id: 2, name: 'Jane Smith', email: 'jane@example.com', phone: '987-654-3210' },
+    { id: 3, name: 'Sam Wilson', email: 'sam@example.com', phone: '555-555-5555' },
+  ];
 
   return (
     <div>
       <CRow className="mb-4">
-        {/* Top Stats Widgets */}
         <CCol sm={6} lg={3}>
           <CWidgetStatsA
             className="mb-4"
-            color="primary"
+            color="dark"
             value={stats.admins.toString()}
             title="Total Admins"
           />
@@ -105,7 +70,7 @@ const Dashboard = () => {
         <CCol sm={6} lg={3}>
           <CWidgetStatsA
             className="mb-4"
-            color="success"
+            color="light"
             value={stats.properties.toString()}
             title="Total Properties"
           />
@@ -126,9 +91,9 @@ const Dashboard = () => {
             title="Monthly Revenue"
           />
         </CCol>
+        
       </CRow>
 
-      {/* Charts Section */}
       <CRow>
         <CCol lg={6}>
           <CCard>
@@ -163,10 +128,26 @@ const Dashboard = () => {
               />
             </CCardBody>
           </CCard>
+          <CCard>
+            <CCardHeader>Yearlly Revenue</CCardHeader>
+            <CCardBody>
+              <CChartBar
+                data={monthlyRevenue}
+                options={{
+                  plugins: {
+                    legend: { display: true, position: 'top' },
+                  },
+                  scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true },
+                  },
+                }}
+              />
+            </CCardBody>
+          </CCard>
         </CCol>
       </CRow>
 
-      {/* Recent Activity Tables */}
       <CRow className="mt-4">
         <CCol lg={6}>
           <CCard>

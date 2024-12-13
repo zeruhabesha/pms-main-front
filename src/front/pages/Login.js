@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   CForm,
   CFormInput,
@@ -10,29 +10,30 @@ import {
   CCardBody,
   CAlert,
   CContainer,
-} from '@coreui/react'
-import { useDispatch, useSelector } from 'react-redux'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
-import { login } from '../../api/actions/authActions'
-import backgroundImage from '../../assets/images/hero-bg-abstract.jpg'
-import { FaLongArrowAltRight } from 'react-icons/fa'
+} from '@coreui/react';
+import { useDispatch, useSelector } from 'react-redux';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { login } from '../../api/actions/authActions';
+import backgroundImage from '../../assets/images/hero-bg-abstract.jpg';
+import logo from '../../assets/images/logo-dark.png'; // Import the logo
+import { FaLongArrowAltRight } from 'react-icons/fa';
 
 const Login = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [errors, setErrors] = useState({})
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
-  const auth = useSelector((state) => state.auth) || {}
-  const { loading, error } = auth
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({});
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const auth = useSelector((state) => state.auth) || {};
+  const { loading, error } = auth;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = {};
     if (!email) errors.email = 'Email is required';
     if (!password) errors.password = 'Password is required';
-  
+
     if (Object.keys(errors).length > 0) {
       setErrors(errors);
     } else {
@@ -40,7 +41,7 @@ const Login = () => {
       try {
         const result = await dispatch(login({ email, password })).unwrap();
         toast.success('Login successful!', { autoClose: 2000, position: 'top-right' });
-  
+
         if (result.token) {
           navigate('/dashboard', { replace: true });
           // Refresh the page after navigation
@@ -57,7 +58,6 @@ const Login = () => {
       }
     }
   };
-  
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
@@ -101,6 +101,28 @@ const Login = () => {
             padding: '2rem',
           }}
         >
+          {/* Logo */}
+          <motion.div
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{
+              textAlign: 'center',
+              marginBottom: '1rem',
+            }}
+          >
+            <img
+              src={logo}
+              alt="Logo"
+              style={{
+                maxWidth: '150px',
+                height: 'auto',
+                display: 'inline',
+                margin: '0 auto',
+              }}
+            />
+          </motion.div>
+
           <motion.h1
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -225,7 +247,7 @@ const Login = () => {
         pauseOnHover
       />
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

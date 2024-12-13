@@ -166,7 +166,7 @@ const ViewUser = () => {
               <span className="circle" aria-hidden="true">
                 <span className="icon arrow"></span>
               </span>
-              <span className="button-text">Add User</span>
+              <span className="button-text">Add Employee</span>
             </button>
           </CCardHeader>
           <CCardBody>

@@ -61,7 +61,7 @@ const _nav = [
       items: [
         {
           component: CNavItem,
-          name: 'Users',
+          name: 'Employee',
           to: '/account/users',
         },
       ],
@@ -95,6 +95,25 @@ const _nav = [
       name: 'Report',
       to: '/report',
       icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
+    },
+  ] : []),
+
+  ...(userRole === 'Tenant' ? [
+    {
+      component: CNavItem,
+      name: 'Dashboard',
+      to: '/dashboard',
+      icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
+      badge: {
+        color: 'info',
+        text: 'NEW',
+      },
+    },
+    {
+      component: CNavItem,
+      name: 'Maintenance',
+      to: '/maintenance',
+      icon: <CIcon icon={cilSettings} customClassName="nav-icon" />,
     },
   ] : []),
 

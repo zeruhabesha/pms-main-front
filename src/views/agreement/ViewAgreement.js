@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
 import {
   CRow,
   CCol,
@@ -9,94 +8,140 @@ import {
   CFormInput,
   CSpinner,
   CAlert,
+  CButton,
 } from "@coreui/react";
 import AgreementTable from "./AgreementTable";
 import AddAgreement from "./AddAgreement";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../Super.scss";
+import { CSVLink } from "react-csv";
+import { cilFile, cilClipboard, cilCloudDownload } from "@coreui/icons";
+import { CIcon } from "@coreui/icons-react";
+import { CopyToClipboard } from "react-copy-to-clipboard";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchAgreements,
+  addAgreement,
+  updateAgreement,
+  deleteAgreement,
+} from "../../api/actions/AgreementActions";
+
+import {
+  setSelectedAgreement,
+  clearSelectedAgreement,
+} from "../../api/slice/AgreementSlice";
 
 const ViewAgreement = () => {
-  const [agreements, setAgreements] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isAgreementModalVisible, setAgreementModalVisible] = useState(false);
-  const [selectedAgreement, setSelectedAgreement] = useState(null);
-
+  const [isModalVisible, setModalVisible] = useState(false);
+  const dispatch = useDispatch();
+  const {
+    agreements,
+    loading,
+    error,
+    currentPage,
+    totalPages,
+    selectedAgreement,
+  } = useSelector((state) => state.agreement);
   const itemsPerPage = 5;
 
- const fetchAgreements = async (page = 1) => {
-  setLoading(true);
-  setError("");
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("No token found. Please log in.");
-
-    const response = await axios.get("http://localhost:4000/api/v1/lease", {
-      params: { page, limit: itemsPerPage, search: searchTerm },
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const { leases: fetchedAgreements, totalPages } = response.data?.data || {};
-    setAgreements(fetchedAgreements || []);
-    setTotalPages(totalPages || 0);
-  } catch (error) {
-    console.error("Error fetching agreements:", error);
-    setError(error.response?.data?.message || "Failed to fetch agreements. Please try again later.");
-  } finally {
-    setLoading(false);
-  }
-};
-  
-
   useEffect(() => {
-    fetchAgreements(currentPage);
-  }, [currentPage, searchTerm]);
+    const fetchData = async () => {
+      try {
+        await dispatch(fetchAgreements({ page: currentPage, limit: itemsPerPage })).unwrap();
+      } catch (error) {
+        console.error("Error fetching agreements:", error.message || error);
+        toast.error("Failed to fetch agreements.");
+      }
+    };
+
+    fetchData();
+  }, [dispatch, currentPage]);
+
+  const handleSearch = (e) => {
+    dispatch(fetchAgreements({ page: 1, limit: itemsPerPage, searchTerm: e.target.value }));
+  };
 
   const handleEdit = (agreement) => {
-    setSelectedAgreement(agreement);
-    setAgreementModalVisible(true);
+    dispatch(setSelectedAgreement(agreement));
+    setModalVisible(true);
   };
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:4000/api/v1/lease/${id}`);
+      await dispatch(deleteAgreement(id)).unwrap();
       toast.success("Agreement deleted successfully.");
-      fetchAgreements(currentPage);
     } catch (error) {
-      console.error("Error deleting agreement:", error);
       toast.error("Failed to delete the agreement.");
     }
   };
 
   const handleSave = async (formData) => {
     try {
+      if (!formData.tenant || !formData.property) {
+        throw new Error("Tenant and Property are required fields.");
+      }
+
       if (selectedAgreement) {
-        await axios.put(`http://localhost:4000/api/v1/lease/${selectedAgreement._id}`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        await dispatch(updateAgreement({ id: selectedAgreement._id, agreementData: formData })).unwrap();
         toast.success("Agreement updated successfully.");
       } else {
-        await axios.post("http://localhost:4000/api/v1/lease", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        await dispatch(addAgreement(formData)).unwrap();
         toast.success("Agreement added successfully.");
       }
-      setAgreementModalVisible(false);
-      fetchAgreements(currentPage);
     } catch (error) {
-      console.error("Error saving agreement:", error);
+      console.error("Save Error:", error.message || error);
       toast.error("Failed to save the agreement.");
     }
+  };
+
+  const closeModal = () => {
+    dispatch(clearSelectedAgreement());
+    setModalVisible(false);
+  };
+
+  const csvData = agreements.map((agreement, index) => ({
+    index: (currentPage - 1) * itemsPerPage + index + 1,
+    tenant: agreement.tenant?.name || "N/A",
+    property: agreement.property?.name || "N/A",
+    leaseStart: agreement.leaseStart || "N/A",
+    leaseEnd: agreement.leaseEnd || "N/A",
+    rentAmount: agreement.rentAmount || "N/A",
+  }));
+
+  const clipboardData = agreements
+    .map(
+      (agreement, index) =>
+        `${(currentPage - 1) * itemsPerPage + index + 1}. ${
+          agreement.tenant?.name || "N/A"
+        } - ${agreement.property?.name || "N/A"} - ${agreement.leaseStart || "N/A"} - ${
+          agreement.leaseEnd || "N/A"
+        }`
+    )
+    .join("\n");
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Agreements List", 14, 10);
+
+    const tableData = agreements.map((agreement, index) => [
+      (currentPage - 1) * itemsPerPage + index + 1,
+      agreement.tenant?.name || "N/A",
+      agreement.property?.name || "N/A",
+      agreement.leaseStart || "N/A",
+      agreement.leaseEnd || "N/A",
+      `$${agreement.rentAmount || "N/A"}`,
+    ]);
+
+    doc.autoTable({
+      head: [["#", "Tenant", "Property", "Lease Start", "Lease End", "Rent Amount"]],
+      body: tableData,
+      startY: 20,
+    });
+
+    doc.save("agreements.pdf");
   };
 
   return (
@@ -108,8 +153,8 @@ const ViewAgreement = () => {
             <button
               className="learn-more"
               onClick={() => {
-                setSelectedAgreement(null);
-                setAgreementModalVisible(true);
+                dispatch(clearSelectedAgreement());
+                setModalVisible(true);
               }}
             >
               <span className="circle" aria-hidden="true">
@@ -119,14 +164,44 @@ const ViewAgreement = () => {
             </button>
           </CCardHeader>
           <CCardBody>
-            {error && <CAlert color="danger">{error}</CAlert>}
-            <CFormInput
-              type="text"
-              placeholder="Search by tenant or property"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="mb-3"
-            />
+            {error && (
+              <CAlert color="danger">
+                {typeof error === "object" ? error.message || JSON.stringify(error) : error}
+              </CAlert>
+            )}
+            <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
+              <CFormInput
+                type="text"
+                placeholder="Search by tenant or property"
+                onChange={handleSearch}
+                className="w-100"
+              />
+              <div className="d-flex gap-2">
+                <CSVLink
+                  data={csvData}
+                  headers={[
+                    { label: "#", key: "index" },
+                    { label: "Tenant", key: "tenant" },
+                    { label: "Property", key: "property" },
+                    { label: "Lease Start", key: "leaseStart" },
+                    { label: "Lease End", key: "leaseEnd" },
+                    { label: "Rent Amount", key: "rentAmount" },
+                  ]}
+                  filename="agreement_data.csv"
+                  className="btn btn-dark"
+                >
+                  <CIcon icon={cilFile} title="Export CSV" />
+                </CSVLink>
+                <CopyToClipboard text={clipboardData}>
+                  <CButton color="dark" title="Copy to Clipboard">
+                    <CIcon icon={cilClipboard} />
+                  </CButton>
+                </CopyToClipboard>
+                <CButton color="dark" onClick={exportToPDF} title="Export PDF">
+                  <CIcon icon={cilCloudDownload} />
+                </CButton>
+              </div>
+            </div>
             {loading ? (
               <CSpinner color="dark" />
             ) : (
@@ -136,21 +211,18 @@ const ViewAgreement = () => {
                 onDelete={handleDelete}
                 currentPage={currentPage}
                 totalPages={totalPages}
-                handlePageChange={setCurrentPage}
-                itemsPerPage={itemsPerPage}
+                handlePageChange={(page) => dispatch(fetchAgreements({ page, limit: itemsPerPage }))}
               />
             )}
           </CCardBody>
         </CCard>
       </CCol>
-
       <AddAgreement
-        visible={isAgreementModalVisible}
-        setVisible={setAgreementModalVisible}
+        visible={isModalVisible}
+        setVisible={closeModal}
         editingAgreement={selectedAgreement}
         handleSave={handleSave}
       />
-
       <ToastContainer position="top-right" autoClose={3000} />
     </CRow>
   );

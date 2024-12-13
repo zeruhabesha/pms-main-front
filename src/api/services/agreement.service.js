@@ -7,75 +7,106 @@ class AgreementService {
 
   getAuthHeader() {
     const token = localStorage.getItem("token");
-    return {
-      Authorization: `Bearer ${token}`,
-    };
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
   async fetchAgreements(page = 1, limit = 5, searchTerm = "") {
     try {
-      const response = await httpCommon.get(`/lease`, {
-        params: { page, limit, search: searchTerm },
+      const response = await httpCommon.get(`${this.baseURL}`, {
         headers: this.getAuthHeader(),
+        params: { page, limit, search: searchTerm },
       });
 
-      if (response.data?.status === "success" && response.data.data) {
-        return response.data.data;
-      } else {
-        throw new Error("Unexpected API response format");
-      }
+      const { data } = response.data;
+
+      return {
+        agreements: data?.leases || [],
+        totalPages: data?.totalPages || 1,
+        currentPage: data?.currentPage || page,
+      };
     } catch (error) {
-      console.error("Error fetching agreements:", error.response?.data || error.message);
-      throw this.handleError(error);
+      this.handleError(error, "Failed to fetch agreements");
     }
   }
 
   async addAgreement(agreementData) {
-    try {
-      const response = await httpCommon.post(`/lease`, agreementData, {
-        headers: {
-          ...this.getAuthHeader(),
-          "Content-Type": "application/json",
-        },
-      });
-      return response.data?.data;
-    } catch (error) {
-      console.error("Error adding agreement:", error.response?.data || error.message);
-      throw this.handleError(error);
-    }
+    return this.handleRequest(
+      () =>
+        httpCommon.post(`${this.baseURL}`, agreementData, {
+          headers: { ...this.getAuthHeader(), "Content-Type": "application/json" },
+        }),
+      "Failed to add agreement"
+    );
   }
 
   async updateAgreement(id, agreementData) {
-    try {
-      const response = await httpCommon.put(`/lease/${id}`, agreementData, {
-        headers: {
-          ...this.getAuthHeader(),
-          "Content-Type": "application/json",
-        },
-      });
-      return response.data?.data;
-    } catch (error) {
-      console.error("Error updating agreement:", error.response?.data || error.message);
-      throw this.handleError(error);
-    }
+    return this.handleRequest(
+      () =>
+        httpCommon.put(`${this.baseURL}/${id}`, agreementData, {
+          headers: { ...this.getAuthHeader(), "Content-Type": "application/json" },
+        }),
+      "Failed to update agreement"
+    );
   }
 
   async deleteAgreement(id) {
+    return this.handleRequest(
+      () =>
+        httpCommon.delete(`${this.baseURL}/${id}`, {
+          headers: this.getAuthHeader(),
+        }),
+      "Failed to delete agreement"
+    );
+  }
+
+  async uploadAgreementFile(id, file) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return this.handleRequest(
+      () =>
+        httpCommon.post(`${this.baseURL}/${id}/file`, formData, {
+          headers: { ...this.getAuthHeader(), "Content-Type": "multipart/form-data" },
+        }),
+      "Failed to upload agreement file"
+    );
+  }
+
+  async downloadAgreementFile(fileName) {
+    if (!fileName) throw new Error("File name is required for download");
+
     try {
-      await httpCommon.delete(`/lease/${id}`, {
+      const response = await httpCommon.get(`${this.baseURL}/download/${fileName}`, {
         headers: this.getAuthHeader(),
+        responseType: "blob", // Treat response as file blob
       });
-      return id;
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", fileName); // Set downloaded file name
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
-      console.error("Error deleting agreement:", error.response?.data || error.message);
-      throw this.handleError(error);
+      this.handleError(error, "Failed to download file");
     }
   }
 
-  handleError(error) {
-    return {
-      message: error.response?.data?.message || error.message,
-      status: error.response?.status,
+  async handleRequest(requestFn, defaultErrorMessage) {
+    try {
+      const response = await requestFn();
+      return response.data?.data || response.data;
+    } catch (error) {
+      this.handleError(error, defaultErrorMessage);
+    }
+  }
+
+  handleError(error, defaultMessage = "An error occurred") {
+    console.error("API Error:", error.response?.data || error.message);
+    throw {
+      message: error.response?.data?.message || defaultMessage,
+      status: error.response?.status || 500,
     };
   }
 }

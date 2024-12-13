@@ -162,56 +162,78 @@
 // export default TenantPhotoModal;
 
 
-
-
 import React, { useState, useRef, useEffect } from 'react';
-import { CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CButton, CFormInput } from '@coreui/react';
+import { CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CButton, CFormInput, CAlert } from '@coreui/react';
 import placeholder from '../image/placeholder.png';
 
 const TenantPhotoModal = ({ visible, setVisible, admin, onSavePhoto, isLoading, error }) => {
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(placeholder);
+  const [localError, setLocalError] = useState(null);
 
   useEffect(() => {
-    // Set the preview to the current admin photo if it exists, or to the placeholder
-    setPreviewUrl(admin?.photo ? `https://pms-backend-sncw.onrender.com/api/v1//users/${admin._id}/photo` : placeholder);
-    setSelectedFile(null); // Reset selected file when admin changes
-  }, [admin]);
+    // Reset the preview and selected file when the modal or admin changes
+    setPreviewUrl(admin?.photo ? `http://localhost:4000/api/v1/users/${admin._id}/photo` : placeholder);
+    setSelectedFile(null);
+    setLocalError(null);
+  }, [admin, visible]);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    if (file && file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-    } else {
-      alert('Please select a valid image file under 5MB');
-    }
-  };
 
-  const handleSubmit = () => {
-    if (!selectedFile) {
-      alert('No photo selected. Please choose a file.');
+    if (!file) {
+      setLocalError('No file selected.');
       return;
     }
-  
+
+    if (!file.type.startsWith('image/')) {
+      setLocalError('Only image files are allowed.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setLocalError('File size must be under 5MB.');
+      return;
+    }
+
+    setLocalError(null);
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file)); // Show a preview of the selected file
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedFile) {
+      setLocalError('Please select a photo before saving.');
+      return;
+    }
+
     try {
-      onSavePhoto(selectedFile);
+      await onSavePhoto(selectedFile);
+      setVisible(false); // Close the modal after a successful upload
     } catch (error) {
       console.error('Error saving photo:', error);
-      alert('Failed to save photo.');
+      setLocalError('Failed to save photo. Please try again.');
     }
   };
-  
 
   return (
-    <CModal visible={visible} onClose={() => setVisible(false)}>
-      <CModalHeader onClose={() => setVisible(false)}>
+    <CModal visible={visible} onClose={() => setVisible(false)} alignment="center">
+      <CModalHeader>
         <CModalTitle>Edit Photo</CModalTitle>
       </CModalHeader>
       <CModalBody className="text-center">
-        <img src={previewUrl} className="me-2"  alt="Admin" style={{ width: '150px', height: '150px', borderRadius: '50%', marginBottom: '20px' }} />
-        <CButton color="dark" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+        <img
+          src={previewUrl}
+          alt="Tenant"
+          style={{ width: '150px', height: '150px', borderRadius: '50%', marginBottom: '20px' }}
+        />
+        <CButton
+          color="dark"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isLoading}
+          className="mb-3"
+        >
           Select Photo
         </CButton>
         <CFormInput
@@ -221,10 +243,11 @@ const TenantPhotoModal = ({ visible, setVisible, admin, onSavePhoto, isLoading, 
           onChange={handleFileChange}
           style={{ display: 'none' }}
         />
-        {error && <div className="text-danger mt-2">{error}</div>}
+        {localError && <CAlert color="danger" className="mt-2">{localError}</CAlert>}
+        {error && <CAlert color="danger" className="mt-2">{error}</CAlert>}
       </CModalBody>
       <CModalFooter>
-        <CButton color="secondary" onClick={() => setVisible(false)}>
+        <CButton color="secondary" onClick={() => setVisible(false)} disabled={isLoading}>
           Cancel
         </CButton>
         <CButton color="dark" onClick={handleSubmit} disabled={!selectedFile || isLoading}>
@@ -236,3 +259,4 @@ const TenantPhotoModal = ({ visible, setVisible, admin, onSavePhoto, isLoading, 
 };
 
 export default TenantPhotoModal;
+

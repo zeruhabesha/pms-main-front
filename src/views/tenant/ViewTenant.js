@@ -11,6 +11,8 @@ import '../Super.scss';
 import TenantPhotoModal from './TenantPhotoModal';
 import debounce from 'lodash/debounce';
 import { uploadUserPhoto } from '../../api/actions/userActions';
+import { decryptData } from '../../api/utils/crypto';
+import TenantDetailsModal from "./TenantDetailsModal"; // Import the modal component
 
 const selectTenantState = (state) => state.tenant || {
   tenants: [],
@@ -32,11 +34,27 @@ const ViewTenant = () => {
   const [tenantToDelete, setTenantToDelete] = useState(null);
   const [userToEdit, setUserToEdit] = useState(null);
   const itemsPerPage = 5;
+  const [userPermissions, setUserPermissions] = useState(null);
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [tenantDetails, setTenantDetails] = useState(null);
 
-  // Debounced search
+  const handleFetchTenants = ({ search }) => {
+    dispatch(fetchTenants({ page: 1, limit: itemsPerPage, search }));
+  };
+
+  useEffect(() => {
+    const encryptedUser = localStorage.getItem('user');
+    if (encryptedUser) {
+      const decryptedUser = decryptData(encryptedUser);
+      if (decryptedUser && decryptedUser.permissions) {
+        setUserPermissions(decryptedUser.permissions);
+      }
+    }
+  }, []);
+
   const debouncedSearch = useCallback(
     debounce((term) => {
-      dispatch(fetchTenants({ page: 1, limit: itemsPerPage, searchTerm: term }));
+      dispatch(fetchTenants({ page: 1, limit: itemsPerPage, search: term }));
     }, 500),
     [dispatch, itemsPerPage]
   );
@@ -46,14 +64,14 @@ const ViewTenant = () => {
     setSearchTerm(term);
     debouncedSearch(term);
   };
-
+  
   useEffect(() => {
-    dispatch(fetchTenants({ page: currentPage, limit: itemsPerPage, searchTerm }));
+    dispatch(fetchTenants({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
   }, [dispatch, currentPage, searchTerm]);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages && page !== currentPage) {
-      dispatch(fetchTenants({ page, limit: itemsPerPage, searchTerm }));
+      dispatch(fetchTenants({ page, limit: itemsPerPage, search: searchTerm }));
     }
   };
 
@@ -81,7 +99,7 @@ const ViewTenant = () => {
         toast.success('Tenant deleted successfully');
         setDeleteModalVisible(false);
         setTenantToDelete(null);
-        dispatch(fetchTenants({ page: currentPage, limit: itemsPerPage, searchTerm }));
+        dispatch(fetchTenants({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
       } catch (error) {
         toast.error(error.message || 'Failed to delete tenant');
       }
@@ -97,7 +115,7 @@ const ViewTenant = () => {
         await dispatch(addTenant(updatedData)).unwrap();
         toast.success('Tenant added successfully');
       }
-      dispatch(fetchTenants({ page: currentPage, limit: itemsPerPage, searchTerm }));
+      dispatch(fetchTenants({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
       setTenantModalVisible(false);
     } catch (error) {
       toast.error(error.message || 'Failed to save tenant');
@@ -116,12 +134,33 @@ const ViewTenant = () => {
         toast.success('Photo updated successfully');
         setEditPhotoVisible(false);
         setUserToEdit(null);
-        dispatch(fetchTenants({ page: currentPage, limit: itemsPerPage, searchTerm }));
+        dispatch(fetchTenants({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
       } catch (error) {
         toast.error(error.message || 'Failed to update photo');
       }
     }
   };
+
+  const handleViewDetails = async (id) => {
+    try {
+      // Dispatch the action to fetch tenant details using the provided ID
+      const details = await dispatch(fetchTenants({ page: 1, limit: itemsPerPage, search: '' })).unwrap(); 
+      const tenantDetails = details.tenants.find((tenant) => tenant._id === id);
+  
+      if (!tenantDetails) {
+        throw new Error("Tenant details not found");
+      }
+  
+      // Set tenant details to display in the modal
+      setTenantDetails(tenantDetails);
+      setDetailsModalVisible(true);
+    } catch (error) {
+      console.error("Error fetching tenant details:", error);
+      toast.error(error.message || "Failed to fetch tenant details");
+    }
+  };
+  
+
 
   return (
     <CRow>
@@ -129,32 +168,41 @@ const ViewTenant = () => {
         <CCard className="mb-4">
           <CCardHeader className="d-flex justify-content-between align-items-center">
             <strong>Tenant List</strong>
-            <div id="container">
-              <button className="learn-more" onClick={handleAddTenant}>
-                <span className="circle" aria-hidden="true">
-                  <span className="icon arrow"></span>
-                </span>
-                <span className="button-text">Add Tenant</span>
-              </button>
-            </div>
+            {userPermissions?.addTenant && (
+              <div id="container">
+                <button className="learn-more" onClick={handleAddTenant}>
+                  <span className="circle" aria-hidden="true">
+                    <span className="icon arrow"></span>
+                  </span>
+                  <span className="button-text">Add Tenant</span>
+                </button>
+              </div>
+            )}
           </CCardHeader>
           <CCardBody>
             {error && (
               <CAlert color="danger" className="mb-4">
-                {error.message}
+                {error.message || 'Failed to fetch tenants'}
               </CAlert>
             )}
-            <TenantTable
-              tenants={tenants}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              handleEdit={handleEdit}
-              handleEditPhoto={handleEditPhoto}
-              handleDelete={handleDelete}
-              handlePageChange={handlePageChange}
-            />
+
+
+<TenantTable
+  tenants={tenants}
+  currentPage={currentPage}
+  totalPages={totalPages}
+  searchTerm={searchTerm}
+  setSearchTerm={setSearchTerm}
+  handleEdit={handleEdit}
+  handleEditPhoto={handleEditPhoto}
+  handleDelete={handleDelete}
+  handlePageChange={handlePageChange}
+  handleViewDetails={handleViewDetails}
+  handleFetchTenants={handleFetchTenants} // Pass here
+/>
+
+
+
           </CCardBody>
         </CCard>
       </CCol>
@@ -176,6 +224,11 @@ const ViewTenant = () => {
         setVisible={setEditPhotoVisible}
         admin={userToEdit}
         onSavePhoto={handleSavePhoto}
+      />
+      <TenantDetailsModal
+        visible={detailsModalVisible}
+        setVisible={setDetailsModalVisible}
+        tenantDetails={tenantDetails}
       />
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </CRow>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CTable,
   CTableHead,
@@ -14,21 +14,40 @@ import { CSVLink } from 'react-csv';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { CIcon } from '@coreui/icons-react';
-import { cilFile, cilCloudDownload, cilClipboard, cilPencil, cilTrash, cilFullscreen } from '@coreui/icons';
+import {
+  cilFile,
+  cilCloudDownload,
+  cilClipboard,
+  cilPencil,
+  cilTrash,
+  cilFullscreen,
+} from '@coreui/icons';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
+import { decryptData } from '../../api/utils/crypto';
 
 const PropertyTable = ({
-  properties,
-  totalProperties,
-  onEdit,
-  onDelete,
-  onView,
-  currentPage,
-  setCurrentPage,
-  totalPages,
-  itemsPerPage,
+  properties = [],
+  totalProperties = 0,
+  onEdit = () => {},
+  onDelete = () => {},
+  onView = () => {},
+  currentPage = 1,
+  setCurrentPage = () => {},
+  totalPages = 1,
+  itemsPerPage = 5,
 }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [userPermissions, setUserPermissions] = useState(null);
+
+  useEffect(() => {
+    const encryptedUser = localStorage.getItem('user');
+    if (encryptedUser) {
+      const decryptedUser = decryptData(encryptedUser);
+      if (decryptedUser && decryptedUser.permissions) {
+        setUserPermissions(decryptedUser.permissions);
+      }
+    }
+  }, []);
 
   const handleSort = (key) => {
     setSortConfig((prevConfig) => ({
@@ -50,7 +69,7 @@ const PropertyTable = ({
     });
   }, [properties, sortConfig]);
 
-  const csvData = properties.map((property, index) => ({
+  const csvData = sortedProperties.map((property, index) => ({
     index: (currentPage - 1) * itemsPerPage + index + 1,
     title: property.title || 'N/A',
     price: property.price || 'N/A',
@@ -59,10 +78,14 @@ const PropertyTable = ({
   }));
 
   const exportToPDF = () => {
+    if (!sortedProperties.length) {
+      console.warn('No properties to export to PDF');
+      return;
+    }
     const doc = new jsPDF();
     doc.text('Property Data', 14, 10);
 
-    const tableData = properties.map((property, index) => [
+    const tableData = sortedProperties.map((property, index) => [
       (currentPage - 1) * itemsPerPage + index + 1,
       property.title || 'N/A',
       property.price || 'N/A',
@@ -77,6 +100,39 @@ const PropertyTable = ({
     });
 
     doc.save('property_data.pdf');
+  };
+
+  const getPaginationRange = (currentPage, totalPages) => {
+    const delta = 2; // Number of pages to show on each side of current page
+    const range = [];
+    const rangeWithDots = [];
+
+    // Calculate start and end of range
+    let start = Math.max(2, currentPage - delta);
+    let end = Math.min(totalPages - 1, currentPage + delta);
+
+    // Adjust start and end to always show 5 numbers if possible
+    if (currentPage - delta > 2 && totalPages > 5) {
+      rangeWithDots.push(1, '...');
+    } else {
+      for (let i = 1; i < start; i++) {
+        rangeWithDots.push(i);
+      }
+    }
+
+    for (let i = start; i <= end; i++) {
+      rangeWithDots.push(i);
+    }
+
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push('...', totalPages);
+    } else {
+      for (let i = end + 1; i <= totalPages; i++) {
+        rangeWithDots.push(i);
+      }
+    }
+
+    return rangeWithDots;
   };
 
   return (
@@ -129,76 +185,104 @@ const PropertyTable = ({
           </CTableRow>
         </CTableHead>
         <CTableBody>
-          {sortedProperties.map((property, index) => (
-            <CTableRow key={property._id || index}>
-              <CTableDataCell>{(currentPage - 1) * itemsPerPage + index + 1}</CTableDataCell>
-              <CTableDataCell>{property?.title || 'N/A'}</CTableDataCell>
-              <CTableDataCell>${property?.price || 'N/A'}</CTableDataCell>
-              <CTableDataCell>{property?.address || 'N/A'}</CTableDataCell>
-              <CTableDataCell>{property?.propertyType || 'N/A'}</CTableDataCell>
-              <CTableDataCell>
-                <CButton
-                  color="light"
-                  size="sm"
-                  className="me-2"
-                  onClick={() => onView(property)}
-                  title="View Property"
-                >
-                  <CIcon icon={cilFullscreen} />
-                </CButton>
-                <CButton
-                  color="light"
-                  size="sm"
-                  className="me-2"
-                  onClick={() => onEdit(property)}
-                  title="Edit Property"
-                >
-                  <CIcon icon={cilPencil} />
-                </CButton>
-                <CButton
-                  color="light"
-                  size="sm"
-                  style={{ color: 'red' }}
-                  onClick={() => onDelete(property)}
-                  title="Delete Property"
-                >
-                  <CIcon icon={cilTrash} />
-                </CButton>
+          {sortedProperties.length ? (
+            sortedProperties.map((property, index) => (
+              <CTableRow key={property._id || index}>
+                <CTableDataCell>{(currentPage - 1) * itemsPerPage + index + 1}</CTableDataCell>
+                <CTableDataCell>{property?.title || 'N/A'}</CTableDataCell>
+                <CTableDataCell>{property?.price ? `$${property.price}` : 'N/A'}</CTableDataCell>
+                <CTableDataCell>{property?.address || 'N/A'}</CTableDataCell>
+                <CTableDataCell>{property?.propertyType || 'N/A'}</CTableDataCell>
+                <CTableDataCell>
+                  <CButton
+                    color="light"
+                    size="sm"
+                    className="me-2"
+                    onClick={() => onView(property)}
+                    title="View Property"
+                  >
+                    <CIcon icon={cilFullscreen} />
+                  </CButton>
+                  {userPermissions?.editProperty && (
+                    <CButton
+                      color="light"
+                      size="sm"
+                      className="me-2"
+                      onClick={() => onEdit({ ...property, _id: property._id || property.id })}
+                      title="Edit Property"
+                    >
+                      <CIcon icon={cilPencil} />
+                    </CButton>
+                  )}
+                  {userPermissions?.deleteProperty && (
+                    <CButton
+                      color="light"
+                      size="sm"
+                      style={{ color: 'red' }}
+                      onClick={() => onDelete({ ...property, _id: property._id || property.id })}
+                      title="Delete Property"
+                    >
+                      <CIcon icon={cilTrash} />
+                    </CButton>
+                  )}
+                </CTableDataCell>
+              </CTableRow>
+            ))
+          ) : (
+            <CTableRow>
+              <CTableDataCell colSpan="6" className="text-center">
+                No properties available.
               </CTableDataCell>
             </CTableRow>
-          ))}
+          )}
         </CTableBody>
       </CTable>
 
-      <CPagination className="mt-3">
-        <CPaginationItem disabled={currentPage === 1} onClick={() => setCurrentPage(1)}>
-          &laquo;
-        </CPaginationItem>
-        <CPaginationItem
-          disabled={currentPage === 1}
-          onClick={() => setCurrentPage(currentPage - 1)}
-        >
-          &lsaquo;
-        </CPaginationItem>
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+     {totalPages > 1 && (
+        <CPagination className="mt-3" style={{ display: 'flex', justifyContent: 'center' }}>
           <CPaginationItem
-            key={page}
-            active={page === currentPage}
-            onClick={() => setCurrentPage(page)}
+            disabled={currentPage <= 1}
+            onClick={() => setCurrentPage(1)}
           >
-            {page}
+            &laquo;
           </CPaginationItem>
-        ))}
-        <CPaginationItem
-          disabled={currentPage === totalPages}
-          onClick={() => setCurrentPage(currentPage + 1)}
-        >
-          &rsaquo;
-        </CPaginationItem>
-        <CPaginationItem disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)}>
-          &raquo;
-        </CPaginationItem>
-      </CPagination>
+          <CPaginationItem
+            disabled={currentPage <= 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+          >
+            &lsaquo;
+          </CPaginationItem>
+          
+          {getPaginationRange(currentPage, totalPages).map((page, index) => (
+            page === '...' ? (
+              <CPaginationItem key={`dots-${index}`} disabled>
+                ...
+              </CPaginationItem>
+            ) : (
+              <CPaginationItem
+                key={`page-${page}`}
+                active={page === currentPage}
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </CPaginationItem>
+            )
+          ))}
+
+          <CPaginationItem
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
+          >
+            &rsaquo;
+          </CPaginationItem>
+          <CPaginationItem
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage(totalPages)}
+          >
+            &raquo;
+          </CPaginationItem>
+        </CPagination>
+      )}
     </div>
   );
 };

@@ -1,21 +1,35 @@
-import { createSlice } from '@reduxjs/toolkit'; // Import createSlice
-import { 
-  fetchProperties, 
-  addProperty, 
-  updateProperty, 
-  deleteProperty 
+import { createSlice } from '@reduxjs/toolkit';
+import {
+  fetchProperties,
+  addProperty,
+  updateProperty,
+  deleteProperty,
+  uploadPhotos,
+  updatePhotos,
+  getProperty,
+  deletePhoto,
+  updateStatus,
+  batchDelete,
+  toggleFeatured,
+  filterProperties,
+  updatePropertyPhoto,
 } from '../actions/PropertyAction';
+
+const initialState = {
+  properties: [],
+  loading: false,
+  error: null,
+  totalPages: 1,
+  currentPage: 1,
+  selectedProperty: null,
+  featuredProperties: [],
+  filters: {},
+  lastUpdated: null,
+};
 
 const propertySlice = createSlice({
   name: 'property',
-  initialState: {
-    properties: [],
-    loading: false,
-    error: null,
-    totalPages: 1,
-    currentPage: 1,
-    selectedProperty: null,
-  },
+  initialState,
   reducers: {
     resetState: () => initialState,
     setSelectedProperty: (state, action) => {
@@ -24,71 +38,125 @@ const propertySlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    updateFilters: (state, action) => {
+      state.filters = { ...state.filters, ...action.payload };
+    },
   },
   extraReducers: (builder) => {
+    // Add common cases for loading and error handling
+    const commonActions = [
+      fetchProperties,
+      addProperty,
+      updateProperty,
+      deleteProperty,
+      uploadPhotos,
+      updatePhotos,
+      deletePhoto,
+      updateStatus,
+      batchDelete,
+      toggleFeatured,
+      filterProperties,
+      updatePropertyPhoto,
+    ];
+
+    commonActions.forEach((action) => {
+      builder
+        .addCase(action.pending, (state) => {
+          state.loading = true;
+          state.error = null;
+        })
+        .addCase(action.rejected, (state, action) => {
+          state.loading = false;
+          state.error = action.payload || 'An unexpected error occurred';
+        });
+    });
+
+    // Add individual success cases
     builder
-      .addCase(fetchProperties.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchProperties.fulfilled, (state, action) => {
+        state.loading = false;
         state.properties = action.payload.properties;
         state.totalPages = action.payload.totalPages;
         state.currentPage = action.payload.currentPage;
-        state.loading = false;
-      })
-      .addCase(fetchProperties.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Failed to fetch properties';
-      })
-
-      .addCase(addProperty.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+        state.lastUpdated = new Date().toISOString();
       })
       .addCase(addProperty.fulfilled, (state, action) => {
         state.loading = false;
-        state.properties.push(action.payload);
-      })
-      .addCase(addProperty.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      .addCase(updateProperty.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+        state.properties.unshift(action.payload);
       })
       .addCase(updateProperty.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.properties.findIndex(
-          (property) => property._id === action.payload._id
-        );
+        const index = state.properties.findIndex((p) => p.id === action.payload.id);
         if (index !== -1) {
           state.properties[index] = action.payload;
         }
       })
-      .addCase(updateProperty.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'An error occurred';
-      })
-
-      .addCase(deleteProperty.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(deleteProperty.fulfilled, (state, action) => {
         state.loading = false;
-        state.properties = state.properties.filter(
-          (property) => property._id !== action.payload
-        );
+        state.properties = state.properties.filter((p) => p.id !== action.payload);
       })
-      .addCase(deleteProperty.rejected, (state, action) => {
+      .addCase(uploadPhotos.fulfilled, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'An error occurred';
+        const { propertyId, photos } = action.payload;
+        const property = state.properties.find((p) => p.id === propertyId);
+        if (property) {
+          property.photos = photos;
+        }
+      })
+      .addCase(getProperty.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedProperty = action.payload;
+      })
+      .addCase(deletePhoto.fulfilled, (state, action) => {
+        state.loading = false;
+        const { propertyId, photoId } = action.payload;
+        const property = state.properties.find((p) => p.id === propertyId);
+        if (property) {
+          property.photos = property.photos.filter((photo) => photo.id !== photoId);
+        }
+      })
+      .addCase(updatePropertyPhoto.fulfilled, (state, action) => {
+        state.loading = false;
+        const { id, photo } = action.payload;
+        const property = state.properties.find((p) => p.id === id);
+        if (property) {
+          property.photos = Array.isArray(property.photos)
+            ? [...property.photos, photo]
+            : [photo];
+        }
+      })
+      .addCase(updateStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.properties.findIndex((p) => p.id === action.payload.id);
+        if (index !== -1) {
+          state.properties[index] = action.payload;
+        }
+      })
+      .addCase(batchDelete.fulfilled, (state, action) => {
+        state.loading = false;
+        state.properties = state.properties.filter((p) => !action.payload.includes(p.id));
+      })
+      .addCase(toggleFeatured.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.properties.findIndex((p) => p.id === action.payload.id);
+        if (index !== -1) {
+          state.properties[index] = action.payload;
+        }
+        if (action.payload.featured) {
+          state.featuredProperties.push(action.payload);
+        } else {
+          state.featuredProperties = state.featuredProperties.filter((p) => p.id !== action.payload.id);
+        }
+      })
+      .addCase(filterProperties.fulfilled, (state, action) => {
+        state.loading = false;
+        state.properties = action.payload.properties;
+        state.totalPages = action.payload.totalPages;
+        state.currentPage = action.payload.currentPage;
+        state.lastUpdated = new Date().toISOString();
       });
   },
 });
 
-export const { resetState, setSelectedProperty, clearError } = propertySlice.actions;
+export const { resetState, setSelectedProperty, clearError, updateFilters } = propertySlice.actions;
 export default propertySlice.reducer;

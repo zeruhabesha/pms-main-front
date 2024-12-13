@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProperties, deleteProperty, updatePropertyPhoto } from '../../api/actions/PropertyAction';
+import {
+  fetchProperties,
+  deleteProperty,
+  updateProperty,
+  addProperty,
+  updatePropertyPhoto,
+} from '../../api/actions/PropertyAction';
 import {
   CRow,
   CCol,
@@ -8,26 +14,28 @@ import {
   CCardBody,
   CCardHeader,
   CFormInput,
-  CButton,
   CAlert,
 } from '@coreui/react';
 import PropertyTable from './PropertyTable';
 import PropertyDeleteModal from './PropertyDeleteModal';
 import AddProperty from './AddProperty';
 import EditPhotoModal from '../EditPhotoModal';
-import '../Super.scss';
-import './property.scss';
+import PropertyDetails from './PropertyDetails';
+import { decryptData } from '../../api/utils/crypto';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import './property.scss';
 import '../Super.scss';
-import PropertyDetails from './PropertyDetails';
 
 const ViewProperty = () => {
   const dispatch = useDispatch();
+
+  // Redux state
   const { properties, loading, error, totalPages, totalCount } = useSelector((state) => state.property);
+
+  // Local state
   const [viewingProperty, setViewingProperty] = useState(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -36,44 +44,81 @@ const ViewProperty = () => {
   const [propertyToDelete, setPropertyToDelete] = useState(null);
   const [editingProperty, setEditingProperty] = useState(null);
   const [propertyToEdit, setPropertyToEdit] = useState(null);
+  const [userPermissions, setUserPermissions] = useState(null);
+
   const itemsPerPage = 5;
+
+  // Fetch user data from localStorage
+  useEffect(() => {
+    const encryptedUser = localStorage.getItem('user');
+    if (encryptedUser) {
+      const decryptedUser = decryptData(encryptedUser);
+      setUserPermissions(decryptedUser.permissions);
+    }
+  }, []);
 
   // Fetch properties
   useEffect(() => {
     dispatch(fetchProperties({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
   }, [dispatch, currentPage, itemsPerPage, searchTerm]);
 
-  // Functions
+  // Handle pagination
   const handlePageChange = (page) => {
     if (page !== currentPage) {
-      dispatch(fetchProperties({ page, limit: itemsPerPage, search: searchTerm }));
       setCurrentPage(page);
     }
   };
 
+  // Handle add property modal
   const handleAddProperty = () => {
-    setEditingProperty(null); // Clear editing state for adding new property
+    setEditingProperty(null); // Reset editing state
     setPropertyModalVisible(true);
   };
 
+  // Handle edit property modal
   const handleEdit = (property) => {
-    setEditingProperty(property);
-    setPropertyModalVisible(true);
-  };
-
-  const handleDelete = (property) => {
-    setPropertyToDelete(property);
-    setDeleteModalVisible(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!propertyToDelete?._id) {
-      toast.error('Invalid property selected for deletion');
+    if (!property) {
+      toast.error('Invalid property selected for editing.');
       return;
     }
+    // Ensure we're working with the complete property object
+    const propertyToEdit = {
+      _id: property._id || property.id,
+      title: property.title || '',
+      propertyType: property.propertyType || '',
+      price: property.price || '',
+      address: property.address || '',
+      photos: property.photos || [],
+      status: property.status || 'active',
+      featured: property.featured || false,
+      createdAt: property.createdAt || null,
+      updatedAt: property.updatedAt || null,
+    };
+    setEditingProperty(propertyToEdit);
+    setPropertyModalVisible(true);
+  };
 
+  // Handle delete modal
+  const handleDelete = (property) => {
+    if (!property || (!property._id && !property.id)) {
+      toast.error('Invalid property selected for deletion.');
+      return;
+    }
+    const propertyId = property._id || property.id;
+    setPropertyToDelete({ ...property, _id: propertyId });
+    setDeleteModalVisible(true);
+  };
+  
+
+  const confirmDelete = async () => {
+    if (!propertyToDelete || (!propertyToDelete._id && !propertyToDelete.id)) {
+      toast.error('Invalid property selected for deletion.');
+      return;
+    }
+  
     try {
-      await dispatch(deleteProperty(propertyToDelete._id)).unwrap();
+      const propertyId = propertyToDelete._id || propertyToDelete.id;
+      await dispatch(deleteProperty(propertyId)).unwrap();
       toast.success('Property deleted successfully');
       dispatch(fetchProperties({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
       setDeleteModalVisible(false);
@@ -82,6 +127,7 @@ const ViewProperty = () => {
     }
   };
 
+  // Handle edit photo modal
   const handleEditPhoto = (property) => {
     setPropertyToEdit(property);
     setEditPhotoVisible(true);
@@ -95,19 +141,18 @@ const ViewProperty = () => {
         dispatch(fetchProperties({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
         setEditPhotoVisible(false);
       } catch (error) {
-        toast.error('Failed to update photo');
+        toast.error(error.message || 'Failed to update photo');
       }
     }
   };
 
+  // Handle add/update property
   const handleSaveProperty = async (propertyData) => {
     try {
       if (editingProperty) {
-        // Update existing property
-        await dispatch(updatePropertyPhoto({ id: editingProperty._id, propertyData })).unwrap();
+        await dispatch(updateProperty({ id: editingProperty._id, propertyData })).unwrap();
         toast.success('Property updated successfully');
       } else {
-        // Add new property
         await dispatch(addProperty(propertyData)).unwrap();
         toast.success('Property added successfully');
       }
@@ -119,30 +164,27 @@ const ViewProperty = () => {
   };
 
   const handleView = (property) => {
-    setViewingProperty(property); // Set the property to be viewed
-    setDetailsModalVisible(true); // Open the PropertyDetails modal
+    setViewingProperty(property);
+    setDetailsModalVisible(true);
   };
-  
+
   return (
     <CRow>
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader className="d-flex justify-content-between align-items-center">
             <strong>Properties</strong>
-          
-            <div id="container">
-              <button
-                className="learn-more"
-                onClick={handleAddProperty}>
+            {userPermissions?.addProperty && (
+              <button className="learn-more" onClick={handleAddProperty}>
                 <span className="circle" aria-hidden="true">
                   <span className="icon arrow"></span>
                 </span>
-                <span className="button-text">Add Properties</span>
+                <span className="button-text">Add Property</span>
               </button>
-            </div>
+            )}
           </CCardHeader>
           <CCardBody>
-            {error && <CAlert color="danger">{error.message}</CAlert>}
+            {error && <CAlert color="danger">{error}</CAlert>}
             <CFormInput
               type="text"
               placeholder="Search by title or property type"
@@ -154,17 +196,16 @@ const ViewProperty = () => {
               <div>Loading...</div>
             ) : properties.length > 0 ? (
               <PropertyTable
-  properties={properties}
-  totalProperties={totalCount}
-  onEdit={handleEdit}
-  onDelete={handleDelete}
-  onView={handleView} // Pass the onView handler
-  currentPage={currentPage}
-  setCurrentPage={setCurrentPage}
-  totalPages={totalPages}
-  itemsPerPage={itemsPerPage}
-/>
-
+                properties={properties}
+                totalProperties={totalCount}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onView={handleView}
+                currentPage={currentPage}
+                handlePageChange={handlePageChange}
+                totalPages={totalPages}
+                itemsPerPage={itemsPerPage}
+              />
             ) : (
               <div>No properties found</div>
             )}
@@ -173,15 +214,11 @@ const ViewProperty = () => {
       </CCol>
 
       <PropertyDetails
-  visible={detailsModalVisible} // Modal visibility controlled by state
-  setVisible={setDetailsModalVisible} // Function to close the modal
-  viewingProperty={viewingProperty} // Pass the selected property to view
-  handlePhotoDelete={(photoId) => console.log(`Delete photo: ${photoId}`)} // Stub or actual implementation
-  handlePhotoUpdate={(photo) => console.log(`Update photo: ${photo}`)} // Stub or actual implementation
-/>
+        visible={detailsModalVisible}
+        setVisible={setDetailsModalVisible}
+        viewingProperty={viewingProperty}
+      />
 
-
-      {/* Modals */}
       <AddProperty
         visible={propertyModalVisible}
         setVisible={setPropertyModalVisible}
@@ -199,7 +236,7 @@ const ViewProperty = () => {
       <EditPhotoModal
         visible={editPhotoVisible}
         setVisible={setEditPhotoVisible}
-        admin={propertyToEdit}
+        property={propertyToEdit}
         onSavePhoto={handleSavePhoto}
       />
 

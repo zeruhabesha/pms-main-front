@@ -7,12 +7,28 @@ const initialState = {
   error: null,
   totalPages: 1,
   currentPage: 1,
+  selectedAgreement: null,
+  expandedRows: {}, // Track expanded rows
 };
 
-const AgreementSlice = createSlice({
+const agreementSlice = createSlice({
   name: "agreement",
   initialState,
-  reducers: {},
+  reducers: {
+    setSelectedAgreement: (state, action) => {
+      state.selectedAgreement = action.payload;
+    },
+    clearSelectedAgreement: (state) => {
+      state.selectedAgreement = null;
+    },
+    clearError: (state) => {
+      state.error = null;
+    },
+    toggleExpandedRow: (state, action) => {
+      const id = action.payload;
+      state.expandedRows[id] = !state.expandedRows[id];
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchAgreements.pending, (state) => {
@@ -21,13 +37,13 @@ const AgreementSlice = createSlice({
       })
       .addCase(fetchAgreements.fulfilled, (state, action) => {
         state.loading = false;
-        state.agreements = action.payload.agreements || [];
-        state.totalPages = action.payload.totalPages || 1;
-        state.currentPage = action.payload.currentPage || 1;
+        state.agreements = action.payload.agreements;
+        state.totalPages = action.payload.totalPages;
+        state.currentPage = action.payload.currentPage;
       })
       .addCase(fetchAgreements.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || "Failed to fetch agreements";
+        state.error = action.payload?.message || "Failed to fetch agreements";
       })
       .addCase(addAgreement.pending, (state) => {
         state.loading = true;
@@ -35,11 +51,11 @@ const AgreementSlice = createSlice({
       })
       .addCase(addAgreement.fulfilled, (state, action) => {
         state.loading = false;
-        state.agreements.push(action.payload);
+        state.agreements = [...state.agreements, action.payload];
       })
       .addCase(addAgreement.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload?.message || "Failed to add agreement";
       })
       .addCase(updateAgreement.pending, (state) => {
         state.loading = true;
@@ -56,7 +72,7 @@ const AgreementSlice = createSlice({
       })
       .addCase(updateAgreement.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload?.message || "Failed to update agreement";
       })
       .addCase(deleteAgreement.pending, (state) => {
         state.loading = true;
@@ -70,9 +86,17 @@ const AgreementSlice = createSlice({
       })
       .addCase(deleteAgreement.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload?.message || "Failed to delete agreement";
       });
   },
 });
 
-export default AgreementSlice.reducer;
+export const {
+  setSelectedAgreement,
+  clearSelectedAgreement,
+  clearError,
+  toggleExpandedRow,
+} = agreementSlice.actions;
+
+export const selectExpandedRows = (state) => state.agreement.expandedRows;
+export default agreementSlice.reducer;

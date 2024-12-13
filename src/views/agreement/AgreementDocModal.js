@@ -3,8 +3,10 @@ import { CModal, CModalHeader, CModalBody, CModalFooter, CButton } from "@coreui
 import PropTypes from "prop-types";
 
 const AgreementDocModal = ({ visible, onClose, documents = [] }) => (
-  <CModal visible={visible} onClose={onClose}>
-    <CModalHeader closeButton>Agreement Documents</CModalHeader>
+  <CModal visible={visible} onClose={onClose} size="lg" aria-labelledby="agreement-documents-modal">
+    <CModalHeader closeButton>
+      <h5 id="agreement-documents-modal">Agreement Documents</h5>
+    </CModalHeader>
     <CModalBody>
       {documents.length > 0 ? (
         <div className="list-group">
@@ -29,7 +31,7 @@ const AgreementDocModal = ({ visible, onClose, documents = [] }) => (
           })}
         </div>
       ) : (
-        <div className="text-center text-muted">
+        <div className="text-center text-muted py-3">
           No documents available for this agreement.
         </div>
       )}
@@ -52,6 +54,10 @@ AgreementDocModal.propTypes = {
       type: PropTypes.string,           // Optional: Document type
     })
   ),
+};
+
+AgreementDocModal.defaultProps = {
+  documents: [],
 };
 
 export default AgreementDocModal;

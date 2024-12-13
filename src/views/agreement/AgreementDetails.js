@@ -13,9 +13,7 @@ const AgreementDetails = ({ visible, onClose, agreement }) => {
   if (!agreement) return null;
 
   const formatCurrency = (value) =>
-    value !== undefined && value !== null
-      ? `$${value.toFixed(2)}`
-      : "N/A";
+    value !== undefined && value !== null ? `$${value.toFixed(2)}` : "N/A";
 
   const formatDate = (dateString) =>
     dateString ? new Date(dateString).toLocaleDateString() : "N/A";
@@ -80,9 +78,7 @@ const AgreementDetails = ({ visible, onClose, agreement }) => {
               </dd>
 
               <dt className="col-sm-2">Utilities</dt>
-              <dd className="col-sm-10">
-                {agreement.utilitiesAndServices || "None"}
-              </dd>
+              <dd className="col-sm-10">{agreement.utilitiesAndServices || "None"}</dd>
             </dl>
           </div>
 

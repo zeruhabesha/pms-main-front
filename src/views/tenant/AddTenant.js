@@ -22,7 +22,6 @@ import axios from 'axios';
 
 const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastColor, setToastColor] = useState('success');
   const [tenantData, setTenantData] = useState({
@@ -47,7 +46,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
     idProof: [],
     paymentMethod: '',
     moveInDate: '',
-    emergencyContacts: [''], // Default array
+    emergencyContacts: [''],
   });
 
   const [errorMessage, setErrorMessage] = useState('');
@@ -72,7 +71,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
           unit: editingTenant.propertyInformation?.unit || '',
           propertyId: editingTenant.propertyInformation?.propertyId || '',
         },
-        password: '', // Reset password field on edit
+        password: '',
         idProof: editingTenant.idProof || [],
         paymentMethod: editingTenant.paymentMethod || '',
         moveInDate: editingTenant.moveInDate?.split('T')[0] || '',
@@ -107,7 +106,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
       idProof: [],
       paymentMethod: '',
       moveInDate: '',
-      emergencyContacts: [''], // Reset to default array
+      emergencyContacts: [''],
     });
     setErrorMessage('');
   };
@@ -145,7 +144,10 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
 
   const validateTenantData = () => {
     if (!tenantData.tenantName.trim()) return 'Tenant name is required';
-    if (!tenantData.contactInformation.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tenantData.contactInformation.email))
+    if (
+      !tenantData.contactInformation.email.trim() ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tenantData.contactInformation.email)
+    )
       return 'A valid email is required';
     if (!tenantData.contactInformation.phoneNumber.trim()) return 'Phone number is required';
     if (!tenantData.paymentMethod) return 'Payment method is required';
@@ -167,26 +169,36 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post('https://pms-backend-sncw.onrender.com/api/v1//tenants', tenantData);
+      const formData = new FormData();
+      Object.entries(tenantData).forEach(([key, value]) => {
+        if (key === 'idProof') {
+          value.forEach((file) => formData.append('idProof', file));
+        } else if (typeof value === 'object' && value !== null) {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, value);
+        }
+      });
+
+      const response = editingTenant
+        ? await axios.put(`http://localhost:4000/api/v1/tenants/${editingTenant.id}`, formData)
+        : await axios.post('http://localhost:4000/api/v1/tenants', formData);
 
       if (response.status === 201 || response.status === 200) {
-        showNotification('Tenant added successfully');
+        setToastMessage('Tenant saved successfully');
+        setToastColor('success');
         handleClose();
       } else {
-        showNotification(response.data.message || 'Failed to save tenant', 'danger');
+        setToastMessage(response.data.message || 'Failed to save tenant');
+        setToastColor('danger');
       }
     } catch (error) {
       console.error('Error saving tenant:', error);
-      showNotification('Failed to save tenant', 'danger');
+      setToastMessage('Failed to save tenant');
+      setToastColor('danger');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const showNotification = (message, color = 'success') => {
-    setToastMessage(message);
-    setToastColor(color);
-    setShowToast(true);
   };
 
   const handleClose = () => {
@@ -196,14 +208,6 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
 
   return (
     <>
-      <CToaster>
-        {showToast && (
-          <CAlert color={toastColor} visible={showToast} onClose={() => setShowToast(false)} dismissible>
-            {toastMessage}
-          </CAlert>
-        )}
-      </CToaster>
-
       <CModal visible={visible} onClose={handleClose} alignment="center" backdrop="static" size="lg">
         <CModalHeader className="bg-dark text-white">
           <CModalTitle>{editingTenant ? 'Edit Tenant' : 'Add Tenant'}</CModalTitle>
@@ -480,14 +484,14 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
   </CCol>
 </CRow>
 
-          </CForm>
+</CForm>
         </CModalBody>
         <CModalFooter>
           <CButton color="secondary" onClick={handleClose} disabled={isLoading}>
             Cancel
           </CButton>
-          <CButton color="dark" onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? <CSpinner size="sm" /> : 'Add Tenant'}
+          <CButton color="dark" type="submit" disabled={isLoading}>
+            {isLoading ? <CSpinner size="sm" /> : editingTenant ? 'Update Tenant' : 'Add Tenant'}
           </CButton>
         </CModalFooter>
       </CModal>
