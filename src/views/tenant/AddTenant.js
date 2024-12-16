@@ -14,16 +14,17 @@ import {
   CFormSelect,
   CAlert,
   CSpinner,
-  CToaster,
 } from '@coreui/react';
 import { cilTrash, cilPlus } from '@coreui/icons';
 import { CIcon } from '@coreui/icons-react';
-import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { addTenant, updateTenant } from '../../api/actions/TenantActions';
+import { toast } from 'react-toastify';
 
 const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
+  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastColor, setToastColor] = useState('success');
+  const [errorMessage, setErrorMessage] = useState('');
   const [tenantData, setTenantData] = useState({
     tenantName: '',
     contactInformation: {
@@ -49,8 +50,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
     emergencyContacts: [''],
   });
 
-  const [errorMessage, setErrorMessage] = useState('');
-
+  // Populate form with tenant data if editing
   useEffect(() => {
     if (editingTenant) {
       setTenantData({
@@ -83,6 +83,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
     setErrorMessage('');
   }, [editingTenant]);
 
+  // Reset the form
   const resetForm = () => {
     setTenantData({
       tenantName: '',
@@ -111,37 +112,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
     setErrorMessage('');
   };
 
-  const handleArrayChange = (index, value, field) => {
-    const updatedArray = [...tenantData[field]];
-    updatedArray[index] = value;
-    setTenantData((prev) => ({ ...prev, [field]: updatedArray }));
-  };
-
-  const handleAddArrayItem = (field) => {
-    setTenantData((prev) => ({
-      ...prev,
-      [field]: [...prev[field], ''],
-    }));
-  };
-
-  const handleRemoveArrayItem = (index, field) => {
-    const updatedArray = tenantData[field].filter((_, i) => i !== index);
-    setTenantData((prev) => ({ ...prev, [field]: updatedArray }));
-  };
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setTenantData((prev) => ({
-      ...prev,
-      idProof: [...prev.idProof, ...files].slice(0, 3), // Limit to 3 files
-    }));
-  };
-
-  const handleRemoveFile = (index) => {
-    const updatedFiles = tenantData.idProof.filter((_, i) => i !== index);
-    setTenantData((prev) => ({ ...prev, idProof: updatedFiles }));
-  };
-
+  // Validate form inputs
   const validateTenantData = () => {
     if (!tenantData.tenantName.trim()) return 'Tenant name is required';
     if (
@@ -158,16 +129,17 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
     return ''; // No validation errors
   };
 
+  // Submit form data
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const validationError = validateTenantData();
     if (validationError) {
       setErrorMessage(validationError);
       return;
     }
-
+  
     setIsLoading(true);
+  
     try {
       const formData = new FormData();
       Object.entries(tenantData).forEach(([key, value]) => {
@@ -179,70 +151,74 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
           formData.append(key, value);
         }
       });
-
-      const response = editingTenant
-        ? await axios.put(`http://localhost:4000/api/v1/tenants/${editingTenant.id}`, formData)
-        : await axios.post('http://localhost:4000/api/v1/tenants', formData);
-
-      if (response.status === 201 || response.status === 200) {
-        setToastMessage('Tenant saved successfully');
-        setToastColor('success');
-        handleClose();
-      } else {
-        setToastMessage(response.data.message || 'Failed to save tenant');
-        setToastColor('danger');
-      }
+  
+      // Dispatch Redux action for adding the tenant
+      await dispatch(addTenant(formData)).unwrap();
+      toast.success('Tenant added successfully');
+      setVisible(false);
     } catch (error) {
-      console.error('Error saving tenant:', error);
-      setToastMessage('Failed to save tenant');
-      setToastColor('danger');
+      console.error('Error adding tenant:', error);
+      toast.error(error.message || 'Failed to add tenant');
     } finally {
       setIsLoading(false);
     }
   };
+  
 
+  // Close the modal
   const handleClose = () => {
     resetForm();
     setVisible(false);
   };
-
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setTenantData((prev) => ({
+      ...prev,
+      idProof: [...prev.idProof, ...files].slice(0, 3), // Limit to 3 files
+    }));
+  };
+  
+  const handleRemoveFile = (index) => {
+    const updatedFiles = tenantData.idProof.filter((_, i) => i !== index);
+    setTenantData((prev) => ({ ...prev, idProof: updatedFiles }));
+  };
+  
   return (
-    <>
-      <CModal visible={visible} onClose={handleClose} alignment="center" backdrop="static" size="lg">
-        <CModalHeader className="bg-dark text-white">
-          <CModalTitle>{editingTenant ? 'Edit Tenant' : 'Add Tenant'}</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          {errorMessage && <CAlert color="danger">{errorMessage}</CAlert>}
-          <CForm onSubmit={handleSubmit}>
+    <CModal visible={visible} onClose={handleClose} alignment="center" backdrop="static" size="lg">
+      <CModalHeader className="bg-dark text-white">
+        <CModalTitle>{editingTenant ? 'Edit Tenant' : 'Add Tenant'}</CModalTitle>
+      </CModalHeader>
+      <CModalBody>
+        {errorMessage && <CAlert color="danger">{errorMessage}</CAlert>}
+        <CForm onSubmit={handleSubmit}>
           <CRow className="g-3">
-  {/* Tenant Name */}
-  <CCol md={6}>
-    <CFormInput
-      label="Tenant Name"
-      name="tenantName"
-      value={tenantData.tenantName}
-      onChange={(e) => setTenantData({ ...tenantData, tenantName: e.target.value })}
-      required
-    />
-  </CCol>
-
-  {/* Email */}
-  <CCol md={6}>
-    <CFormInput
-      label="Email"
-      type="email"
-      name="email"
-      value={tenantData.contactInformation.email}
-      onChange={(e) =>
-        setTenantData({
-          ...tenantData,
-          contactInformation: { ...tenantData.contactInformation, email: e.target.value },
-        })
-      }
-      required
-    />
-  </CCol>
+            <CCol md={6}>
+              <CFormInput
+                label="Tenant Name"
+                name="tenantName"
+                value={tenantData.tenantName}
+                onChange={(e) => setTenantData({ ...tenantData, tenantName: e.target.value })}
+                required
+              />
+            </CCol>
+            <CCol md={6}>
+              <CFormInput
+                label="Email"
+                type="email"
+                name="email"
+                value={tenantData.contactInformation.email}
+                onChange={(e) =>
+                  setTenantData({
+                    ...tenantData,
+                    contactInformation: {
+                      ...tenantData.contactInformation,
+                      email: e.target.value,
+                    },
+                  })
+                }
+                required
+              />
+            </CCol>
 
   {/* Phone Number */}
   <CCol md={6}>
@@ -461,41 +437,41 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
 
   {/* ID Proof */}
   <CCol md={6}>
-    <label>ID Proof (Max: 3)</label>
-    <CInputGroup>
-      <CFormInput
-        type="file"
-        name="idProof"
-        multiple
-        accept=".jpg,.jpeg,.png,.pdf"
-        onChange={handleFileChange}
-      />
-    </CInputGroup>
-    <CRow className="mt-2">
-      {tenantData.idProof.map((file, idx) => (
-        <CCol key={idx} xs={12} className="d-flex align-items-center justify-content-between">
-          <span>{file.name}</span>
-          <CButton size="sm" color="light" onClick={() => handleRemoveFile(idx)}>
-            <CIcon icon={cilTrash} />
-          </CButton>
-        </CCol>
-      ))}
-    </CRow>
-  </CCol>
-</CRow>
+  <label>ID Proof (Max: 3)</label>
+  <CInputGroup>
+    <CFormInput
+      type="file"
+      name="idProof"
+      multiple
+      accept=".jpg,.jpeg,.png,.pdf"
+      onChange={handleFileChange} // Correctly referencing the function
+    />
+  </CInputGroup>
+  <CRow className="mt-2">
+    {tenantData.idProof.map((file, idx) => (
+      <CCol key={idx} xs={12} className="d-flex align-items-center justify-content-between">
+        <span>{file.name}</span>
+        <CButton size="sm" color="light" onClick={() => handleRemoveFile(idx)}>
+          <CIcon icon={cilTrash} />
+        </CButton>
+      </CCol>
+    ))}
+  </CRow>
+</CCol>
 
-</CForm>
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={handleClose} disabled={isLoading}>
-            Cancel
-          </CButton>
-          <CButton color="dark" type="submit" disabled={isLoading}>
-            {isLoading ? <CSpinner size="sm" /> : editingTenant ? 'Update Tenant' : 'Add Tenant'}
-          </CButton>
-        </CModalFooter>
-      </CModal>
-    </>
+
+  </CRow>
+          <CModalFooter>
+            <CButton color="secondary" onClick={handleClose} disabled={isLoading}>
+              Cancel
+            </CButton>
+            <CButton color="dark" type="submit" disabled={isLoading}>
+              {isLoading ? <CSpinner size="sm" /> : editingTenant ? 'Update Tenant' : 'Add Tenant'}
+            </CButton>
+          </CModalFooter>
+        </CForm>
+      </CModalBody>
+    </CModal>
   );
 };
 

@@ -1,5 +1,5 @@
-import React from 'react'
-import CIcon from '@coreui/icons-react'
+import React from 'react';
+import CIcon from '@coreui/icons-react';
 import {
   cilBuilding,
   cilPuzzle,
@@ -8,11 +8,11 @@ import {
   cilSettings,
   cilChartPie,
   cilUser,
-} from '@coreui/icons'
-import { CNavGroup, CNavItem } from '@coreui/react'
-import { decryptData } from './api/utils/crypto'
+} from '@coreui/icons';
+import { CNavGroup, CNavItem } from '@coreui/react';
+import { decryptData } from './api/utils/crypto';
 
-const userRole = decryptData(localStorage.getItem('user'))?.role || ''
+const userRole = decryptData(localStorage.getItem('user'))?.role || '';
 
 const _nav = [
   ...(userRole === 'SuperAdmin' ? [
@@ -89,6 +89,10 @@ const _nav = [
       name: 'Maintenance',
       to: '/maintenance',
       icon: <CIcon icon={cilSettings} customClassName="nav-icon" />,
+      badge: {
+        color: 'warning',
+        text: '3',
+      },
     },
     {
       component: CNavItem,
@@ -106,7 +110,7 @@ const _nav = [
       icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
       badge: {
         color: 'info',
-        text: 'NEW',
+        text: '1',
       },
     },
     {
@@ -114,6 +118,10 @@ const _nav = [
       name: 'Maintenance',
       to: '/maintenance',
       icon: <CIcon icon={cilSettings} customClassName="nav-icon" />,
+      badge: {
+        color: 'warning',
+        text: '2',
+      },
     },
   ] : []),
 
@@ -123,6 +131,10 @@ const _nav = [
       name: 'Dashboard',
       to: '/dashboard',
       icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
+      badge: {
+        color: 'warning',
+        text: '1',
+      },
     },
     {
       component: CNavItem,
@@ -147,8 +159,12 @@ const _nav = [
       name: 'Maintenance',
       to: '/maintenance',
       icon: <CIcon icon={cilSettings} customClassName="nav-icon" />,
+      badge: {
+        color: 'warning',
+        text: '5',
+      },
     },
   ] : []),
-]
+];
 
-export default _nav
+export default _nav;

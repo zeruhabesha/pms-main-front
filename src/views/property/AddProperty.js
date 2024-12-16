@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
-import {
-  addProperty,
-  updateProperty,
-} from '../../api/actions/PropertyAction';
-import '../btn.scss';
-import FlipButton from './FlipButton';
-
+import { addProperty, updateProperty } from '../../api/actions/PropertyAction';
 import {
   CModal,
   CModalBody,
@@ -61,7 +55,7 @@ const AddProperty = ({ visible, setVisible, editingProperty = {} }) => {
   const { error, loading } = useSelector((state) => state.property);
 
   useEffect(() => {
-    if (editingProperty && editingProperty._id) {
+    if (editingProperty?.id || editingProperty?._id) {
       setFormData({
         ...editingProperty,
         amenities: Array.isArray(editingProperty.amenities)
@@ -136,51 +130,37 @@ const AddProperty = ({ visible, setVisible, editingProperty = {} }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    if (!validateForm()) {
-      setIsSubmitting(false);
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
-      const encryptedUserData = localStorage.getItem('user');
-      if (!encryptedUserData) throw new Error('User data is missing. Please log in again.');
+      setIsSubmitting(true);
 
-      const userData = decryptData(encryptedUserData);
-      if (!userData || !userData._id) throw new Error('User ID is missing. Please log in again.');
+      const encryptedUser = localStorage.getItem('user');
+      const user = decryptData(encryptedUser);
+      const adminId = user?.registeredBy;
+
+      if (!adminId) {
+        setErrors({ general: 'Admin ID is missing. Please try again.' });
+        setIsSubmitting(false);
+        return;
+      }
 
       const propertyData = {
         ...formData,
-        admin: userData._id,
-        amenities: formData.amenities
-          .split(',')
-          .map((item) => item.trim())
-          .filter(Boolean),
+        amenities: formData.amenities.split(',').map((item) => item.trim()),
+        admin: adminId,
       };
 
-      const formDataToSend = new FormData();
-      Object.entries(propertyData).forEach(([key, value]) => {
-        if (key === 'photos') {
-          value.forEach((photo) => formDataToSend.append('photos', photo));
-        } else {
-          formDataToSend.append(key, value);
-        }
-      });
-
-      if (editingProperty && editingProperty._id) {
-        await dispatch(updateProperty({ id: editingProperty._id, formData: formDataToSend })).unwrap();
+      if (editingProperty?._id || editingProperty?.id) {
+        await dispatch(updateProperty({ id: editingProperty._id || editingProperty.id, propertyData })).unwrap();
       } else {
-        await dispatch(addProperty(formDataToSend)).unwrap();
+        await dispatch(addProperty(propertyData)).unwrap();
       }
 
-      handleClose();
+      setVisible(false);
+      setFormData(initialState);
     } catch (err) {
-      setErrors({ general: err.message || 'An unexpected error occurred' });
-      if (err.response?.status === 403) {
-        localStorage.clear();
-        window.location.href = '/login';
-      }
+      setErrors({ general: err.message || 'Failed to save property' });
     } finally {
       setIsSubmitting(false);
     }
@@ -192,22 +172,10 @@ const AddProperty = ({ visible, setVisible, editingProperty = {} }) => {
     setVisible(false);
   };
 
-  const handleClick = () => {
-    alert('Button clicked!');
-  };
   return (
-    <CModal
-      visible={visible}
-      onClose={handleClose}
-      alignment="center"
-      backdrop="static"
-      size="lg"
-      aria-labelledby="property-modal-title"
-    >
+    <CModal visible={visible} onClose={handleClose} alignment="center" backdrop="static" size="lg">
       <CModalHeader className="bg-dark text-white">
-        <CModalTitle id="property-modal-title">
-          {editingProperty && editingProperty._id ? 'Edit Property' : 'Add Property'}
-        </CModalTitle>
+        <CModalTitle>{editingProperty?._id || editingProperty?.id ? 'Edit Property' : 'Add Property'}</CModalTitle>
       </CModalHeader>
       <CModalBody>
         <CCard className="border-0 shadow-sm">
@@ -218,171 +186,160 @@ const AddProperty = ({ visible, setVisible, editingProperty = {} }) => {
               </CAlert>
             )}
             <CForm onSubmit={handleSubmit} noValidate>
-              <CRow className="g-4">
-                <CCol xs={12}>
-                  <CFormLabel htmlFor="title">Title</CFormLabel>
-                  <CFormInput
-                    type="text"
-                    id="title"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleInputChange}
-                    invalid={!!errors.title}
-                    placeholder="Enter Property Title"
-                  />
-                  {errors.title && <div className="invalid-feedback d-block">{errors.title}</div>}
-                </CCol>
-                <CCol xs={12}>
-                  <CFormLabel htmlFor="description">Description</CFormLabel>
-                  <CFormTextarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    invalid={!!errors.description}
-                    placeholder="Enter Property Description"
-                    rows={4}
-                  />
-                  {errors.description && <div className="invalid-feedback d-block">{errors.description}</div>}
-                </CCol>
-                <CCol xs={12}>
-                  <CFormLabel htmlFor="address">Address</CFormLabel>
-                  <CFormInput
-                    type="text"
-                    id="address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    invalid={!!errors.address}
-                    placeholder="Enter Property Address"
-                  />
-                  {errors.address && <div className="invalid-feedback d-block">{errors.address}</div>}
-                </CCol>
-                <CCol xs={12}>
-                  <CFormLabel htmlFor="price">Price</CFormLabel>
-                  <CFormInput
-                    type="number"
-                    id="price"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    invalid={!!errors.price}
-                    placeholder="Enter Price"
-                  />
-                  {errors.price && <div className="invalid-feedback d-block">{errors.price}</div>}
-                </CCol>
-                <CCol xs={12}>
-                  <CFormLabel htmlFor="rentPrice">Rent Price (optional)</CFormLabel>
-                  <CFormInput
-                    type="number"
-                    id="rentPrice"
-                    name="rentPrice"
-                    value={formData.rentPrice}
-                    onChange={handleInputChange}
-                    placeholder="Enter Rent Price"
-                  />
-                </CCol>
-                <CCol xs={12}>
-                  <CFormLabel htmlFor="numberOfUnits">Number of Units</CFormLabel>
-                  <CFormInput
-                    type="number"
-                    id="numberOfUnits"
-                    name="numberOfUnits"
-                    value={formData.numberOfUnits}
-                    onChange={handleInputChange}
-                    invalid={!!errors.numberOfUnits}
-                    placeholder="Enter Number of Units"
-                  />
-                  {errors.numberOfUnits && <div className="invalid-feedback d-block">{errors.numberOfUnits}</div>}
-                </CCol>
-                <CCol xs={12}>
-                  <CFormLabel htmlFor="propertyType">Property Type</CFormLabel>
-                  <CFormSelect
-                    id="propertyType"
-                    name="propertyType"
-                    value={formData.propertyType}
-                    onChange={handleInputChange}
-                    invalid={!!errors.propertyType}
-                  >
-                    <option value="">Select Property Type</option>
-                    {PROPERTY_TYPES.map((type) => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </CFormSelect>
-                  {errors.propertyType && <div className="invalid-feedback d-block">{errors.propertyType}</div>}
-                </CCol>
-                <CCol xs={12}>
-                  <CFormLabel htmlFor="floorPlan">Floor Plan</CFormLabel>
-                  <CFormInput
-                    type="text"
-                    id="floorPlan"
-                    name="floorPlan"
-                    value={formData.floorPlan}
-                    onChange={handleInputChange}
-                    placeholder="Enter Floor Plan URL (optional)"
-                  />
-                </CCol>
-                <CCol xs={12}>
-                  <CFormLabel htmlFor="amenities">Amenities</CFormLabel>
-                  <CFormInput
-                    type="text"
-                    id="amenities"
-                    name="amenities"
-                    value={formData.amenities}
-                    onChange={handleInputChange}
-                    placeholder="Enter Amenities, separated by commas"
-                  />
-                </CCol>
-                <CCol xs={12}>
-                  <CFormLabel htmlFor="photos">Photos (Max 5)</CFormLabel>
-                  <CFormInput
-                    type="file"
-                    id="photos"
-                    name="photos"
-                    multiple
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                  />
-                  {errors.photos && <div className="invalid-feedback d-block">{errors.photos}</div>}
-                </CCol>
-                </CRow>
-                <CModalFooter className="border-top-0">
-                <CButton 
-  color="secondary" 
-  onClick={handleClose}
-  type="button"
-  className="flip-button"
-  data-flip-text="Go Back"
->
-  <span>Cancel</span>
-</CButton>
+            <CRow className="g-4">
+  <CCol xs={12}>
+    <CFormLabel htmlFor="title">Title</CFormLabel>
+    <CFormInput
+      type="text"
+      id="title"
+      name="title"
+      value={formData.title}
+      onChange={handleInputChange}
+      invalid={!!errors.title}
+      placeholder="Enter Property Title"
+    />
+    {errors.title && <div className="invalid-feedback d-block">{errors.title}</div>}
+  </CCol>
 
-<CButton 
-  color="primary" 
-  type="submit" 
-  disabled={isSubmitting || loading}
-  className="flip-button"
-  data-flip-text={isSubmitting || loading ? `${editingProperty ? 'Updating...' : 'Adding...'}` : `${editingProperty ? 'Update' : 'Add'} Property`}
->
+  <CCol xs={12}>
+    <CFormLabel htmlFor="description">Description</CFormLabel>
+    <CFormTextarea
+      id="description"
+      name="description"
+      value={formData.description}
+      onChange={handleInputChange}
+      invalid={!!errors.description}
+      placeholder="Enter Property Description"
+      rows={4}
+    />
+    {errors.description && <div className="invalid-feedback d-block">{errors.description}</div>}
+  </CCol>
 
-{/* <FlipButton frontText="Submit" backText="Confirm" onClick={handleClick} /> */}
-{/* <button
-      className="btn-flip"
-      data-front={frontText}
-      data-back={backText}
-      onClick={onClick}
+  <CCol xs={12}>
+    <CFormLabel htmlFor="address">Address</CFormLabel>
+    <CFormInput
+      type="text"
+      id="address"
+      name="address"
+      value={formData.address}
+      onChange={handleInputChange}
+      invalid={!!errors.address}
+      placeholder="Enter Property Address"
+    />
+    {errors.address && <div className="invalid-feedback d-block">{errors.address}</div>}
+  </CCol>
+
+  <CCol xs={12}>
+    <CFormLabel htmlFor="price">Price</CFormLabel>
+    <CFormInput
+      type="number"
+      id="price"
+      name="price"
+      value={formData.price}
+      onChange={handleInputChange}
+      invalid={!!errors.price}
+      placeholder="Enter Price"
+    />
+    {errors.price && <div className="invalid-feedback d-block">{errors.price}</div>}
+  </CCol>
+
+  <CCol xs={12}>
+    <CFormLabel htmlFor="rentPrice">Rent Price (optional)</CFormLabel>
+    <CFormInput
+      type="number"
+      id="rentPrice"
+      name="rentPrice"
+      value={formData.rentPrice}
+      onChange={handleInputChange}
+      placeholder="Enter Rent Price"
+    />
+  </CCol>
+
+  <CCol xs={12}>
+    <CFormLabel htmlFor="numberOfUnits">Number of Units</CFormLabel>
+    <CFormInput
+      type="number"
+      id="numberOfUnits"
+      name="numberOfUnits"
+      value={formData.numberOfUnits}
+      onChange={handleInputChange}
+      invalid={!!errors.numberOfUnits}
+      placeholder="Enter Number of Units"
+    />
+    {errors.numberOfUnits && <div className="invalid-feedback d-block">{errors.numberOfUnits}</div>}
+  </CCol>
+
+  <CCol xs={12}>
+    <CFormLabel htmlFor="propertyType">Property Type</CFormLabel>
+    <CFormSelect
+      id="propertyType"
+      name="propertyType"
+      value={formData.propertyType}
+      onChange={handleInputChange}
+      invalid={!!errors.propertyType}
     >
-      <span className="btn-flip-content">{frontText}</span>
-    </button> */}
-  <span>
-    {isSubmitting || loading
-      ? `${editingProperty ? 'Updating...' : 'Adding...'}`
-      : `${editingProperty ? 'Update' : 'Add'} Property`}
-  </span>
-</CButton>
-</CModalFooter>
+      <option value="">Select Property Type</option>
+      {PROPERTY_TYPES.map((type) => (
+        <option key={type.value} value={type.value}>
+          {type.label}
+        </option>
+      ))}
+    </CFormSelect>
+    {errors.propertyType && <div className="invalid-feedback d-block">{errors.propertyType}</div>}
+  </CCol>
+
+  <CCol xs={12}>
+    <CFormLabel htmlFor="floorPlan">Floor Plan</CFormLabel>
+    <CFormInput
+      type="text"
+      id="floorPlan"
+      name="floorPlan"
+      value={formData.floorPlan}
+      onChange={handleInputChange}
+      placeholder="Enter Floor Plan URL (optional)"
+    />
+  </CCol>
+
+  <CCol xs={12}>
+    <CFormLabel htmlFor="amenities">Amenities</CFormLabel>
+    <CFormInput
+      type="text"
+      id="amenities"
+      name="amenities"
+      value={formData.amenities}
+      onChange={handleInputChange}
+      placeholder="Enter Amenities, separated by commas"
+    />
+  </CCol>
+
+  <CCol xs={12}>
+    <CFormLabel htmlFor="photos">Photos (Max 5)</CFormLabel>
+    <CFormInput
+      type="file"
+      id="photos"
+      name="photos"
+      multiple
+      accept="image/*"
+      onChange={handlePhotoUpload}
+    />
+    {errors.photos && <div className="invalid-feedback d-block">{errors.photos}</div>}
+  </CCol>
+</CRow>
+
+              <CModalFooter>
+                <CButton color="secondary" onClick={handleClose}>
+                  Cancel
+                </CButton>
+                <CButton color="primary" type="submit" disabled={isSubmitting || loading}>
+                  {isSubmitting || loading
+                    ? editingProperty?._id || editingProperty?.id
+                      ? 'Updating...'
+                      : 'Adding...'
+                    : editingProperty?._id || editingProperty?.id
+                    ? 'Update Property'
+                    : 'Add Property'}
+                </CButton>
+              </CModalFooter>
             </CForm>
           </CCardBody>
         </CCard>
@@ -394,19 +351,7 @@ const AddProperty = ({ visible, setVisible, editingProperty = {} }) => {
 AddProperty.propTypes = {
   visible: PropTypes.bool.isRequired,
   setVisible: PropTypes.func.isRequired,
-  editingProperty: PropTypes.shape({
-    _id: PropTypes.string,
-    title: PropTypes.string,
-    description: PropTypes.string,
-    address: PropTypes.string,
-    price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    rentPrice: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    numberOfUnits: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    propertyType: PropTypes.string,
-    floorPlan: PropTypes.string,
-    amenities: PropTypes.arrayOf(PropTypes.string),
-    photos: PropTypes.arrayOf(PropTypes.any),
-  }),
+  editingProperty: PropTypes.object,
 };
 
 export default AddProperty;

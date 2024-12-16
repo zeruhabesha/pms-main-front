@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react'
-import { NavLink } from 'react-router-dom'
-import { useSelector, useDispatch } from 'react-redux'
+import React, { useEffect, useRef, useState } from 'react';
+import { NavLink } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   CContainer,
   CDropdown,
@@ -13,8 +13,13 @@ import {
   CNavLink,
   CNavItem,
   useColorModes,
-} from '@coreui/react'
-import CIcon from '@coreui/icons-react'
+  CModal,
+  CModalHeader,
+  CModalBody,
+  CModalFooter,
+  CButton,
+} from '@coreui/react';
+import CIcon from '@coreui/icons-react';
 import {
   cilBell,
   cilContrast,
@@ -23,25 +28,31 @@ import {
   cilMenu,
   cilMoon,
   cilSun,
-} from '@coreui/icons'
+} from '@coreui/icons';
+import './AppHeader.scss';
 
-import { AppBreadcrumb } from './index'
-import { AppHeaderDropdown } from './header/index'
+import { AppBreadcrumb } from './index';
+import { AppHeaderDropdown } from './header/index';
 import { setSidebarShow } from './store/sidebarSlice'; // Import the action
 
 const AppHeader = () => {
-  const headerRef = useRef()
-  const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
+  const headerRef = useRef();
+  const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme');
+  const [comingSoonVisible, setComingSoonVisible] = useState(false);
 
-  const dispatch = useDispatch()
-  const sidebarShow = useSelector((state) => state.sidebar.sidebarShow) // Access the sidebar state correctly
+  const dispatch = useDispatch();
+  const sidebarShow = useSelector((state) => state.sidebar.sidebarShow); // Access the sidebar state correctly
 
   useEffect(() => {
     document.addEventListener('scroll', () => {
       headerRef.current &&
-        headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0)
-    })
-  }, [])
+        headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0);
+    });
+  }, []);
+
+  const handleComingSoon = () => {
+    setComingSoonVisible(true);
+  };
 
   return (
     <CHeader position="sticky" className="mb-4 p-0" ref={headerRef}>
@@ -67,18 +78,18 @@ const AppHeader = () => {
         </CHeaderNav>
         <CHeaderNav className="ms-auto">
           <CNavItem>
-            <CNavLink href="">
+            <CNavLink  onClick={handleComingSoon}>
               <CIcon icon={cilBell} size="lg" />
             </CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink href="">
+            <CNavLink onClick={handleComingSoon}>
               <CIcon icon={cilList} size="lg" />
             </CNavLink>
           </CNavItem>
           <CNavItem>
-            <CNavLink href="">
-              <CIcon icon={cilEnvelopeOpen} size="lg" />
+            <CNavLink >
+              <CIcon icon={cilEnvelopeOpen} size="lg" onClick={handleComingSoon}/>
             </CNavLink>
           </CNavItem>
         </CHeaderNav>
@@ -135,8 +146,33 @@ const AppHeader = () => {
       <CContainer className="px-4" fluid>
         <AppBreadcrumb />
       </CContainer>
-    </CHeader>
-  )
-}
 
-export default AppHeader
+      <CModal
+  className="coming-soon-modal"
+  visible={comingSoonVisible}
+  onClose={() => setComingSoonVisible(false)}
+  backdrop={true} // Ensure backdrop is enabled
+  scrollable={false} // Prevent scrolling issues
+>
+  <CModalHeader className="modal-header" onClose={() => setComingSoonVisible(false)}>
+    <h5>Coming Soon</h5>
+  </CModalHeader>
+  <CModalBody className="modal-body">
+    <p>
+      This feature is currently under development. Please check back later for updates!
+    </p>
+  </CModalBody>
+  <CModalFooter className="modal-footer">
+    <CButton color="primary" onClick={() => setComingSoonVisible(false)}>
+      Got It
+    </CButton>
+  </CModalFooter>
+</CModal>
+
+    </CHeader>
+  );
+};
+
+export default AppHeader;
+
+

@@ -1,0 +1,46 @@
+.coming-soon-modal {
+    .modal-header {
+      background-color: #f8f9fa;
+      color: #495057;
+      text-align: center;
+      border-bottom: 1px solid #dee2e6;
+    }
+  
+    .modal-body {
+      background-color: #ffffff;
+      color: #212529;
+      font-size: 1.1rem;
+      text-align: center;
+      padding: 20px;
+    }
+  
+    .modal-footer {
+      background-color: #f8f9fa;
+      display: flex;
+      justify-content: center;
+      border-top: 1px solid #dee2e6;
+    }
+  
+    .modal {
+      display: block !important; // Ensure it displays as a modal
+      position: fixed !important; // Fix positioning
+      z-index: 1050 !important;   // Above dropdowns
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      border-radius: 10px;
+    }
+  
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1040;
+    }
+  }
+  

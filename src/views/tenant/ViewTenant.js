@@ -13,14 +13,18 @@ import debounce from 'lodash/debounce';
 import { uploadUserPhoto } from '../../api/actions/userActions';
 import { decryptData } from '../../api/utils/crypto';
 import TenantDetailsModal from "./TenantDetailsModal"; // Import the modal component
+import { createSelector } from '@reduxjs/toolkit';
 
-const selectTenantState = (state) => state.tenant || {
-  tenants: [],
-  loading: false,
-  error: null,
-  totalPages: 0,
-  currentPage: 1,
-};
+const selectTenantState = createSelector(
+  (state) => state.tenant,
+  (tenant) => ({
+    tenants: tenant.tenants || [],
+    loading: tenant.loading,
+    error: tenant.error,
+    totalPages: tenant.pagination?.totalPages || 1,
+    currentPage: tenant.pagination?.currentPage || 1,
+  })
+);
 
 const ViewTenant = () => {
   const dispatch = useDispatch();
@@ -143,22 +147,20 @@ const ViewTenant = () => {
 
   const handleViewDetails = async (id) => {
     try {
-      // Dispatch the action to fetch tenant details using the provided ID
-      const details = await dispatch(fetchTenants({ page: 1, limit: itemsPerPage, search: '' })).unwrap(); 
-      const tenantDetails = details.tenants.find((tenant) => tenant._id === id);
-  
-      if (!tenantDetails) {
+      const response = await dispatch(getTenantById(id)).unwrap();
+      
+      if (!response) {
         throw new Error("Tenant details not found");
       }
   
-      // Set tenant details to display in the modal
-      setTenantDetails(tenantDetails);
+      setTenantDetails(response);
       setDetailsModalVisible(true);
     } catch (error) {
       console.error("Error fetching tenant details:", error);
       toast.error(error.message || "Failed to fetch tenant details");
     }
   };
+  
   
 
 

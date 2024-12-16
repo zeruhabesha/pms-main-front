@@ -32,7 +32,7 @@ const PropertyTable = ({
   onDelete = () => {},
   onView = () => {},
   currentPage = 1,
-  setCurrentPage = () => {},
+  handlePageChange = () => {}, // Change this from setCurrentPage
   totalPages = 1,
   itemsPerPage = 5,
 }) => {
@@ -238,17 +238,17 @@ const PropertyTable = ({
         </CTableBody>
       </CTable>
 
-     {totalPages > 1 && (
-        <CPagination className="mt-3" style={{ display: 'flex', justifyContent: 'center' }}>
+      {totalPages > 1 && (
+        <CPagination className="mt-3" style={{ display: 'flex'}}>
           <CPaginationItem
             disabled={currentPage <= 1}
-            onClick={() => setCurrentPage(1)}
+            onClick={() => handlePageChange(1)}
           >
             &laquo;
           </CPaginationItem>
           <CPaginationItem
             disabled={currentPage <= 1}
-            onClick={() => setCurrentPage(currentPage - 1)}
+            onClick={() => handlePageChange(currentPage - 1)}
           >
             &lsaquo;
           </CPaginationItem>
@@ -262,22 +262,22 @@ const PropertyTable = ({
               <CPaginationItem
                 key={`page-${page}`}
                 active={page === currentPage}
-                onClick={() => setCurrentPage(page)}
+                onClick={() => handlePageChange(page)}
               >
                 {page}
               </CPaginationItem>
             )
           ))}
 
-          <CPaginationItem
+<CPaginationItem
             disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage(currentPage + 1)}
+            onClick={() => handlePageChange(currentPage + 1)}
           >
             &rsaquo;
           </CPaginationItem>
           <CPaginationItem
             disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage(totalPages)}
+            onClick={() => handlePageChange(totalPages)}
           >
             &raquo;
           </CPaginationItem>

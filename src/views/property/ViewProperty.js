@@ -31,7 +31,7 @@ const ViewProperty = () => {
   const dispatch = useDispatch();
 
   // Redux state
-  const { properties, loading, error, totalPages, totalCount } = useSelector((state) => state.property);
+  const { properties, loading, error, pagination } = useSelector((state) => state.property);
 
   // Local state
   const [viewingProperty, setViewingProperty] = useState(null);
@@ -46,7 +46,7 @@ const ViewProperty = () => {
   const [propertyToEdit, setPropertyToEdit] = useState(null);
   const [userPermissions, setUserPermissions] = useState(null);
 
-  const itemsPerPage = 5;
+  const itemsPerPage = pagination.limit || 5;
 
   // Fetch user data from localStorage
   useEffect(() => {
@@ -81,44 +81,28 @@ const ViewProperty = () => {
       toast.error('Invalid property selected for editing.');
       return;
     }
-    // Ensure we're working with the complete property object
-    const propertyToEdit = {
-      _id: property._id || property.id,
-      title: property.title || '',
-      propertyType: property.propertyType || '',
-      price: property.price || '',
-      address: property.address || '',
-      photos: property.photos || [],
-      status: property.status || 'active',
-      featured: property.featured || false,
-      createdAt: property.createdAt || null,
-      updatedAt: property.updatedAt || null,
-    };
-    setEditingProperty(propertyToEdit);
+    setEditingProperty(property);
     setPropertyModalVisible(true);
   };
 
   // Handle delete modal
   const handleDelete = (property) => {
-    if (!property || (!property._id && !property.id)) {
+    if (!property) {
       toast.error('Invalid property selected for deletion.');
       return;
     }
-    const propertyId = property._id || property.id;
-    setPropertyToDelete({ ...property, _id: propertyId });
+    setPropertyToDelete(property);
     setDeleteModalVisible(true);
   };
-  
 
   const confirmDelete = async () => {
-    if (!propertyToDelete || (!propertyToDelete._id && !propertyToDelete.id)) {
+    if (!propertyToDelete) {
       toast.error('Invalid property selected for deletion.');
       return;
     }
-  
+
     try {
-      const propertyId = propertyToDelete._id || propertyToDelete.id;
-      await dispatch(deleteProperty(propertyId)).unwrap();
+      await dispatch(deleteProperty(propertyToDelete._id || propertyToDelete.id)).unwrap();
       toast.success('Property deleted successfully');
       dispatch(fetchProperties({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
       setDeleteModalVisible(false);
@@ -196,16 +180,16 @@ const ViewProperty = () => {
               <div>Loading...</div>
             ) : properties.length > 0 ? (
               <PropertyTable
-                properties={properties}
-                totalProperties={totalCount}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onView={handleView}
-                currentPage={currentPage}
-                handlePageChange={handlePageChange}
-                totalPages={totalPages}
-                itemsPerPage={itemsPerPage}
-              />
+  properties={properties}
+  totalProperties={pagination.totalItems}
+  onEdit={handleEdit}
+  onDelete={handleDelete}
+  onView={handleView}
+  currentPage={currentPage}
+  handlePageChange={handlePageChange}
+  totalPages={pagination.totalPages}
+  itemsPerPage={itemsPerPage}
+/>
             ) : (
               <div>No properties found</div>
             )}

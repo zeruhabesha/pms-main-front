@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   CModal,
   CModalHeader,
@@ -8,6 +9,7 @@ import {
   CButton,
   CFormInput,
   CFormLabel,
+  CFormSelect,
   CRow,
   CCol,
   CCard,
@@ -15,11 +17,14 @@ import {
   CAlert,
   CSpinner,
 } from '@coreui/react';
-import axios from 'axios';
+import { addTenant, updateTenant } from '../actions/tenantActions';
+import { fetchProperties } from '../actions/propertyActions'; // Add this import
 
 const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.tenant);
+  const { properties, loading: propertiesLoading, error: propertiesError } = useSelector((state) => state.property);
+
   const [tenantData, setTenantData] = useState({
     tenantName: '',
     contactInformation: {
@@ -45,13 +50,17 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
     emergencyContacts: [],
   });
 
+  // Fetch properties when component mounts
+  useEffect(() => {
+    dispatch(fetchProperties());
+  }, [dispatch]);
+
   useEffect(() => {
     if (editingTenant) {
       setTenantData(editingTenant);
     } else {
       resetForm();
     }
-    setErrorMessage('');
   }, [editingTenant]);
 
   const resetForm = () => {
@@ -79,7 +88,6 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
       moveInDate: '',
       emergencyContacts: [],
     });
-    setErrorMessage('');
   };
 
   const handleChange = (e) => {
@@ -118,48 +126,20 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
     return null;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const validationError = validateForm();
     if (validationError) {
       setErrorMessage(validationError);
       return;
     }
 
-    try {
-      setIsLoading(true);
-
-      const formData = new FormData();
-      Object.entries(tenantData).forEach(([key, value]) => {
-        if (key === 'idProof' && value.length) {
-          value.forEach((file) => formData.append('idProof', file));
-        } else if (typeof value === 'object') {
-          formData.append(key, JSON.stringify(value));
-        } else {
-          formData.append(key, value);
-        }
-      });
-
-      const url = editingTenant
-        ? `http://localhost:4000/api/v1/tenants/${editingTenant._id}`
-        : 'http://localhost:4000/api/v1/tenants';
-
-      const method = editingTenant ? 'put' : 'post';
-
-      await axios({
-        method,
-        url,
-        data: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      handleClose();
-    } catch (error) {
-      setErrorMessage(error.response?.data?.message || error.message || 'Operation failed');
-    } finally {
-      setIsLoading(false);
+    if (editingTenant) {
+      dispatch(updateTenant(editingTenant._id, tenantData));
+    } else {
+      dispatch(addTenant(tenantData));
     }
+
+    handleClose();
   };
 
   const handleClose = () => {
@@ -181,9 +161,9 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
       <CModalBody>
         <CCard className="border-0 shadow-sm">
           <CCardBody>
-            {errorMessage && (
+            {(error || propertiesError) && (
               <CAlert color="danger" className="mb-4">
-                {errorMessage}
+                {error || propertiesError}
               </CAlert>
             )}
             <CRow className="g-4">
@@ -199,7 +179,36 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                   required
                 />
               </CCol>
-
+              <CCol xs={12} md={6}>
+                <CFormLabel htmlFor="propertyId">Property</CFormLabel>
+                {propertiesLoading ? (
+                  <CSpinner size="sm" />
+                ) : (
+                  <CFormSelect
+                    id="propertyId"
+                    value={tenantData.propertyInformation.propertyId}
+                    onChange={(e) => handleNestedChange('propertyInformation', 'propertyId', e.target.value)}
+                    disabled={propertiesLoading}
+                  >
+                    <option value="">Select Property</option>
+                    {properties?.map((property) => (
+                      <option key={property._id} value={property._id}>
+                        {property.name}
+                      </option>
+                    ))}
+                  </CFormSelect>
+                )}
+              </CCol>
+              <CCol xs={12} md={6}>
+                <CFormLabel htmlFor="unit">Unit Number</CFormLabel>
+                <CFormInput
+                  id="unit"
+                  type="text"
+                  placeholder="Enter unit number"
+                  value={tenantData.propertyInformation.unit}
+                  onChange={(e) => handleNestedChange('propertyInformation', 'unit', e.target.value)}
+                />
+              </CCol>
               <CCol xs={12} md={6}>
                 <CFormLabel htmlFor="email">Email</CFormLabel>
                 <CFormInput
@@ -211,7 +220,6 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                   required
                 />
               </CCol>
-
               <CCol xs={12} md={6}>
                 <CFormLabel htmlFor="phoneNumber">Phone Number</CFormLabel>
                 <CFormInput
@@ -223,7 +231,6 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                   required
                 />
               </CCol>
-
               <CCol xs={12} md={6}>
                 <CFormLabel htmlFor="startDate">Lease Start Date</CFormLabel>
                 <CFormInput
@@ -234,7 +241,6 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                   required
                 />
               </CCol>
-
               <CCol xs={12} md={6}>
                 <CFormLabel htmlFor="endDate">Lease End Date</CFormLabel>
                 <CFormInput
@@ -245,7 +251,6 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                   required
                 />
               </CCol>
-
               <CCol xs={12}>
                 <CFormLabel htmlFor="idProof">Upload ID Proofs</CFormLabel>
                 <CFormInput
@@ -255,16 +260,20 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                   onChange={handleFileChange}
                 />
               </CCol>
-            </CRow>
+              </CRow>
           </CCardBody>
         </CCard>
       </CModalBody>
       <CModalFooter>
-        <CButton color="secondary" variant="ghost" onClick={handleClose} disabled={isLoading}>
+        <CButton color="secondary" variant="ghost" onClick={handleClose} disabled={loading}>
           Cancel
         </CButton>
-        <CButton color="dark" onClick={handleSubmit} disabled={isLoading}>
-          {isLoading ? (
+        <CButton 
+          color="dark" 
+          onClick={handleSubmit} 
+          disabled={loading || propertiesLoading}
+        >
+          {loading ? (
             <>
               <CSpinner size="sm" className="me-2" />
               {editingTenant ? 'Updating...' : 'Adding...'}

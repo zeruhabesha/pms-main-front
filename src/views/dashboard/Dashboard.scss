@@ -1,0 +1,35 @@
+// Dashboard.scss
+.dashboard {
+    .animated-widget {
+      transition: transform 0.3s ease;
+      background-color: var(--cui-dark-background);
+      color: var(--cui-dark-color);
+    }
+  
+    .animated-widget:hover {
+      transform: translateY(-5px);
+    }
+  
+    .animated-card {
+      transition: box-shadow 0.3s ease, transform 0.3s ease;
+      background-color: var(--cui-dark-background);
+      color: var(--cui-dark-color);
+    }
+  
+    .animated-card:hover {
+      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+      transform: translateY(-5px);
+    }
+  
+    body[data-theme='dark'] & {
+      .animated-widget {
+        background-color: #343a40;
+        color: #f8f9fa;
+      }
+  
+      .animated-card {
+        background-color: #343a40;
+        color: #f8f9fa;
+      }
+    }
+  }

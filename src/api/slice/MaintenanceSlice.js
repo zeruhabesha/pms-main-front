@@ -1,27 +1,20 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { fetchMaintenance, addMaintenance, updateMaintenance, deleteMaintenance } from '../actions/MaintenanceActions';
+import { fetchMaintenances, addMaintenance, updateMaintenance, deleteMaintenance } from '../actions/MaintenanceActions';
 
 const initialState = {
-  maintenanceRequests: [],
+  maintenances: [], // Changed from maintenanceRequests to match usage
   loading: false,
   error: null,
   totalPages: 1,
   currentPage: 1,
-  totalMaintenanceRequests: 0,
+  totalMaintenances: 0, // Changed from totalMaintenanceRequests to match usage
 };
 
 const maintenanceSlice = createSlice({
   name: 'maintenance',
   initialState,
   reducers: {
-    resetState: (state) => {
-      state.maintenanceRequests = [];
-      state.loading = false;
-      state.error = null;
-      state.totalPages = 1;
-      state.currentPage = 1;
-      state.totalMaintenanceRequests = 0;
-    },
+    resetState: () => initialState,
     clearError: (state) => {
       state.error = null;
     },
@@ -29,21 +22,21 @@ const maintenanceSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Fetch Maintenance Requests
-      .addCase(fetchMaintenance.pending, (state) => {
+      .addCase(fetchMaintenances.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchMaintenance.fulfilled, (state, action) => {
-        const { maintenanceRequests, totalPages, currentPage, totalRequests } = action.payload;
+      .addCase(fetchMaintenances.fulfilled, (state, action) => {
+        const { data } = action.payload;
+        state.maintenances = data.maintenances || [];
+        state.totalPages = data.totalPages || 1;
+        state.currentPage = data.currentPage || 1;
+        state.totalMaintenances = data.totalRequests || 0;
         state.loading = false;
-        state.maintenanceRequests = maintenanceRequests;
-        state.totalPages = totalPages;
-        state.currentPage = currentPage;
-        state.totalMaintenanceRequests = totalRequests;
       })
-      .addCase(fetchMaintenance.rejected, (state, action) => {
+      .addCase(fetchMaintenances.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Failed to fetch maintenance requests';
+        state.error = action.payload?.message || 'Failed to fetch maintenances';
       })
       // Add Maintenance Request
       .addCase(addMaintenance.pending, (state) => {
@@ -52,12 +45,12 @@ const maintenanceSlice = createSlice({
       })
       .addCase(addMaintenance.fulfilled, (state, action) => {
         state.loading = false;
-        state.maintenanceRequests.unshift(action.payload);
-        state.totalMaintenanceRequests += 1;
+        state.maintenances.unshift(action.payload.data);
+        state.totalMaintenances += 1;
       })
       .addCase(addMaintenance.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload?.message;
       })
       // Update Maintenance Request
       .addCase(updateMaintenance.pending, (state) => {
@@ -66,16 +59,17 @@ const maintenanceSlice = createSlice({
       })
       .addCase(updateMaintenance.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.maintenanceRequests.findIndex(
-          (request) => request._id === action.payload._id
+        const updatedMaintenance = action.payload.data;
+        const index = state.maintenances.findIndex(
+          (maintenance) => maintenance._id === updatedMaintenance._id
         );
-        if (index >= 0) {
-          state.maintenanceRequests[index] = action.payload;
+        if (index !== -1) {
+          state.maintenances[index] = updatedMaintenance;
         }
       })
       .addCase(updateMaintenance.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload?.message;
       })
       // Delete Maintenance Request
       .addCase(deleteMaintenance.pending, (state) => {
@@ -84,14 +78,14 @@ const maintenanceSlice = createSlice({
       })
       .addCase(deleteMaintenance.fulfilled, (state, action) => {
         state.loading = false;
-        state.maintenanceRequests = state.maintenanceRequests.filter(
-          (request) => request._id !== action.payload
+        state.maintenances = state.maintenances.filter(
+          (maintenance) => maintenance._id !== action.payload.id
         );
-        state.totalMaintenanceRequests -= 1;
+        state.totalMaintenances -= 1;
       })
       .addCase(deleteMaintenance.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Failed to delete maintenance request';
+        state.error = action.payload?.message;
       });
   },
 });

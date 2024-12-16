@@ -1,12 +1,10 @@
+import axios from 'axios';
 import httpCommon from '../http-common';
-import { decryptData } from '../utils/crypto';
+import { encryptData, decryptData } from '../utils/crypto';
 
 class MaintenanceService {
   constructor() {
     this.baseURL = `${httpCommon.defaults.baseURL}/maintenances`;
-    this.defaultHeaders = {
-      'Content-Type': 'application/json',
-    };
   }
 
   getAuthHeader() {
@@ -27,37 +25,47 @@ class MaintenanceService {
     };
   }
 
-  async fetchMaintenance(page = 1, limit = 5, searchTerm = '') {
+  async fetchMaintenances(page = 1, limit = 5, searchTerm = '') {
     try {
-      const response = await httpCommon.get(this.baseURL, {
+      const response = await httpCommon.get('/maintenances', {
         headers: this.getAuthHeader(),
-        params: {
-          page,
-          limit,
-          search: searchTerm.trim(),
-        },
+        params: { page, limit, search: searchTerm },
       });
-
-      const { data } = response.data;
-
-      return {
-        maintenanceRequests: data?.maintenances || [],
-        totalPages: data?.totalPages || 1,
-        totalRequests: data?.totalRequests || 0,
-        currentPage: data?.currentPage || page,
-      };
+  
+      const { data } = response;
+  
+      // Store the fetched data in localStorage
+      if (data?.data) {
+        localStorage.setItem('maintenances', encryptData({
+          timestamp: new Date().getTime(),
+          ...data.data
+        }));
+      }
+  
+      return data.data;
     } catch (error) {
+      const encryptedCache = localStorage.getItem('maintenances');
+      if (encryptedCache) {
+        const cachedData = decryptData(encryptedCache);
+        if (cachedData && (new Date().getTime() - cachedData.timestamp < 3600000)) {
+          return {
+            maintenances: cachedData.maintenances,
+            totalPages: cachedData.totalPages,
+            totalRequests: cachedData.totalRequests,
+            currentPage: cachedData.currentPage,
+            fromCache: true,
+          };
+        }
+      }
       throw this.handleError(error);
     }
   }
 
   async addMaintenance(maintenanceData) {
     try {
-      this.validateMaintenanceData(maintenanceData);
-
       const formData = this.createFormData(maintenanceData);
 
-      const response = await httpCommon.post(this.baseURL, formData, {
+      const response = await httpCommon.post('/maintenances', formData, {
         headers: {
           ...this.getAuthHeader(),
           'Content-Type': 'multipart/form-data',
@@ -66,6 +74,7 @@ class MaintenanceService {
 
       return response.data?.data;
     } catch (error) {
+      console.error('Error adding maintenance:', error.response?.data || error.message);
       throw this.handleError(error);
     }
   }
@@ -74,45 +83,61 @@ class MaintenanceService {
     if (!maintenanceData) {
       throw new Error('No data provided for update');
     }
-
     try {
       const formData = this.createFormData(maintenanceData);
 
-      const response = await httpCommon.put(`${this.baseURL}/${id}`, formData, {
+      const response = await httpCommon.put(`/maintenances/${id}`, formData, {
         headers: {
           ...this.getAuthHeader(),
           'Content-Type': 'multipart/form-data',
         },
       });
 
+      // Update cached maintenance data if exists
+      const encryptedCache = localStorage.getItem('maintenances');
+      if (encryptedCache) {
+        const cachedData = decryptData(encryptedCache);
+        if (cachedData) {
+          cachedData.maintenances = cachedData.maintenances.map((item) =>
+            item.id === id ? { ...item, ...response.data?.data } : item
+          );
+          cachedData.timestamp = new Date().getTime();
+          localStorage.setItem('maintenances', encryptData(cachedData));
+        }
+      }
+
       return response.data?.data;
     } catch (error) {
+      console.error('Maintenance Update Error:', error.response?.data || error);
       throw this.handleError(error);
     }
   }
 
   async deleteMaintenance(id) {
     try {
-      await httpCommon.delete(`${this.baseURL}/${id}`, {
+      await httpCommon.delete(`/maintenances/${id}`, {
         headers: this.getAuthHeader(),
       });
 
-      return { id, message: 'Maintenance deleted successfully' };
+      // Update cached maintenances if exists
+      const encryptedCache = localStorage.getItem('maintenances');
+      if (encryptedCache) {
+        const cachedData = decryptData(encryptedCache);
+        if (cachedData) {
+          cachedData.maintenances = cachedData.maintenances.filter((item) => item.id !== id);
+          cachedData.timestamp = new Date().getTime();
+          localStorage.setItem('maintenances', encryptData(cachedData));
+        }
+      }
+
+      return id;
     } catch (error) {
       throw this.handleError(error);
     }
   }
 
-  validateMaintenanceData(maintenanceData) {
-    if (!maintenanceData.title?.trim()) {
-      throw new Error('Title is required');
-    }
-    if (!maintenanceData.maintenanceType?.trim()) {
-      throw new Error('Maintenance Type is required');
-    }
-    if (!maintenanceData.description?.trim()) {
-      throw new Error('Description is required');
-    }
+  clearCache() {
+    localStorage.removeItem('maintenances');
   }
 
   createFormData(data) {
@@ -130,10 +155,11 @@ class MaintenanceService {
   }
 
   handleError(error) {
-    const errorMessage = error.response?.data?.message || error.message;
-    const errorStatus = error.response?.status || 500;
-    console.error('API Error:', errorMessage, `(Status: ${errorStatus})`);
-    return { message: errorMessage, status: errorStatus };
+    console.error('API Error:', error.response?.data || error.message);
+    return {
+      message: error.response?.data?.message || error.message || 'An error occurred',
+      status: error.response?.status || 500,
+    };
   }
 }
 

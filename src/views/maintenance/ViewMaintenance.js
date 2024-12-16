@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  fetchMaintenance,
+  fetchMaintenances,
   addMaintenance,
   updateMaintenance,
   deleteMaintenance,
@@ -27,82 +27,149 @@ import { decryptData } from '../../api/utils/crypto';
 const ViewMaintenance = () => {
   const dispatch = useDispatch();
   const {
-    maintenanceRequests,
-    loading,
-    error,
-    totalPages,
-    totalMaintenanceRequests,
-    currentPage,
+    maintenanceRequests = [],
+    loading = false,
+    error = null,
+    totalPages = 0,
+    totalMaintenanceRequests = 0,
+    currentPage = 1,
   } = useSelector((state) => state.maintenance);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
-  const [selectedMaintenance, setSelectedMaintenance] = useState(null);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editingMaintenance, setEditingMaintenance] = useState(null);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [maintenanceToDelete, setMaintenanceToDelete] = useState(null);
-  const [tenantRequestVisible, setTenantRequestVisible] = useState(false);
-  const itemsPerPage = 5;
+  const [searchState, setSearchState] = useState({
+    term: '',
+    debouncedTerm: '',
+  });
+
+  const [modalStates, setModalStates] = useState({
+    details: { visible: false, maintenance: null },
+    edit: { visible: false, maintenance: null },
+    delete: { visible: false, maintenance: null },
+    tenantRequest: { visible: false },
+  });
 
   const [userPermissions, setUserPermissions] = useState(null);
+
+  const ITEMS_PER_PAGE = 5;
+
+  const fetchMaintenanceRequests = useCallback(() => {
+    console.log('Fetching with params:', {
+      page: currentPage,
+      limit: ITEMS_PER_PAGE,
+      search: searchState.debouncedTerm,
+    });
+    
+    dispatch(
+      fetchMaintenances({
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+        search: searchState.debouncedTerm,
+      })
+    );
+  }, [dispatch, currentPage, searchState.debouncedTerm]);
+  
 
   useEffect(() => {
     const encryptedUser = localStorage.getItem('user');
     if (encryptedUser) {
-      const decryptedUser = decryptData(encryptedUser);
-      if (decryptedUser && decryptedUser.permissions) {
-        setUserPermissions(decryptedUser.permissions);
+      try {
+        const decryptedUser = decryptData(encryptedUser);
+        setUserPermissions(decryptedUser?.permissions || null);
+      } catch (error) {
+        console.error('Failed to decrypt user data', error);
       }
     }
   }, []);
 
+  // useEffect(() => {
+    useEffect(() => {
+      try {
+        console.log('Fetching maintenance requests...');
+        fetchMaintenanceRequests();
+      } catch (error) {
+        console.error('Error fetching maintenance requests:', error);
+      }
+    }, [fetchMaintenanceRequests]);
+  
+  useSelector((state) => {
+    console.log('Current maintenance state:', state.maintenance);
+    return state.maintenance;
+  });
+  
   useEffect(() => {
-    dispatch(fetchMaintenance({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
-  }, [dispatch, currentPage, searchTerm]);
+    const timerId = setTimeout(() => {
+      setSearchState((prev) => ({
+        ...prev,
+        debouncedTerm: prev.term,
+      }));
+    }, 500);
+
+    return () => clearTimeout(timerId);
+  }, [searchState.term]);
+
+  const handleOpenModal = (type, maintenance = null) => {
+    setModalStates((prev) => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        visible: true,
+        maintenance,
+      },
+    }));
+  };
+
+  const handleCloseModal = (type) => {
+    setModalStates((prev) => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        visible: false,
+        maintenance: null,
+      },
+    }));
+  };
 
   const handlePageChange = (page) => {
     if (page !== currentPage) {
-      dispatch(fetchMaintenance({ page, limit: itemsPerPage, search: searchTerm }));
+      dispatch(
+        fetchMaintenance({
+          page,
+          limit: ITEMS_PER_PAGE,
+          search: searchState.debouncedTerm,
+        })
+      );
     }
   };
 
-  const handleViewDetails = (maintenance) => {
-    setSelectedMaintenance(maintenance);
-    setDetailsModalVisible(true);
-  };
-
-  const handleEdit = (maintenance) => {
-    setEditingMaintenance(maintenance);
-    setEditModalVisible(true);
-  };
-
-  const handleDelete = (maintenance) => {
-    setMaintenanceToDelete(maintenance);
-    setDeleteModalVisible(true);
-  };
-
-  const confirmDelete = async () => {
+  const handleDelete = async () => {
+    const maintenanceToDelete = modalStates.delete.maintenance;
     if (maintenanceToDelete?._id) {
-      await dispatch(deleteMaintenance(maintenanceToDelete._id));
-      setDeleteModalVisible(false);
+      try {
+        await dispatch(deleteMaintenance(maintenanceToDelete._id));
+        handleCloseModal('delete');
+        fetchMaintenanceRequests();
+      } catch (error) {
+        console.error('Delete error', error);
+      }
     }
   };
 
-  const handleUpdateMaintenance = async (formData) => {
-    if (editingMaintenance?._id) {
-      await dispatch(updateMaintenance({ id: editingMaintenance._id, maintenanceData: formData }));
-      setEditModalVisible(false);
+  const handleSubmit = async (formData, isEdit = false) => {
+    try {
+      if (isEdit && modalStates.edit.maintenance?._id) {
+        await dispatch(
+          updateMaintenance({
+            id: modalStates.edit.maintenance._id,
+            maintenanceData: formData,
+          })
+        );
+      } else {
+        await dispatch(addMaintenance(formData));
+      }
+      handleCloseModal(isEdit ? 'edit' : 'tenantRequest');
+      fetchMaintenanceRequests();
+    } catch (error) {
+      console.error('Submission error', error);
     }
-  };
-
-  const handleFormSubmit = async (formData) => {
-    if (editingMaintenance?._id) {
-      await dispatch(updateMaintenance({ id: editingMaintenance._id, maintenanceData: formData }));
-    } else {
-      await dispatch(addMaintenance(formData));
-    }
-    setTenantRequestVisible(false);
   };
 
   return (
@@ -115,7 +182,7 @@ const ViewMaintenance = () => {
               <div id="container">
                 <button
                   className="learn-more"
-                  onClick={() => setTenantRequestVisible(true)}
+                  onClick={() => handleOpenModal('tenantRequest')}
                 >
                   <span className="circle" aria-hidden="true">
                     <span className="icon arrow"></span>
@@ -129,66 +196,58 @@ const ViewMaintenance = () => {
             <CFormInput
               type="text"
               placeholder="Search by tenant name or maintenance type"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchState.term}
+              onChange={(e) =>
+                setSearchState((prev) => ({ ...prev, term: e.target.value }))
+              }
               className="mb-3"
             />
-            {loading ? (
-              <CSpinner />
-            ) : error ? (
-              <div className="text-danger">{error}</div>
-            ) : maintenanceRequests.length > 0 ? (
-              <MaintenanceTable
-                maintenanceList={maintenanceRequests}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                handleDelete={handleDelete}
-                handleEdit={handleEdit}
-                handleViewDetails={handleViewDetails}
-                handlePageChange={handlePageChange}
-              />
-            ) : (
-              <div className="text-center text-muted">No maintenance records found.</div>
-            )}
+           {loading ? (
+  <CSpinner />
+) : error ? (
+  <div className="text-danger">{error}</div>
+) : maintenanceRequests && maintenanceRequests.length > 0 ? (
+  <MaintenanceTable
+    maintenanceList={maintenanceRequests}
+    currentPage={currentPage}
+    totalPages={totalPages}
+    handleDelete={(maintenance) => handleOpenModal('delete', maintenance)}
+    handleEdit={(maintenance) => handleOpenModal('edit', maintenance)}
+    handleViewDetails={(maintenance) => handleOpenModal('details', maintenance)}
+    handlePageChange={handlePageChange}
+  />
+) : (
+  <div className="text-center text-muted">No maintenance records found.</div>
+)}
           </CCardBody>
         </CCard>
       </CCol>
 
       {/* Modals */}
       <MaintenanceDetailsModal
-        visible={detailsModalVisible}
-        setVisible={setDetailsModalVisible}
-        maintenance={selectedMaintenance}
+        visible={modalStates.details.visible}
+        setVisible={() => handleCloseModal('details')}
+        maintenance={modalStates.details.maintenance}
       />
 
       <MaintenanceEditForm
-        visible={editModalVisible}
-        setVisible={setEditModalVisible}
-        maintenance={editingMaintenance}
-        onSubmit={handleUpdateMaintenance}
-      />
-
-      <MaintenanceProfessionalForm
-        visible={false}
-        setVisible={() => {}}
-        editingMaintenance={null}
-        onSubmit={handleFormSubmit}
+        visible={modalStates.edit.visible}
+        setVisible={() => handleCloseModal('edit')}
+        maintenance={modalStates.edit.maintenance}
+        onSubmit={(formData) => handleSubmit(formData, true)}
       />
 
       <TenantRequestForm
-        visible={tenantRequestVisible}
-        setVisible={setTenantRequestVisible}
-        onSubmit={handleFormSubmit}
-        editingRequest={null}
+        visible={modalStates.tenantRequest.visible}
+        setVisible={() => handleCloseModal('tenantRequest')}
+        onSubmit={handleSubmit}
       />
 
       <MaintenanceDeleteModal
-        visible={deleteModalVisible}
-        setDeleteModalVisible={setDeleteModalVisible}
-        maintenanceToDelete={maintenanceToDelete}
-        confirmDelete={confirmDelete}
+        visible={modalStates.delete.visible}
+        setDeleteModalVisible={() => handleCloseModal('delete')}
+        maintenanceToDelete={modalStates.delete.maintenance}
+        confirmDelete={handleDelete}
       />
     </CRow>
   );

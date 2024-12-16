@@ -2,20 +2,14 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import MaintenanceService from '../services/maintenance.service';
 
 // Fetch maintenance records
-export const fetchMaintenance = createAsyncThunk(
-  'maintenance/fetchMaintenance',
-  async ({ page = 1, limit = 5, search = '' }, { rejectWithValue }) => {
+export const fetchMaintenances = createAsyncThunk(
+  'maintenance/fetchMaintenances',
+  async ({ page = 1, limit = 5, searchTerm = '' }, { rejectWithValue }) => {
     try {
-      const response = await MaintenanceService.fetchMaintenance(page, limit, search);
-      return {
-        data: response,
-        success: true,
-      };
+      const data = await MaintenanceService.fetchMaintenances(page, limit, searchTerm);
+      return { data, success: true };
     } catch (error) {
-      console.error('Fetch maintenance error:', error.response || error);
-      return rejectWithValue(
-        error.response?.data || { message: 'Failed to fetch maintenance records' }
-      );
+      return rejectWithValue(error.response?.data || { message: 'Failed to fetch maintenances' });
     }
   }
 );

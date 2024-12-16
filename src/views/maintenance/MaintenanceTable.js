@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   CTable,
   CTableHead,
@@ -11,20 +11,30 @@ import {
   CPaginationItem,
   CFormInput,
   CBadge,
+  CAlert,
 } from '@coreui/react';
 import { CIcon } from '@coreui/icons-react';
-import { cilPencil, cilTrash, cilZoom, cilArrowTop, cilArrowBottom } from '@coreui/icons';
+import {
+  cilPencil,
+  cilTrash,
+  cilZoom,
+  cilArrowTop,
+  cilArrowBottom,
+  cilFile,
+  cilClipboard,
+  cilCloudDownload,
+} from '@coreui/icons';
 import { CSVLink } from 'react-csv';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { cilFile, cilClipboard, cilCloudDownload } from '@coreui/icons';
 import { decryptData } from '../../api/utils/crypto';
 
 const MaintenanceTable = ({
   maintenanceList = [],
   currentPage,
   totalPages,
+  totalRequests,
   searchTerm,
   setSearchTerm,
   handleDelete,
@@ -33,101 +43,121 @@ const MaintenanceTable = ({
   handlePageChange,
 }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-
-  const handleSort = (key) => {
-    setSortConfig((prevConfig) => {
-      const direction =
-        prevConfig.key === key && prevConfig.direction === 'ascending' ? 'descending' : 'ascending';
-      return { key, direction };
-    });
-  };
-
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'pending':
-        return 'warning';
-      case 'in progress':
-        return 'info';
-      case 'completed':
-        return 'success';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const sortedMaintenance = React.useMemo(() => {
-    if (!sortConfig.key) return maintenanceList;
-
-    return [...maintenanceList].sort((a, b) => {
-      const aKey = a[sortConfig.key] || '';
-      const bKey = b[sortConfig.key] || '';
-
-      if (aKey < bKey) {
-        return sortConfig.direction === 'ascending' ? -1 : 1;
-      }
-      if (aKey > bKey) {
-        return sortConfig.direction === 'ascending' ? 1 : -1;
-      }
-      return 0;
-    });
-  }, [maintenanceList, sortConfig]);
-
-  const csvData = maintenanceList.map((maintenance, index) => ({
-    index: (currentPage - 1) * 5 + index + 1,
-    tenantName: maintenance.tenant?.tenantName || 'N/A',
-    email: maintenance.tenant?.contactInformation?.email || 'N/A',
-    phone: maintenance.tenant?.contactInformation?.phoneNumber || 'N/A',
-    status: maintenance.status || 'N/A',
-  }));
-
-  const clipboardData = maintenanceList
-    .map(
-      (maintenance, index) =>
-        `${(currentPage - 1) * 5 + index + 1}. ${maintenance.tenant?.tenantName || 'N/A'} - ${
-          maintenance.tenant?.contactInformation?.email || 'N/A'
-        } - ${maintenance.status || 'N/A'}`
-    )
-    .join('\n');
-
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.text('Maintenance Requests', 14, 10);
-
-    const tableData = maintenanceList.map((maintenance, index) => [
-      (currentPage - 1) * 5 + index + 1,
-      maintenance.tenant?.tenantName || 'N/A',
-      maintenance.tenant?.contactInformation?.email || 'N/A',
-      maintenance.tenant?.contactInformation?.phoneNumber || 'N/A',
-      maintenance.status || 'N/A',
-    ]);
-
-    doc.autoTable({
-      head: [['#', 'Tenant Name', 'Email', 'Phone', 'Status']],
-      body: tableData,
-      startY: 20,
-    });
-
-    doc.save('maintenance_requests.pdf');
-  };
-
   const [userPermissions, setUserPermissions] = useState(null);
   const [role, setRole] = useState(null);
+  const [error, setError] = useState(null);
 
+  // Fetch user permissions and role on component mount
   useEffect(() => {
-    const encryptedUser = localStorage.getItem('user');
-    if (encryptedUser) {
-      const decryptedUser = decryptData(encryptedUser);
-      if (decryptedUser && decryptedUser.permissions) {
-        setUserPermissions(decryptedUser.permissions);
+    try {
+      const encryptedUser = localStorage.getItem('user');
+      if (encryptedUser) {
+        const decryptedUser = decryptData(encryptedUser);
+        setUserPermissions(decryptedUser?.permissions || null);
+        setRole(decryptedUser?.role || null);
       }
-      if (decryptedUser && decryptedUser.role) {
-        setRole(decryptedUser.role);
-      }
+    } catch (err) {
+      setError('Failed to load user permissions');
+      console.error('Permission loading error:', err);
     }
   }, []);
 
+  // Sorting handler
+  const handleSort = useCallback((key) => {
+    setSortConfig((prevConfig) => ({
+      key,
+      direction:
+        prevConfig.key === key && prevConfig.direction === 'ascending'
+          ? 'descending'
+          : 'ascending',
+    }));
+  }, []);
+
+  // Status color mapping
+  const getStatusColor = useCallback((status) => {
+    const statusColorMap = {
+      pending: 'warning',
+      'in progress': 'info',
+      completed: 'success',
+    };
+    return statusColorMap[status?.toLowerCase()] || 'secondary';
+  }, []);
+
+  // Sorted maintenance list
+  const sortedMaintenance = useMemo(() => {
+    if (!sortConfig.key) return maintenanceList;
+
+    return [...maintenanceList].sort((a, b) => {
+      const aValue = a[sortConfig.key]?.toString() || '';
+      const bValue = b[sortConfig.key]?.toString() || '';
+
+      return sortConfig.direction === 'ascending'
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    });
+  }, [maintenanceList, sortConfig]);
+
+  // Data for CSV export
+  const csvData = useMemo(
+    () =>
+      maintenanceList.map((maintenance, index) => ({
+        index: (currentPage - 1) * 5 + index + 1,
+        tenantName: maintenance.tenant?.tenantName || 'N/A',
+        email: maintenance.tenant?.contactInformation?.email || 'N/A',
+        phone: maintenance.tenant?.contactInformation?.phoneNumber || 'N/A',
+        status: maintenance.status || 'N/A',
+      })),
+    [maintenanceList, currentPage]
+  );
+
+  // Data for clipboard
+  const clipboardData = useMemo(
+    () =>
+      maintenanceList
+        .map(
+          (maintenance, index) =>
+            `${(currentPage - 1) * 5 + index + 1}. ${maintenance.tenant?.tenantName || 'N/A'} - ${
+              maintenance.tenant?.contactInformation?.email || 'N/A'
+            } - ${maintenance.status || 'N/A'}`
+        )
+        .join('\n'),
+    [maintenanceList, currentPage]
+  );
+
+  // Export to PDF
+  const exportToPDF = useCallback(() => {
+    try {
+      const doc = new jsPDF();
+      doc.text('Maintenance Requests', 14, 10);
+
+      const tableData = maintenanceList.map((maintenance, index) => [
+        (currentPage - 1) * 5 + index + 1,
+        maintenance.tenant?.tenantName || 'N/A',
+        maintenance.tenant?.contactInformation?.email || 'N/A',
+        maintenance.tenant?.contactInformation?.phoneNumber || 'N/A',
+        maintenance.status || 'N/A',
+      ]);
+
+      doc.autoTable({
+        head: [['#', 'Tenant Name', 'Email', 'Phone', 'Status']],
+        body: tableData,
+        startY: 20,
+      });
+
+      doc.save('maintenance_requests.pdf');
+    } catch (err) {
+      setError('Failed to export PDF');
+      console.error('PDF export error:', err);
+    }
+  }, [maintenanceList, currentPage]);
+
   return (
     <div>
+      {error && (
+        <CAlert color="danger" dismissible onClose={() => setError(null)}>
+          {error}
+        </CAlert>
+      )}
       {/* Export and Search */}
       <div className="d-flex mb-3 gap-2">
         <CFormInput
@@ -165,79 +195,77 @@ const MaintenanceTable = ({
       </div>
 
       {/* Maintenance Table */}
-      <div className="table-responsive">
-        <CTable striped hover bordered>
-          <CTableHead className="table-light">
-            <CTableRow>
-              <CTableHeaderCell>#</CTableHeaderCell>
-              <CTableHeaderCell>Tenant Name</CTableHeaderCell>
-              <CTableHeaderCell>Email</CTableHeaderCell>
-              <CTableHeaderCell>Phone</CTableHeaderCell>
-              <CTableHeaderCell onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
-                Status
-                {sortConfig.key === 'status' && (
-                  <CIcon
-                    icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom}
-                  />
-                )}
-              </CTableHeaderCell>
-              <CTableHeaderCell>Actions</CTableHeaderCell>
-            </CTableRow>
-          </CTableHead>
-          <CTableBody>
-            {sortedMaintenance.map((maintenance, index) => (
-              <CTableRow key={maintenance._id || index}>
-                <CTableDataCell>{(currentPage - 1) * 5 + index + 1}</CTableDataCell>
-                <CTableDataCell>{maintenance.tenant?.tenantName || 'N/A'}</CTableDataCell>
-                <CTableDataCell>{maintenance.tenant?.contactInformation?.email || 'N/A'}</CTableDataCell>
-                <CTableDataCell>{maintenance.tenant?.contactInformation?.phoneNumber || 'N/A'}</CTableDataCell>
-                <CTableDataCell>
-                  <CBadge color={getStatusColor(maintenance.status)}>
-                    {maintenance.status || 'N/A'}
-                  </CBadge>
-                </CTableDataCell>
-                <CTableDataCell>
+      <CTable striped hover bordered>
+        <CTableHead className="table-light">
+          <CTableRow>
+            <CTableHeaderCell>#</CTableHeaderCell>
+            <CTableHeaderCell>Tenant Name</CTableHeaderCell>
+            <CTableHeaderCell>Email</CTableHeaderCell>
+            <CTableHeaderCell>Phone</CTableHeaderCell>
+            <CTableHeaderCell onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
+              Status
+              {sortConfig.key === 'status' && (
+                <CIcon
+                  icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom}
+                />
+              )}
+            </CTableHeaderCell>
+            <CTableHeaderCell>Actions</CTableHeaderCell>
+          </CTableRow>
+        </CTableHead>
+        <CTableBody>
+          {sortedMaintenance.map((maintenance, index) => (
+            <CTableRow key={maintenance._id || index}>
+              <CTableDataCell>{(currentPage - 1) * 5 + index + 1}</CTableDataCell>
+              <CTableDataCell>{maintenance.tenant?.tenantName || 'N/A'}</CTableDataCell>
+              <CTableDataCell>{maintenance.tenant?.contactInformation?.email || 'N/A'}</CTableDataCell>
+              <CTableDataCell>{maintenance.tenant?.contactInformation?.phoneNumber || 'N/A'}</CTableDataCell>
+              <CTableDataCell>
+                <CBadge color={getStatusColor(maintenance.status)}>
+                  {maintenance.status || 'N/A'}
+                </CBadge>
+              </CTableDataCell>
+              <CTableDataCell>
+                <CButton
+                  color="light"
+                  size="sm"
+                  className="me-2"
+                  onClick={() => handleViewDetails(maintenance)}
+                  title="View Details"
+                >
+                  <CIcon icon={cilZoom} />
+                </CButton>
+                {role === 'User' && userPermissions?.editMaintenance && (
                   <CButton
                     color="light"
                     size="sm"
                     className="me-2"
-                    onClick={() => handleViewDetails(maintenance)}
-                    title="View Details"
+                    onClick={() => handleEdit(maintenance)}
+                    title="Edit"
                   >
-                    <CIcon icon={cilZoom} />
+                    <CIcon icon={cilPencil} />
                   </CButton>
-                  {role === 'User' && userPermissions?.editMaintenance && (
-                    <CButton
-                      color="light"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleEdit(maintenance)}
-                      title="Edit"
-                    >
-                      <CIcon icon={cilPencil} />
-                    </CButton>
-                  )}
-                  {role === 'User' && userPermissions?.deleteMaintenance && (
-                    <CButton
-                      color="light"
-                      style={{ color: `red` }}
-                      size="sm"
-                      onClick={() => handleDelete(maintenance)}
-                      title="Delete"
-                    >
-                      <CIcon icon={cilTrash} />
-                    </CButton>
-                  )}
-                </CTableDataCell>
-              </CTableRow>
-            ))}
-          </CTableBody>
-        </CTable>
-      </div>
+                )}
+                {role === 'User' && userPermissions?.deleteMaintenance && (
+                  <CButton
+                    color="light"
+                    style={{ color: `red` }}
+                    size="sm"
+                    onClick={() => handleDelete(maintenance)}
+                    title="Delete"
+                  >
+                    <CIcon icon={cilTrash} />
+                  </CButton>
+                )}
+              </CTableDataCell>
+            </CTableRow>
+          ))}
+        </CTableBody>
+      </CTable>
 
       {/* Pagination */}
       <div className="d-flex justify-content-between align-items-center mt-3">
-        <span>Total Requests: {maintenanceList.length}</span>
+        <span>Total Requests: {totalRequests}</span>
         <CPagination className="d-inline-flex">
           <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
             &laquo;
@@ -272,4 +300,4 @@ const MaintenanceTable = ({
   );
 };
 
-export default MaintenanceTable;
+export default React.memo(MaintenanceTable);

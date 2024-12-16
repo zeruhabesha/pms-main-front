@@ -19,8 +19,14 @@ const initialState = {
   properties: [],
   loading: false,
   error: null,
-  totalPages: 1,
-  currentPage: 1,
+  pagination: {
+    totalPages: 1,
+    totalItems: 0,
+    currentPage: 1,
+    limit: 5,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  },
   selectedProperty: null,
   featuredProperties: [],
   filters: {},
@@ -41,9 +47,12 @@ const propertySlice = createSlice({
     updateFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
     },
+    setPagination: (state, action) => {
+      state.pagination = { ...state.pagination, ...action.payload };
+    },
   },
   extraReducers: (builder) => {
-    // Add common cases for loading and error handling
+    // Handle common loading and error states for all async actions
     const commonActions = [
       fetchProperties,
       addProperty,
@@ -71,13 +80,18 @@ const propertySlice = createSlice({
         });
     });
 
-    // Add individual success cases
+    // Handle individual success states for async actions
     builder
       .addCase(fetchProperties.fulfilled, (state, action) => {
         state.loading = false;
         state.properties = action.payload.properties;
-        state.totalPages = action.payload.totalPages;
-        state.currentPage = action.payload.currentPage;
+        state.pagination = action.payload.pagination;
+        state.lastUpdated = new Date().toISOString();
+      })
+      .addCase(filterProperties.fulfilled, (state, action) => {
+        state.loading = false;
+        state.properties = action.payload.properties;
+        state.pagination = action.payload.pagination;
         state.lastUpdated = new Date().toISOString();
       })
       .addCase(addProperty.fulfilled, (state, action) => {
@@ -147,16 +161,9 @@ const propertySlice = createSlice({
         } else {
           state.featuredProperties = state.featuredProperties.filter((p) => p.id !== action.payload.id);
         }
-      })
-      .addCase(filterProperties.fulfilled, (state, action) => {
-        state.loading = false;
-        state.properties = action.payload.properties;
-        state.totalPages = action.payload.totalPages;
-        state.currentPage = action.payload.currentPage;
-        state.lastUpdated = new Date().toISOString();
       });
   },
 });
 
-export const { resetState, setSelectedProperty, clearError, updateFilters } = propertySlice.actions;
+export const { resetState, setSelectedProperty, clearError, updateFilters, setPagination } = propertySlice.actions;
 export default propertySlice.reducer;

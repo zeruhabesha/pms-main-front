@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   CRow,
   CCol,
@@ -13,7 +13,8 @@ import {
   CTableBody,
   CTableDataCell,
 } from '@coreui/react';
-import { CChartBar, CChartLine, CChartDoughnut } from '@coreui/react-chartjs';
+import { CChartDoughnut, CChartBar } from '@coreui/react-chartjs';
+import './Dashboard.scss';
 
 const Dashboard = () => {
   const stats = {
@@ -29,6 +30,7 @@ const Dashboard = () => {
       {
         data: [10, 8, 2],
         backgroundColor: ['#4CAF50', '#FF9800', '#F44336'],
+        hoverOffset: 10,
       },
     ],
   };
@@ -39,6 +41,9 @@ const Dashboard = () => {
       {
         label: 'Revenue (in $)',
         backgroundColor: '#42A5F5',
+        borderColor: '#1E88E5',
+        borderWidth: 2,
+        hoverBackgroundColor: '#64B5F6',
         data: [2000, 3000, 2500, 4000, 5000],
       },
     ],
@@ -57,11 +62,11 @@ const Dashboard = () => {
   ];
 
   return (
-    <div>
+    <div className="dashboard">
       <CRow className="mb-4">
         <CCol sm={6} lg={3}>
           <CWidgetStatsA
-            className="mb-4"
+            className="animated-widget mb-4"
             color="dark"
             value={stats.admins.toString()}
             title="Total Admins"
@@ -69,34 +74,33 @@ const Dashboard = () => {
         </CCol>
         <CCol sm={6} lg={3}>
           <CWidgetStatsA
-            className="mb-4"
-            color="light"
+            className="animated-widget mb-4"
+            color="dark"
             value={stats.properties.toString()}
             title="Total Properties"
           />
         </CCol>
         <CCol sm={6} lg={3}>
           <CWidgetStatsA
-            className="mb-4"
-            color="warning"
+            className="animated-widget mb-4"
+            color="dark"
             value={stats.tenants.toString()}
             title="Total Tenants"
           />
         </CCol>
         <CCol sm={6} lg={3}>
           <CWidgetStatsA
-            className="mb-4"
-            color="danger"
+            className="animated-widget mb-4"
+            color="dark"
             value={`$${stats.revenue}`}
             title="Monthly Revenue"
           />
         </CCol>
-        
       </CRow>
 
       <CRow>
         <CCol lg={6}>
-          <CCard>
+          <CCard className="animated-card">
             <CCardHeader>Property Distribution</CCardHeader>
             <CCardBody>
               <CChartDoughnut
@@ -105,13 +109,17 @@ const Dashboard = () => {
                   plugins: {
                     legend: { position: 'top' },
                   },
+                  animation: {
+                    animateScale: true,
+                    animateRotate: true,
+                  },
                 }}
               />
             </CCardBody>
           </CCard>
         </CCol>
         <CCol lg={6}>
-          <CCard>
+          <CCard className="animated-card">
             <CCardHeader>Monthly Revenue</CCardHeader>
             <CCardBody>
               <CChartBar
@@ -124,22 +132,9 @@ const Dashboard = () => {
                     x: { grid: { display: false } },
                     y: { beginAtZero: true },
                   },
-                }}
-              />
-            </CCardBody>
-          </CCard>
-          <CCard>
-            <CCardHeader>Yearlly Revenue</CCardHeader>
-            <CCardBody>
-              <CChartBar
-                data={monthlyRevenue}
-                options={{
-                  plugins: {
-                    legend: { display: true, position: 'top' },
-                  },
-                  scales: {
-                    x: { grid: { display: false } },
-                    y: { beginAtZero: true },
+                  animation: {
+                    duration: 1500,
+                    easing: 'easeOutBounce',
                   },
                 }}
               />
@@ -150,7 +145,7 @@ const Dashboard = () => {
 
       <CRow className="mt-4">
         <CCol lg={6}>
-          <CCard>
+          <CCard className="animated-card">
             <CCardHeader>Recent Properties</CCardHeader>
             <CCardBody>
               <CTable hover>
@@ -177,7 +172,7 @@ const Dashboard = () => {
           </CCard>
         </CCol>
         <CCol lg={6}>
-          <CCard>
+          <CCard className="animated-card">
             <CCardHeader>Recent Tenants</CCardHeader>
             <CCardBody>
               <CTable hover>

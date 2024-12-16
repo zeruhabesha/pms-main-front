@@ -133,12 +133,12 @@ const TenantTable = ({
   return (
     <div>
       <div className="d-flex mb-3 gap-2">
-      <CFormInput
+      {/* <CFormInput
       type="text"
       placeholder="Search by name or email"
       value={searchTerm}
       onChange={(e) => setSearchTerm(e.target.value)} // Use setSearchTerm correctly
-    />
+    /> */}
     <div className="d-flex gap-2">
           <CSVLink
             data={csvData}
@@ -163,12 +163,12 @@ const TenantTable = ({
             <CIcon icon={cilCloudDownload} />
           </CButton>
         </div>
-        {/* <CFormInput
+        <CFormInput
           type="text"
           placeholder="Search by name or email"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-        /> */}
+        />
       </div>
 
       <div className="table-responsive">

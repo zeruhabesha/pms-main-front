@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   CModal,
   CModalHeader,
@@ -14,92 +14,101 @@ import {
   CCard,
   CCardBody,
   CSpinner,
+  CAlert,
 } from '@coreui/react';
-import Select from 'react-select';
 import axios from 'axios';
 import { decryptData } from '../../api/utils/crypto';
 
-const TenantRequestForm = ({ visible, setVisible, onSubmit, editingRequest = null }) => {
+const TenantRequestForm = ({ 
+  visible, 
+  setVisible, 
+  onSubmit, 
+  editingRequest = null 
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [properties, setProperties] = useState([]);
-  const [formData, setFormData] = useState({
+  const [propertiesLoading, setPropertiesLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Initial form state with default values
+  const initialFormState = {
     tenant: '',
-    property: '',
+    propertyInformation: {
+      propertyId: '',
+      unit: ''
+    },
     typeOfRequest: '',
     description: '',
     urgencyLevel: '',
     preferredAccessTimes: '',
     photosOrVideos: [],
     notes: '',
-  });
+  };
 
-  useEffect(() => {
-    const encryptedUser = localStorage.getItem('user');
-    const decryptedUser = decryptData(encryptedUser);
-    const tenantId = decryptedUser?._id || '';
+  const [formData, setFormData] = useState(initialFormState);
 
-    if (editingRequest) {
-      setFormData({
-        tenant: editingRequest?.tenant || tenantId,
-        property: editingRequest?.property || '',
-        typeOfRequest: editingRequest?.typeOfRequest || '',
-        description: editingRequest?.description || '',
-        urgencyLevel: editingRequest?.urgencyLevel || '',
-        preferredAccessTimes: editingRequest?.preferredAccessTimes || '',
-        photosOrVideos: editingRequest?.photosOrVideos || [],
-        notes: editingRequest?.notes || '',
-      });
-    } else {
-      resetForm(tenantId);
-    }
-
-    fetchProperties();
-  }, [editingRequest]);
-
-  const fetchProperties = async () => {
+  // Fetch properties with improved error handling
+  const fetchProperties = useCallback(async () => {
+    setPropertiesLoading(true);
     try {
       const response = await axios.get('http://localhost:4000/api/v1/properties');
-      console.log('Raw Property Response:', response.data); // Debugging
-  
-      // Access the properties array correctly
-      const propertiesData = response.data?.data?.properties;
-      if (Array.isArray(propertiesData)) {
-        setProperties(
-          propertiesData.map((property) => ({
-            value: property._id,
-            label: property.title,
-          }))
-        );
-      } else {
-        console.error('Unexpected response structure:', response.data);
-        setProperties([]);
-      }
+      
+      const propertiesData = response.data?.data?.properties || 
+                            response.data?.properties || 
+                            [];
+
+      setProperties(propertiesData);
     } catch (error) {
-      console.error('Failed to fetch properties:', error.message);
+      console.error('Failed to fetch properties:', error);
+      setError('Unable to load properties. Please try again later.');
+    } finally {
+      setPropertiesLoading(false);
     }
-  };
-  
+  }, []);
 
-  const resetForm = (tenantId) => {
-    setFormData({
-      tenant: tenantId,
-      property: '',
-      typeOfRequest: '',
-      description: '',
-      urgencyLevel: '',
-      preferredAccessTimes: '',
-      photosOrVideos: [],
-      notes: '',
-    });
-  };
+  // Initialize form data on component mount or when editing
+  useEffect(() => {
+    const initializeForm = () => {
+      const encryptedUser = localStorage.getItem('user');
+      const decryptedUser = decryptData(encryptedUser);
+      const tenantId = decryptedUser?._id || '';
 
+      if (editingRequest) {
+        setFormData({
+          ...initialFormState,
+          ...editingRequest,
+          tenant: tenantId,
+        });
+      } else {
+        setFormData({
+          ...initialFormState,
+          tenant: tenantId,
+        });
+      }
+    };
+
+    if (visible) {
+      initializeForm();
+      fetchProperties();
+    }
+  }, [visible, editingRequest, fetchProperties]);
+
+  // Form change handlers
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setError(null);
   };
 
-  const handlePropertyChange = (selectedOption) => {
-    setFormData((prev) => ({ ...prev, property: selectedOption?.value || '' }));
+  const handleNestedChange = (parent, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [parent]: {
+        ...prev[parent],
+        [field]: value
+      }
+    }));
+    setError(null);
   };
 
   const handleFileChange = (e) => {
@@ -107,76 +116,129 @@ const TenantRequestForm = ({ visible, setVisible, onSubmit, editingRequest = nul
     setFormData((prev) => ({ ...prev, photosOrVideos: files }));
   };
 
+  // Form validation
   const validateForm = () => {
-    console.log('Current FormData:', formData); // Debugging
-    const requiredFields = ['tenant', 'property', 'typeOfRequest', 'description', 'urgencyLevel'];
-    for (let field of requiredFields) {
-      if (!formData[field]) {
-        return `${field.charAt(0).toUpperCase() + field.slice(1)} is required.`;
+    const requiredFields = {
+      tenant: 'Tenant',
+      'propertyInformation.propertyId': 'Property',
+      'propertyInformation.unit': 'Unit',
+      typeOfRequest: 'Type of Request',
+      description: 'Description',
+      urgencyLevel: 'Urgency Level'
+    };
+
+    for (const [field, label] of Object.entries(requiredFields)) {
+      const value = field.includes('.') 
+        ? formData[field.split('.')[0]][field.split('.')[1]]
+        : formData[field];
+
+      if (!value) {
+        return `${label} is required.`;
       }
     }
     return null;
   };
 
+  // Submit handler with comprehensive error management
   const handleSubmit = async () => {
+    setError(null);
     const validationError = validateForm();
+
     if (validationError) {
-      console.error(validationError);
+      setError(validationError);
       return;
     }
 
     setIsLoading(true);
     try {
-      const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
+      const formDataToSubmit = new FormData();
+      
+      // Flatten the nested structure for FormData
+      const flattenedData = {
+        ...formData,
+        propertyId: formData.propertyInformation.propertyId,
+        unit: formData.propertyInformation.unit
+      };
+      
+      Object.entries(flattenedData).forEach(([key, value]) => {
         if (key === 'photosOrVideos' && value.length) {
-          value.forEach((file) => data.append('photosOrVideos', file));
-        } else {
-          data.append(key, value);
+          value.forEach((file) => formDataToSubmit.append('photosOrVideos', file));
+        } else if (key !== 'propertyInformation') {
+          formDataToSubmit.append(key, value);
         }
       });
 
-      await onSubmit(data);
-      resetForm(formData.tenant);
+      await onSubmit(formDataToSubmit);
       setVisible(false);
-    } catch (error) {
-      console.error('Failed to submit the request:', error);
+    } catch (submitError) {
+      console.error('Submission failed:', submitError);
+      setError(submitError.message || 'Submission failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <CModal visible={visible} onClose={() => setVisible(false)} alignment="center" size="lg">
+    <CModal 
+      visible={visible} 
+      onClose={() => setVisible(false)} 
+      alignment="center" 
+      size="lg"
+    >
       <CModalHeader className="bg-dark text-white">
-        <CModalTitle>{editingRequest ? 'Edit Tenant Request' : 'Add Tenant Request'}</CModalTitle>
+        <CModalTitle>
+          {editingRequest ? 'Edit Tenant Request' : 'Add Tenant Request'}
+        </CModalTitle>
       </CModalHeader>
+      
       <CModalBody>
+        {error && (
+          <CAlert color="danger" className="mb-3">
+            {error}
+          </CAlert>
+        )}
+        
         <CCard className="border-0 shadow-sm">
           <CCardBody>
             <CRow className="g-4">
               <CCol xs={12}>
-                <CFormLabel htmlFor="tenant">Tenant</CFormLabel>
+                <CFormLabel htmlFor="tenant">Tenant ID</CFormLabel>
                 <CFormInput
                   id="tenant"
                   name="tenant"
                   type="text"
-                  placeholder="Tenant ID"
                   value={formData.tenant}
                   readOnly
                 />
               </CCol>
-              <CCol xs={12}>
-                <CFormLabel htmlFor="property">Property</CFormLabel>
-                <Select
-                  id="property"
-                  name="property"
-                  options={properties}
-                  onChange={handlePropertyChange}
-                  value={properties.find((p) => p.value === formData.property) || null}
-                  placeholder="Select a property"
-                  isClearable
-                  isSearchable
+              <CCol xs={12} md={6}>
+                <CFormLabel htmlFor="propertyId">Property</CFormLabel>
+                {propertiesLoading ? (
+                  <CSpinner size="sm" />
+                ) : (
+                  <CFormSelect
+                    id="propertyId"
+                    value={formData.propertyInformation.propertyId}
+                    onChange={(e) => handleNestedChange('propertyInformation', 'propertyId', e.target.value)}
+                    disabled={propertiesLoading}
+                  >
+                    <option value="">Select Property</option>
+                    {properties.map((property) => (
+                      <option key={property._id} value={property._id}>
+                        {property.name || property.title}
+                      </option>
+                    ))}
+                  </CFormSelect>
+                )}
+              </CCol>
+              <CCol xs={12} md={6}>
+                <CFormLabel htmlFor="unit">Unit Number</CFormLabel>
+                <CFormInput
+                  id="unit"
+                  type="text"
+                  placeholder="Enter unit number"
+                  value={formData.propertyInformation.unit}
+                  onChange={(e) => handleNestedChange('propertyInformation', 'unit', e.target.value)}
                 />
               </CCol>
               <CCol xs={12}>
@@ -255,16 +317,29 @@ const TenantRequestForm = ({ visible, setVisible, onSubmit, editingRequest = nul
                   accept="image/*,video/*"
                 />
               </CCol>
-            </CRow>
+              </CRow>
           </CCardBody>
         </CCard>
       </CModalBody>
+      
       <CModalFooter>
-        <CButton color="secondary" onClick={() => setVisible(false)} disabled={isLoading}>
+        <CButton 
+          color="secondary" 
+          onClick={() => setVisible(false)} 
+          disabled={isLoading}
+        >
           Cancel
         </CButton>
-        <CButton color="dark" onClick={handleSubmit} disabled={isLoading}>
-          {isLoading ? <CSpinner size="sm" /> : editingRequest ? 'Update Request' : 'Add Request'}
+        <CButton 
+          color="dark" 
+          onClick={handleSubmit} 
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <CSpinner size="sm" /> 
+          ) : (
+            editingRequest ? 'Update Request' : 'Add Request'
+          )}
         </CButton>
       </CModalFooter>
     </CModal>
