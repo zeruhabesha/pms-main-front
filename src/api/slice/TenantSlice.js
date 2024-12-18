@@ -4,7 +4,7 @@ import {
   addTenant,
   updateTenant,
   deleteTenant,
-  uploadTenantPhoto,
+  uploadTenantPhoto
 } from "../actions/TenantActions";
 
 const initialState = {
@@ -15,6 +15,7 @@ const initialState = {
   currentPage: 1,
   totalTenants: 0,
   selectedTenant: null,
+  tenantDetails: null,  // Add this to store the details of a single tenant
 };
 
 const tenantSlice = createSlice({
@@ -29,9 +30,11 @@ const tenantSlice = createSlice({
       state.currentPage = 1;
       state.totalTenants = 0;
       state.selectedTenant = null;
+      state.tenantDetails = null
     },
-    setSelectedTenant: (state, action) => {
+      setSelectedTenant: (state, action) => {
       state.selectedTenant = action.payload;
+        state.tenantDetails = state.tenants.find(tenant => tenant._id === action.payload) || null;
     },
     clearError: (state) => {
       state.error = null;
@@ -65,10 +68,10 @@ const tenantSlice = createSlice({
       .addCase(addTenant.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      });
+      })
   },
 });
 
 export const { resetState, setSelectedTenant, clearError } = tenantSlice.actions;
-export { fetchTenants }; // Ensure fetchTenants is exported
+export { fetchTenants };
 export default tenantSlice.reducer;

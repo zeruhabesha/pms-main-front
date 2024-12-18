@@ -1,110 +1,101 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect, useState, useCallback } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import {
   fetchMaintenances,
   addMaintenance,
   updateMaintenance,
   deleteMaintenance,
-} from '../../api/actions/MaintenanceActions';
-import {
-  CRow,
-  CCol,
-  CCard,
-  CCardBody,
-  CCardHeader,
-  CFormInput,
-  CSpinner,
-} from '@coreui/react';
-import MaintenanceDetailsModal from './MaintenanceDetailsModal';
-import MaintenanceTable from './MaintenanceTable';
-import MaintenanceProfessionalForm from './MaintenanceProfessionalForm';
-import TenantRequestForm from './TenantRequestForm';
-import MaintenanceDeleteModal from './MaintenanceDeleteModal';
-import MaintenanceEditForm from './MaintenanceEditForm';
-import '../Super.scss';
-import { decryptData } from '../../api/utils/crypto';
+} from '../../api/actions/MaintenanceActions'
+import { CRow, CCol, CCard, CCardBody, CCardHeader, CFormInput, CSpinner } from '@coreui/react'
+import MaintenanceDetailsModal from './MaintenanceDetailsModal'
+import MaintenanceTable from './MaintenanceTable'
+import MaintenanceProfessionalForm from './MaintenanceProfessionalForm'
+import TenantRequestForm from './TenantRequestForm'
+import MaintenanceDeleteModal from './MaintenanceDeleteModal'
+import MaintenanceEditForm from './MaintenanceEditForm'
+import '../Super.scss'
+import { decryptData } from '../../api/utils/crypto'
 
 const ViewMaintenance = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch()
   const {
-    maintenanceRequests = [],
+    maintenances = [],
     loading = false,
     error = null,
     totalPages = 0,
     totalMaintenanceRequests = 0,
     currentPage = 1,
-  } = useSelector((state) => state.maintenance);
+  } = useSelector((state) => state.maintenance)
 
   const [searchState, setSearchState] = useState({
     term: '',
     debouncedTerm: '',
-  });
+  })
 
   const [modalStates, setModalStates] = useState({
     details: { visible: false, maintenance: null },
     edit: { visible: false, maintenance: null },
     delete: { visible: false, maintenance: null },
     tenantRequest: { visible: false },
-  });
+  })
 
-  const [userPermissions, setUserPermissions] = useState(null);
+  const [userPermissions, setUserPermissions] = useState(null)
 
-  const ITEMS_PER_PAGE = 5;
+  const ITEMS_PER_PAGE = 5
 
   const fetchMaintenanceRequests = useCallback(() => {
     console.log('Fetching with params:', {
       page: currentPage,
       limit: ITEMS_PER_PAGE,
       search: searchState.debouncedTerm,
-    });
-    
+    })
+
     dispatch(
       fetchMaintenances({
         page: currentPage,
         limit: ITEMS_PER_PAGE,
         search: searchState.debouncedTerm,
-      })
-    );
-  }, [dispatch, currentPage, searchState.debouncedTerm]);
-  
+      }),
+    )
+  }, [dispatch, currentPage, searchState.debouncedTerm])
 
   useEffect(() => {
-    const encryptedUser = localStorage.getItem('user');
+    const encryptedUser = localStorage.getItem('user')
     if (encryptedUser) {
       try {
-        const decryptedUser = decryptData(encryptedUser);
-        setUserPermissions(decryptedUser?.permissions || null);
+        const decryptedUser = decryptData(encryptedUser)
+        setUserPermissions(decryptedUser?.permissions || null)
       } catch (error) {
-        console.error('Failed to decrypt user data', error);
+        console.error('Failed to decrypt user data', error)
       }
     }
-  }, []);
+  }, [])
 
   // useEffect(() => {
-    useEffect(() => {
-      try {
-        console.log('Fetching maintenance requests...');
-        fetchMaintenanceRequests();
-      } catch (error) {
-        console.error('Error fetching maintenance requests:', error);
-      }
-    }, [fetchMaintenanceRequests]);
-  
+  useEffect(() => {
+    try {
+      console.log('Fetching maintenance requests...')
+      fetchMaintenanceRequests()
+    } catch (error) {
+      console.error('Error fetching maintenance requests:', error)
+    }
+  }, [fetchMaintenanceRequests])
+
   useSelector((state) => {
-    console.log('Current maintenance state:', state.maintenance);
-    return state.maintenance;
-  });
-  
+    console.log('Current maintenance state:', state.maintenance)
+    return state.maintenance
+  })
+
   useEffect(() => {
     const timerId = setTimeout(() => {
       setSearchState((prev) => ({
         ...prev,
         debouncedTerm: prev.term,
-      }));
-    }, 500);
+      }))
+    }, 500)
 
-    return () => clearTimeout(timerId);
-  }, [searchState.term]);
+    return () => clearTimeout(timerId)
+  }, [searchState.term])
 
   const handleOpenModal = (type, maintenance = null) => {
     setModalStates((prev) => ({
@@ -114,8 +105,8 @@ const ViewMaintenance = () => {
         visible: true,
         maintenance,
       },
-    }));
-  };
+    }))
+  }
 
   const handleCloseModal = (type) => {
     setModalStates((prev) => ({
@@ -125,8 +116,8 @@ const ViewMaintenance = () => {
         visible: false,
         maintenance: null,
       },
-    }));
-  };
+    }))
+  }
 
   const handlePageChange = (page) => {
     if (page !== currentPage) {
@@ -135,23 +126,23 @@ const ViewMaintenance = () => {
           page,
           limit: ITEMS_PER_PAGE,
           search: searchState.debouncedTerm,
-        })
-      );
+        }),
+      )
     }
-  };
+  }
 
   const handleDelete = async () => {
-    const maintenanceToDelete = modalStates.delete.maintenance;
+    const maintenanceToDelete = modalStates.delete.maintenance
     if (maintenanceToDelete?._id) {
       try {
-        await dispatch(deleteMaintenance(maintenanceToDelete._id));
-        handleCloseModal('delete');
-        fetchMaintenanceRequests();
+        await dispatch(deleteMaintenance(maintenanceToDelete._id))
+        handleCloseModal('delete')
+        fetchMaintenanceRequests()
       } catch (error) {
-        console.error('Delete error', error);
+        console.error('Delete error', error)
       }
     }
-  };
+  }
 
   const handleSubmit = async (formData, isEdit = false) => {
     try {
@@ -160,17 +151,17 @@ const ViewMaintenance = () => {
           updateMaintenance({
             id: modalStates.edit.maintenance._id,
             maintenanceData: formData,
-          })
-        );
+          }),
+        )
       } else {
-        await dispatch(addMaintenance(formData));
+        await dispatch(addMaintenance(formData))
       }
-      handleCloseModal(isEdit ? 'edit' : 'tenantRequest');
-      fetchMaintenanceRequests();
+      handleCloseModal(isEdit ? 'edit' : 'tenantRequest')
+      fetchMaintenanceRequests()
     } catch (error) {
-      console.error('Submission error', error);
+      console.error('Submission error', error)
     }
-  };
+  }
 
   return (
     <CRow>
@@ -180,10 +171,7 @@ const ViewMaintenance = () => {
             <strong>Maintenance Records</strong>
             {userPermissions?.addMaintenanceRecord && (
               <div id="container">
-                <button
-                  className="learn-more"
-                  onClick={() => handleOpenModal('tenantRequest')}
-                >
+                <button className="learn-more" onClick={() => handleOpenModal('tenantRequest')}>
                   <span className="circle" aria-hidden="true">
                     <span className="icon arrow"></span>
                   </span>
@@ -197,28 +185,26 @@ const ViewMaintenance = () => {
               type="text"
               placeholder="Search by tenant name or maintenance type"
               value={searchState.term}
-              onChange={(e) =>
-                setSearchState((prev) => ({ ...prev, term: e.target.value }))
-              }
+              onChange={(e) => setSearchState((prev) => ({ ...prev, term: e.target.value }))}
               className="mb-3"
             />
-           {loading ? (
-  <CSpinner />
-) : error ? (
-  <div className="text-danger">{error}</div>
-) : maintenanceRequests && maintenanceRequests.length > 0 ? (
-  <MaintenanceTable
-    maintenanceList={maintenanceRequests}
-    currentPage={currentPage}
-    totalPages={totalPages}
-    handleDelete={(maintenance) => handleOpenModal('delete', maintenance)}
-    handleEdit={(maintenance) => handleOpenModal('edit', maintenance)}
-    handleViewDetails={(maintenance) => handleOpenModal('details', maintenance)}
-    handlePageChange={handlePageChange}
-  />
-) : (
-  <div className="text-center text-muted">No maintenance records found.</div>
-)}
+            {loading ? (
+              <CSpinner />
+            ) : error ? (
+              <div className="text-danger">{error}</div>
+            ) : maintenances && maintenances.length > 0 ? (
+              <MaintenanceTable
+                maintenanceList={maintenances}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                handleDelete={(maintenance) => handleOpenModal('delete', maintenance)}
+                handleEdit={(maintenance) => handleOpenModal('edit', maintenance)}
+                handleViewDetails={(maintenance) => handleOpenModal('details', maintenance)}
+                handlePageChange={handlePageChange}
+              />
+            ) : (
+              <div className="text-center text-muted">No maintenance records found.</div>
+            )}
           </CCardBody>
         </CCard>
       </CCol>
@@ -250,7 +236,7 @@ const ViewMaintenance = () => {
         confirmDelete={handleDelete}
       />
     </CRow>
-  );
-};
+  )
+}
 
-export default ViewMaintenance;
+export default ViewMaintenance

@@ -1,35 +1,77 @@
-// Dashboard.scss
 .dashboard {
-    .animated-widget {
-      transition: transform 0.3s ease;
-      background-color: var(--cui-dark-background);
-      color: var(--cui-dark-color);
-    }
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease-in-out;
+}
+
+
+/* Widget Stats Styles */
+.animated-widget {
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  border-radius: 8px;
+}
+.animated-widget:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+/* Card Styles */
+.animated-card {
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.animated-card:hover{
+    transform: translateY(-3px);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+}
+
+/*Chart styles*/
+.chart-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+
+}
+.chart-header{
+    border-bottom: 1px solid #eee;
+    padding: 15px 20px;
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+.chart-body{
+    padding: 20px;
+}
+
+
+/* Table styles */
+
+.table-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+
+}
+.table-header{
+    border-bottom: 1px solid #eee;
+    padding: 15px 20px;
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+.table-body{
+    padding: 15px 10px;
+}
+.table-row-item {
+    transition: background-color 0.3s ease;
+  }
   
-    .animated-widget:hover {
-      transform: translateY(-5px);
-    }
-  
-    .animated-card {
-      transition: box-shadow 0.3s ease, transform 0.3s ease;
-      background-color: var(--cui-dark-background);
-      color: var(--cui-dark-color);
-    }
-  
-    .animated-card:hover {
-      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
-      transform: translateY(-5px);
-    }
-  
-    body[data-theme='dark'] & {
-      .animated-widget {
-        background-color: #343a40;
-        color: #f8f9fa;
-      }
-  
-      .animated-card {
-        background-color: #343a40;
-        color: #f8f9fa;
-      }
-    }
+  .table-row-item:hover {
+    background-color: #f0f0f0;
+  }
+  .table-row-item td{
+      padding: 10px 8px;
+      vertical-align: middle;
   }

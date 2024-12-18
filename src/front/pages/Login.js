@@ -207,12 +207,12 @@ const Login = () => {
               >
                 <CButton
                   type="submit"
-                  color="primary"
+                  color="dark"
                   style={{
                     width: '100%',
                     marginTop: '1.5rem',
                     marginBottom: '1rem',
-                    backgroundColor: '#007bff',
+                    backgroundColor: 'dark',
                   }}
                   disabled={loading}
                 >
@@ -224,7 +224,7 @@ const Login = () => {
               <a
                 href="/"
                 style={{
-                  color: '#007bff',
+                  color: 'black',
                   textDecoration: 'none',
                 }}
               >

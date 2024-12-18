@@ -1,114 +1,133 @@
 import httpCommon from "../http-common";
+import { encryptData, decryptData } from '../utils/crypto';
 
 class AgreementService {
-  constructor() {
-    this.baseURL = `${httpCommon.defaults.baseURL}/lease`;
-  }
-
-  getAuthHeader() {
-    const token = localStorage.getItem("token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-
-  async fetchAgreements(page = 1, limit = 5, searchTerm = "") {
-    try {
-      const response = await httpCommon.get(`${this.baseURL}`, {
-        headers: this.getAuthHeader(),
-        params: { page, limit, search: searchTerm },
-      });
-
-      const { data } = response.data;
-
-      return {
-        agreements: data?.leases || [],
-        totalPages: data?.totalPages || 1,
-        currentPage: data?.currentPage || page,
-      };
-    } catch (error) {
-      this.handleError(error, "Failed to fetch agreements");
+    constructor() {
+        this.baseURL = `${httpCommon.defaults.baseURL}/lease`;
+        this.defaultHeaders = {
+            'Content-Type': 'application/json',
+        };
     }
-  }
 
-  async addAgreement(agreementData) {
-    return this.handleRequest(
-      () =>
-        httpCommon.post(`${this.baseURL}`, agreementData, {
-          headers: { ...this.getAuthHeader(), "Content-Type": "application/json" },
-        }),
-      "Failed to add agreement"
-    );
-  }
+    getAuthHeader() {
+         try {
+             const encryptedToken = localStorage.getItem('token');
+             if (!encryptedToken) {
+                 console.warn('No token found in local storage');
+                 return {};
+             }
 
-  async updateAgreement(id, agreementData) {
-    return this.handleRequest(
-      () =>
-        httpCommon.put(`${this.baseURL}/${id}`, agreementData, {
-          headers: { ...this.getAuthHeader(), "Content-Type": "application/json" },
-        }),
-      "Failed to update agreement"
-    );
-  }
+             const token = decryptData(encryptedToken);
+             if (!token) {
+                 console.warn('Failed to decrypt token');
+                 return {};
+             }
 
-  async deleteAgreement(id) {
-    return this.handleRequest(
-      () =>
-        httpCommon.delete(`${this.baseURL}/${id}`, {
-          headers: this.getAuthHeader(),
-        }),
-      "Failed to delete agreement"
-    );
-  }
+             return {
+                 Authorization: `Bearer ${token}`,
+             };
+         } catch (error) {
+             console.error('Error getting authorization header:', error.message);
+             return {};
+         }
+     }
 
-  async uploadAgreementFile(id, file) {
-    const formData = new FormData();
-    formData.append("file", file);
 
-    return this.handleRequest(
-      () =>
-        httpCommon.post(`${this.baseURL}/${id}/file`, formData, {
-          headers: { ...this.getAuthHeader(), "Content-Type": "multipart/form-data" },
-        }),
-      "Failed to upload agreement file"
-    );
-  }
+    async fetchAgreements(page = 1, limit = 5, searchTerm = "") {
+        try {
+            const response = await httpCommon.get(this.baseURL, {
+                headers: this.getAuthHeader(),
+                params: { page, limit, search: searchTerm },
+            });
 
-  async downloadAgreementFile(fileName) {
-    if (!fileName) throw new Error("File name is required for download");
+            const { data } = response.data;
 
-    try {
-      const response = await httpCommon.get(`${this.baseURL}/download/${fileName}`, {
-        headers: this.getAuthHeader(),
-        responseType: "blob", // Treat response as file blob
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", fileName); // Set downloaded file name
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      this.handleError(error, "Failed to download file");
+            return {
+                agreements: data?.leases || [],
+                totalPages: data?.totalPages || 1,
+                currentPage: data?.currentPage || page,
+            };
+        } catch (error) {
+            throw this.handleError(error, "Failed to fetch agreements");
+        }
     }
-  }
 
-  async handleRequest(requestFn, defaultErrorMessage) {
-    try {
-      const response = await requestFn();
-      return response.data?.data || response.data;
-    } catch (error) {
-      this.handleError(error, defaultErrorMessage);
+    async addAgreement(agreementData) {
+        try {
+            const response = await httpCommon.post(this.baseURL, agreementData, {
+                headers: { ...this.getAuthHeader(), ...this.defaultHeaders },
+            });
+            return response.data?.data;
+        } catch (error) {
+            throw this.handleError(error, "Failed to add agreement");
+        }
     }
-  }
 
-  handleError(error, defaultMessage = "An error occurred") {
-    console.error("API Error:", error.response?.data || error.message);
-    throw {
-      message: error.response?.data?.message || defaultMessage,
-      status: error.response?.status || 500,
-    };
-  }
+    async updateAgreement(id, agreementData) {
+        try {
+            const response = await httpCommon.put(`${this.baseURL}/${id}`, agreementData, {
+                headers: { ...this.getAuthHeader(), ...this.defaultHeaders },
+            });
+            return response.data?.data;
+        } catch (error) {
+            throw this.handleError(error, "Failed to update agreement");
+        }
+    }
+
+    async deleteAgreement(id) {
+        try {
+            await httpCommon.delete(`${this.baseURL}/${id}`, {
+                headers: this.getAuthHeader(),
+            });
+            return id;
+        } catch (error) {
+            throw this.handleError(error, "Failed to delete agreement");
+        }
+    }
+
+    async uploadAgreementFile(id, file) {
+         try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+             const response =  await httpCommon.post(`${this.baseURL}/${id}/file`, formData, {
+                headers: { ...this.getAuthHeader(), "Content-Type": "multipart/form-data" },
+            });
+            return response.data?.data;
+        } catch (error) {
+            throw this.handleError(error, "Failed to upload agreement file");
+        }
+    }
+
+
+    async downloadAgreementFile(fileName) {
+        if (!fileName) throw new Error("File name is required for download");
+
+        try {
+             const response = await httpCommon.get(`${this.baseURL}/download/${fileName}`, {
+                headers: this.getAuthHeader(),
+                responseType: "blob",
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            throw this.handleError(error, "Failed to download file");
+        }
+    }
+
+    handleError(error, defaultMessage) {
+        console.error("API Error:", error.response?.data || error.message);
+        throw {
+            message: error.response?.data?.message || error.message || defaultMessage,
+            status: error.response?.status || 500,
+        };
+    }
 }
 
 export default new AgreementService();

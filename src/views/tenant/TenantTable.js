@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   CTable,
   CTableBody,
@@ -28,6 +29,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import placeholder from '../image/placeholder.png';
 import { decryptData } from '../../api/utils/crypto';
+import  TenantDetailsModal from './TenantDetailsModal'
+import { setSelectedTenant, clearError } from '../../api/slice/TenantSlice';
 
 const TenantTable = ({
   tenants = [],
@@ -39,24 +42,27 @@ const TenantTable = ({
   handleEdit,
   handleDelete,
   handlePageChange,
-  handleViewDetails,
   handleFetchTenants,
   itemsPerPage = 5,
 }) => {
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-  const [userPermissions, setUserPermissions] = useState(null);
+    const dispatch = useDispatch();
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+    const [userPermissions, setUserPermissions] = useState(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const selectedTenant = useSelector(state => state.tenant.selectedTenant);
+    const tenantDetails = useSelector(state => state.tenant.tenantDetails)
 
-  useEffect(() => {
-    const encryptedUser = localStorage.getItem('user');
-    if (encryptedUser) {
-      const decryptedUser = decryptData(encryptedUser);
-      if (decryptedUser && decryptedUser.permissions) {
-        setUserPermissions(decryptedUser.permissions);
-      }
-    }
-  }, []);
+    useEffect(() => {
+        const encryptedUser = localStorage.getItem('user');
+        if (encryptedUser) {
+        const decryptedUser = decryptData(encryptedUser);
+        if (decryptedUser && decryptedUser.permissions) {
+            setUserPermissions(decryptedUser.permissions);
+        }
+        }
+    }, []);
 
-  const handleSort = (key) => {
+    const handleSort = (key) => {
     setSortConfig((prevConfig) => {
       const direction =
         prevConfig.key === key && prevConfig.direction === 'ascending' ? 'descending' : 'ascending';
@@ -64,22 +70,22 @@ const TenantTable = ({
     });
   };
 
-  const sortedTenants = useMemo(() => {
-    if (!sortConfig.key) return tenants;
+    const sortedTenants = useMemo(() => {
+        if (!sortConfig.key) return tenants;
 
-    return [...tenants].sort((a, b) => {
-      const aKey = a[sortConfig.key] || '';
-      const bKey = b[sortConfig.key] || '';
+        return [...tenants].sort((a, b) => {
+        const aKey = a[sortConfig.key] || '';
+        const bKey = b[sortConfig.key] || '';
 
-      if (aKey < bKey) {
-        return sortConfig.direction === 'ascending' ? -1 : 1;
-      }
-      if (aKey > bKey) {
-        return sortConfig.direction === 'ascending' ? 1 : -1;
-      }
-      return 0;
-    });
-  }, [tenants, sortConfig]);
+        if (aKey < bKey) {
+            return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aKey > bKey) {
+            return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+        });
+    }, [tenants, sortConfig]);
 
   const csvData = tenants.map((tenant, index) => ({
     index: (currentPage - 1) * itemsPerPage + index + 1,
@@ -128,8 +134,13 @@ const TenantTable = ({
   
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, handleFetchTenants]);
-  
-  
+
+    const handleViewDetails = (id) => {
+      dispatch(setSelectedTenant(id));
+      setIsModalVisible(true);
+      dispatch(clearError())
+          };
+          
   return (
     <div>
       <div className="d-flex mb-3 gap-2">
@@ -240,14 +251,14 @@ const TenantTable = ({
                     </CButton>
                   )}
                   <CButton
-  color="light"
-  size="sm"
-  className="ms-2"
-  title="View Details"
-  onClick={() => handleViewDetails(tenant._id)} // Pass tenant ID to fetch details
->
-  <CIcon icon={cilZoom} />
-</CButton>
+                  color="light"
+                  size="sm"
+                  className="ms-2"
+                  title="View Details"
+                  onClick={() => handleViewDetails(tenant._id)} // Pass tenant ID to fetch details
+                  >
+                  <CIcon icon={cilZoom} />
+                  </CButton>
                 </CTableDataCell>
               </CTableRow>
             ))}
@@ -257,13 +268,13 @@ const TenantTable = ({
 
       <CPagination className="mt-3">
         <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
-          &laquo;
+          «
         </CPaginationItem>
         <CPaginationItem
           disabled={currentPage === 1}
           onClick={() => handlePageChange(currentPage - 1)}
         >
-          &lsaquo;
+          ‹
         </CPaginationItem>
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
           <CPaginationItem
@@ -278,15 +289,20 @@ const TenantTable = ({
           disabled={currentPage === totalPages}
           onClick={() => handlePageChange(currentPage + 1)}
         >
-          &rsaquo;
+          ›
         </CPaginationItem>
         <CPaginationItem
           disabled={currentPage === totalPages}
           onClick={() => handlePageChange(totalPages)}
         >
-          &raquo;
+          »
         </CPaginationItem>
       </CPagination>
+        <TenantDetailsModal
+          visible={isModalVisible}
+            setVisible={setIsModalVisible}
+            tenantDetails={tenantDetails}
+        />
     </div>
   );
 };

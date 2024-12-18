@@ -27,12 +27,12 @@ const maintenanceSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchMaintenances.fulfilled, (state, action) => {
-        const { data } = action.payload;
-        state.maintenances = data.maintenances || [];
-        state.totalPages = data.totalPages || 1;
-        state.currentPage = data.currentPage || 1;
-        state.totalMaintenances = data.totalRequests || 0;
-        state.loading = false;
+        const { data } = action.payload
+        state.maintenances = data.maintenanceRequests || []
+        state.totalPages = data.totalPages || 1
+        state.currentPage = data.currentPage || 1
+        state.totalMaintenances = data.totalRequests || 0
+        state.loading = false
       })
       .addCase(fetchMaintenances.rejected, (state, action) => {
         state.loading = false;

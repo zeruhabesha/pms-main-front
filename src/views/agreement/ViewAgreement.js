@@ -28,7 +28,6 @@ import {
   updateAgreement,
   deleteAgreement,
 } from "../../api/actions/AgreementActions";
-
 import {
   setSelectedAgreement,
   clearSelectedAgreement,
@@ -48,19 +47,10 @@ const ViewAgreement = () => {
   const itemsPerPage = 5;
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await dispatch(fetchAgreements({ page: currentPage, limit: itemsPerPage })).unwrap();
-      } catch (error) {
-        console.error("Error fetching agreements:", error.message || error);
-        toast.error("Failed to fetch agreements.");
-      }
-    };
+    dispatch(fetchAgreements({ page: currentPage, limit: itemsPerPage }));
+  }, [dispatch, currentPage, itemsPerPage]);
 
-    fetchData();
-  }, [dispatch, currentPage]);
-
-  const handleSearch = (e) => {
+    const handleSearch = (e) => {
     dispatch(fetchAgreements({ page: 1, limit: itemsPerPage, searchTerm: e.target.value }));
   };
 
@@ -69,33 +59,39 @@ const ViewAgreement = () => {
     setModalVisible(true);
   };
 
+
   const handleDelete = async (id) => {
-    try {
-      await dispatch(deleteAgreement(id)).unwrap();
-      toast.success("Agreement deleted successfully.");
-    } catch (error) {
-      toast.error("Failed to delete the agreement.");
-    }
+      try {
+          await dispatch(deleteAgreement(id)).unwrap();
+          toast.success("Agreement deleted successfully.");
+      } catch (err) {
+           toast.error(err.message || "Failed to delete the agreement.");
+       }
   };
+
+
 
   const handleSave = async (formData) => {
-    try {
-      if (!formData.tenant || !formData.property) {
-        throw new Error("Tenant and Property are required fields.");
-      }
-
-      if (selectedAgreement) {
-        await dispatch(updateAgreement({ id: selectedAgreement._id, agreementData: formData })).unwrap();
-        toast.success("Agreement updated successfully.");
-      } else {
-        await dispatch(addAgreement(formData)).unwrap();
-        toast.success("Agreement added successfully.");
-      }
-    } catch (error) {
-      console.error("Save Error:", error.message || error);
-      toast.error("Failed to save the agreement.");
+    if (!formData.tenant || !formData.property) {
+        toast.error("Tenant and Property are required fields.");
+      return;
     }
+    try {
+          if (selectedAgreement) {
+              await dispatch(
+                  updateAgreement({ id: selectedAgreement._id, agreementData: formData })
+              ).unwrap();
+              toast.success("Agreement updated successfully.");
+          } else {
+             await dispatch(addAgreement(formData)).unwrap();
+            toast.success("Agreement added successfully.");
+          }
+
+       } catch (err) {
+      toast.error(err.message || "Failed to save the agreement.");
+        }
   };
+
 
   const closeModal = () => {
     dispatch(clearSelectedAgreement());
@@ -164,11 +160,7 @@ const ViewAgreement = () => {
             </button>
           </CCardHeader>
           <CCardBody>
-            {error && (
-              <CAlert color="danger">
-                {typeof error === "object" ? error.message || JSON.stringify(error) : error}
-              </CAlert>
-            )}
+            {error && <CAlert color="danger">{error}</CAlert>}
             <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
               <CFormInput
                 type="text"
@@ -211,7 +203,10 @@ const ViewAgreement = () => {
                 onDelete={handleDelete}
                 currentPage={currentPage}
                 totalPages={totalPages}
-                handlePageChange={(page) => dispatch(fetchAgreements({ page, limit: itemsPerPage }))}
+                handlePageChange={(page) =>
+                  dispatch(fetchAgreements({ page, limit: itemsPerPage }))
+                }
+                itemsPerPage={itemsPerPage}
               />
             )}
           </CCardBody>

@@ -148,18 +148,19 @@ const ViewTenant = () => {
   const handleViewDetails = async (id) => {
     try {
       const response = await dispatch(getTenantById(id)).unwrap();
-      
+  
       if (!response) {
-        throw new Error("Tenant details not found");
+        throw new Error('Tenant details not found');
       }
   
       setTenantDetails(response);
       setDetailsModalVisible(true);
     } catch (error) {
-      console.error("Error fetching tenant details:", error);
-      toast.error(error.message || "Failed to fetch tenant details");
+      console.error('Error fetching tenant details:', error);
+      toast.error(error.message || 'Failed to fetch tenant details');
     }
   };
+  
   
   
 
