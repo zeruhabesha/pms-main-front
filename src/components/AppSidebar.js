@@ -43,7 +43,7 @@ const AppSidebar = () => {
         <img 
           src={logo}
           alt="BETA-PMS Logo" 
-          style={{ height: '90px', width: 'auto' }} 
+          style={{ height: '80px', width: 'auto' }} 
         />
         <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} />
       </CSidebarBrand>
