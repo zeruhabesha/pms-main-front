@@ -30,15 +30,29 @@ export const addProperty = createAsyncThunk(
 
 export const updateProperty = createAsyncThunk(
     PropertyTypes.UPDATE_PROPERTY,
-    async ({ id, propertyData }, { rejectWithValue }) => {
+    async ({ id, payload }, { rejectWithValue }) => { // Updated to accept a generic payload
         try {
-            const response = await propertyService.updateProperty(id, propertyData);
+            const response = await propertyService.updateProperty(id, payload);
             return response;
         } catch (error) {
             return rejectWithValue(error.message);
         }
     }
 );
+
+
+export const updatePropertyPhotos = createAsyncThunk(
+    PropertyTypes.UPDATE_PROPERTY_PHOTOS, // Corrected this to a new ActionType
+    async ({ id, photos }, { rejectWithValue }) => {
+        try {
+            const response = await propertyService.updatePropertyPhotos(id, photos);
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
 
 export const getTenantById = createAsyncThunk(
     'tenant/getTenantById',
@@ -88,29 +102,29 @@ export const getProperty = createAsyncThunk(
     }
 );
 
+// export const deletePhoto = createAsyncThunk(
+//     PropertyTypes.DELETE_PHOTO,
+//     async ({ propertyId, photoId }, { rejectWithValue }) => {
+//         try {
+//            const response =  await propertyService.deletePhoto(propertyId, photoId);
+//             return response; // Return the whole response including the success flag
+//         } catch (error) {
+//             return rejectWithValue(error.message);
+//         }
+//     }
+// );
 export const deletePhoto = createAsyncThunk(
     PropertyTypes.DELETE_PHOTO,
     async ({ propertyId, photoId }, { rejectWithValue }) => {
         try {
-            await propertyService.deletePhoto(propertyId, photoId);
-            return { propertyId, photoId };
+            const response = await propertyService.deletePhoto(propertyId, photoId);
+            return { success: true, photoId };
         } catch (error) {
             return rejectWithValue(error.message);
         }
     }
 );
 
-export const updatePropertyPhoto = createAsyncThunk(
-    PropertyTypes.UPDATE_PROPERTY_PHOTO,
-    async ({ id, photo }, { rejectWithValue }) => {
-        try {
-           const response = await propertyService.updatePhoto(id, photo);
-           return response;
-        } catch (error) {
-           return rejectWithValue(error.message);
-        }
-    }
-);
 
 export const batchDelete = createAsyncThunk(
     PropertyTypes.BATCH_DELETE,
@@ -158,4 +172,16 @@ export const downloadPhoto = createAsyncThunk(
           return rejectWithValue(error.message);
         }
     }
+);
+
+export const updatePhoto = createAsyncThunk(
+  PropertyTypes.UPDATE_PHOTO, // Changed the name here as well
+  async ({ id, photo, photoId }, { rejectWithValue }) => {
+      try {
+          const response = await propertyService.updatePhoto(id, {photo, photoId });
+          return response; // Return the entire response object
+      } catch (error) {
+          return rejectWithValue(error.message);
+      }
+  }
 );

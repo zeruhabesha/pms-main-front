@@ -8,6 +8,7 @@ import './scss/style.scss';
 // Lazy-loaded components
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'));
 const Login = React.lazy(() => import('./front/pages/Login'));
+const ResetPassword = React.lazy(() => import('./front/pages/ResetPassword'));
 const HomePage = React.lazy(() => import('./front/pages/HomePage'));
 const AboutPage = React.lazy(() => import('./front/pages/AboutPage'));
 const ContactPage = React.lazy(() => import('./front/pages/ContactPage'));
@@ -21,9 +22,15 @@ const SuperAdmin = React.lazy(() => import('./views/superadmin/SuperAdmin'));
 const Admin = React.lazy(() => import('./views/admin/Admin'));
 const User = React.lazy(() => import('./views/users/User'));
 const Agreement = React.lazy(() => import('./views/agreement/Agreement'));
+const AddAgreement = React.lazy(() => import('./views/agreement/AddAgreement'));
 const Tenant = React.lazy(() => import('./views/tenant/Tenant'));
+const AddTenant = React.lazy(() => import('./views/tenant/AddTenant'));
 const Maintenance = React.lazy(() => import('./views/maintenance/Maintenance'));
+const TenantRequestForm = React.lazy(() => import('./views/maintenance/TenantRequestForm'));
+const MaintenanceAssign = React.lazy(() => import('./views/maintenance/MaintenanceAssignPage'));
 const Property = React.lazy(() => import('./views/property/Property'));
+// const ViewProperty = React.lazy(() => import('./views/property/ViewProperty'));
+const AddProperty = React.lazy(() => import('./views/property/AddProperty'));
 const Report = React.lazy(() => import('./views/report/ComingSoon'));
 const Profile = React.lazy(() => import('./views/Profile/ViewProfile'));
 // Protected Route Component
@@ -58,6 +65,7 @@ const App = () => {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/resetpassword" element={<ResetPassword />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/clients" element={<ClientsPage />} />
@@ -74,9 +82,18 @@ const App = () => {
             <Route path="/account/admin" element={<ProtectedRoute element={Admin} />} />
             <Route path="/account/users" element={<ProtectedRoute element={User} />} />
             <Route path="/agreement" element={<ProtectedRoute element={Agreement} />} />
+            <Route path="/agreement/add"  element={<ProtectedRoute element={AddAgreement} />} />
+            <Route path="/agreement/edit/:id"  element={<ProtectedRoute element={AddAgreement} />} />
             <Route path="/tenant" element={<ProtectedRoute element={Tenant} />} />
+            <Route path="/tenant/add" element={<ProtectedRoute element={AddTenant} />} />
+            <Route path="/tenant/edit/:id" element={<ProtectedRoute element={AddTenant} />} />
             <Route path="/maintenance" element={<ProtectedRoute element={Maintenance} />} />
+            <Route path="/maintenance/add"  element={<ProtectedRoute element={TenantRequestForm} />} />
+            <Route path="/maintenance/edit/:id"  element={<ProtectedRoute element={TenantRequestForm} />} />
+            <Route path="/maintenance/assign/:id"  element={<ProtectedRoute element={MaintenanceAssign} />} />
             <Route path="/property" element={<ProtectedRoute element={Property} />} />
+            <Route path="/property/edit/:id" element={<ProtectedRoute element={AddProperty} />} />
+            <Route path="/property/add" element={<ProtectedRoute element={AddProperty} />} />
             <Route path="/report" element={<ProtectedRoute element={Report} />} />
             <Route path="/profile" element={<ProtectedRoute element={Profile} />} />
           </Route>

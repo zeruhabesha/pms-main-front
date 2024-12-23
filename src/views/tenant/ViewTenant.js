@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { CRow, CCol, CCard, CCardHeader, CCardBody, CAlert } from '@coreui/react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchTenants, addTenant, updateTenant, deleteTenant } from '../../api/actions/TenantActions';
+import { fetchTenants, deleteTenant } from '../../api/actions/TenantActions';
 import TenantTable from './TenantTable';
-import TenantModal from './TenantModal';
 import TenantDeleteModal from './TenantDeleteModal';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -12,8 +11,10 @@ import TenantPhotoModal from './TenantPhotoModal';
 import debounce from 'lodash/debounce';
 import { uploadUserPhoto } from '../../api/actions/userActions';
 import { decryptData } from '../../api/utils/crypto';
-import TenantDetailsModal from "./TenantDetailsModal"; // Import the modal component
+import TenantDetailsModal from "./TenantDetailsModal";
 import { createSelector } from '@reduxjs/toolkit';
+import { Link } from 'react-router-dom'; // Import Link
+import { useNavigate } from 'react-router-dom';
 
 const selectTenantState = createSelector(
   (state) => state.tenant,
@@ -28,13 +29,12 @@ const selectTenantState = createSelector(
 
 const ViewTenant = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { tenants, loading, error, totalPages, currentPage } = useSelector(selectTenantState);
 
   const [editPhotoVisible, setEditPhotoVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [tenantModalVisible, setTenantModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [editingTenant, setEditingTenant] = useState(null);
   const [tenantToDelete, setTenantToDelete] = useState(null);
   const [userToEdit, setUserToEdit] = useState(null);
   const itemsPerPage = 5;
@@ -78,19 +78,12 @@ const ViewTenant = () => {
       dispatch(fetchTenants({ page, limit: itemsPerPage, search: searchTerm }));
     }
   };
-
   const handleAddTenant = () => {
-    setEditingTenant(null);
-    setTenantModalVisible(true);
-  };
-
-  const handleEdit = (tenant) => {
-    if (tenant) {
-      setEditingTenant(tenant);
-      setTenantModalVisible(true);
-    }
-  };
-
+     navigate('/tenant/add')
+   };
+  const handleEdit = (id) => {
+     navigate(`/tenant/edit/${id}`);
+   };
   const handleDelete = (id, tenant) => {
     setTenantToDelete({ id, ...tenant });
     setDeleteModalVisible(true);
@@ -110,21 +103,6 @@ const ViewTenant = () => {
     }
   };
 
-  const handleSave = async (updatedData) => {
-    try {
-      if (editingTenant && editingTenant.id) {
-        await dispatch(updateTenant({ id: editingTenant.id, tenantData: updatedData })).unwrap();
-        toast.success('Tenant updated successfully');
-      } else {
-        await dispatch(addTenant(updatedData)).unwrap();
-        toast.success('Tenant added successfully');
-      }
-      dispatch(fetchTenants({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
-      setTenantModalVisible(false);
-    } catch (error) {
-      toast.error(error.message || 'Failed to save tenant');
-    }
-  };
 
   const handleEditPhoto = (user) => {
     setUserToEdit(user);
@@ -161,10 +139,6 @@ const ViewTenant = () => {
     }
   };
   
-  
-  
-
-
   return (
     <CRow>
       <CCol xs={12}>
@@ -188,34 +162,25 @@ const ViewTenant = () => {
                 {error.message || 'Failed to fetch tenants'}
               </CAlert>
             )}
-
-
-<TenantTable
-  tenants={tenants}
-  currentPage={currentPage}
-  totalPages={totalPages}
-  searchTerm={searchTerm}
-  setSearchTerm={setSearchTerm}
-  handleEdit={handleEdit}
-  handleEditPhoto={handleEditPhoto}
-  handleDelete={handleDelete}
-  handlePageChange={handlePageChange}
-  handleViewDetails={handleViewDetails}
-  handleFetchTenants={handleFetchTenants} // Pass here
-/>
-
-
+            <TenantTable
+                tenants={tenants}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                handleEdit={handleEdit}
+                handleEditPhoto={handleEditPhoto}
+                handleDelete={handleDelete}
+                handlePageChange={handlePageChange}
+                handleViewDetails={handleViewDetails}
+                handleFetchTenants={handleFetchTenants}
+              />
 
           </CCardBody>
         </CCard>
       </CCol>
 
-      <TenantModal
-        visible={tenantModalVisible}
-        setVisible={setTenantModalVisible}
-        editingTenant={editingTenant}
-        handleSave={handleSave}
-      />
+     
       <TenantDeleteModal
         visible={deleteModalVisible}
         setDeleteModalVisible={setDeleteModalVisible}

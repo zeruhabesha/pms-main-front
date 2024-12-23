@@ -14,6 +14,19 @@ export const fetchAgreements = createAsyncThunk(
     }
 );
 
+// Fetch a single agreement
+export const fetchAgreement = createAsyncThunk(
+    "agreement/fetchAgreement",
+    async (id, { rejectWithValue }) => {
+        try {
+            const response = await AgreementService.fetchAgreement(id);
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
 // Add agreement
 export const addAgreement = createAsyncThunk(
     "agreement/addAgreement",

@@ -1,77 +1,139 @@
 .dashboard {
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease-in-out;
-}
-
-
-/* Widget Stats Styles */
-.animated-widget {
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-  border-radius: 8px;
-}
-.animated-widget:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  }
-/* Card Styles */
-.animated-card {
-    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-    border-radius: 12px;
-    overflow: hidden;
-}
-.animated-card:hover{
-    transform: translateY(-3px);
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
-}
-
-/*Chart styles*/
-.chart-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
-
-}
-.chart-header{
-    border-bottom: 1px solid #eee;
-    padding: 15px 20px;
-    font-weight: 600;
-    background-color: #f8f9fa;
-}
-.chart-body{
     padding: 20px;
-}
-
-
-/* Table styles */
-
-.table-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
-
-}
-.table-header{
-    border-bottom: 1px solid #eee;
-    padding: 15px 20px;
-    font-weight: 600;
     background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+
+    .animated-widget {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 1.2rem;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #2c3e50, #34495e);
+      color: #ffffff;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      }
+
+      .c-widget-stats-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #e0e0e0;
+      }
+
+      .c-widget-stats-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #ffffff;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+      }
+
+      .chart-container {
+        width: 100%;
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 0.5rem;
+
+        svg {
+          width: 100%;
+          height: auto;
+        }
+      }
+    }
+    /* Widget Stats Styles */
+    .animated-widget {
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        border-radius: 8px;
+    }
+
+    .animated-widget:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Card Styles */
+    .animated-card {
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .animated-card:hover{
+        transform: translateY(-3px);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    /*Chart styles*/
+    .chart-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+
+    }
+
+    .chart-header{
+        border-bottom: 1px solid #eee;
+        padding: 15px 20px;
+        font-weight: 600;
+        background-color: #f8f9fa;
+    }
+
+    .chart-body{
+        padding: 20px;
+    }
+
+
+    /* Table styles */
+
+    .table-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+
+    }
+
+    .table-header{
+        border-bottom: 1px solid #eee;
+        padding: 15px 20px;
+        font-weight: 600;
+        background-color: #f8f9fa;
+    }
+
+    .table-body{
+        padding: 15px 10px;
+    }
+
+    .table-row-item {
+        transition: background-color 0.3s ease;
+    }
+
+    .table-row-item:hover {
+        background-color: #f0f0f0;
+    }
+
+    .table-row-item td{
+        padding: 10px 8px;
+        vertical-align: middle;
+    }
+
+
 }
-.table-body{
-    padding: 15px 10px;
-}
-.table-row-item {
-    transition: background-color 0.3s ease;
-  }
-  
-  .table-row-item:hover {
-    background-color: #f0f0f0;
-  }
-  .table-row-item td{
-      padding: 10px 8px;
-      vertical-align: middle;
-  }
+
+
+
+

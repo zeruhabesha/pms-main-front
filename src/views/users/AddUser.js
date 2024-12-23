@@ -123,7 +123,7 @@ const AddUser = ({ visible, setVisible, editingUser }) => {
 
   return (
     <CModal visible={visible} onClose={handleClose} alignment="center" backdrop="static" size="lg">
-      <CModalHeader className="bg-secondary text-white">
+      <CModalHeader color="dark">
         <CModalTitle>{editingUser ? 'Edit User' : 'Add User'}</CModalTitle>
       </CModalHeader>
       <CModalBody>

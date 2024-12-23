@@ -1,10 +1,13 @@
+// tenantSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 import {
   fetchTenants,
-  addTenant,
-  updateTenant,
+    addTenant,
+    updateTenant,
   deleteTenant,
-  uploadTenantPhoto
+  uploadTenantPhoto,
+  fetchTenantById,
+    generateTenantReport
 } from "../actions/TenantActions";
 
 const initialState = {
@@ -14,8 +17,10 @@ const initialState = {
   totalPages: 1,
   currentPage: 1,
   totalTenants: 0,
-  selectedTenant: null,
-  tenantDetails: null,  // Add this to store the details of a single tenant
+    selectedTenant: null,
+    tenantDetails: null,  // Add this to store the details of a single tenant
+  report:null,
+  reportLoading: false
 };
 
 const tenantSlice = createSlice({
@@ -29,18 +34,20 @@ const tenantSlice = createSlice({
       state.totalPages = 1;
       state.currentPage = 1;
       state.totalTenants = 0;
-      state.selectedTenant = null;
-      state.tenantDetails = null
+        state.selectedTenant = null;
+        state.tenantDetails = null
+        state.report = null;
+        state.reportLoading = false;
     },
       setSelectedTenant: (state, action) => {
-      state.selectedTenant = action.payload;
-        state.tenantDetails = state.tenants.find(tenant => tenant._id === action.payload) || null;
-    },
+          state.selectedTenant = action.payload;
+           state.tenantDetails = state.tenants.find(tenant => tenant._id === action.payload) || null;
+      },
     clearError: (state) => {
       state.error = null;
     },
   },
-  extraReducers: (builder) => {
+    extraReducers: (builder) => {
     builder
       .addCase(fetchTenants.pending, (state) => {
         state.loading = true;
@@ -55,11 +62,24 @@ const tenantSlice = createSlice({
       })
       .addCase(fetchTenants.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || "Failed to fetch tenants";
+        state.error = action.payload?.message || "Failed to fetch tenants";
       })
+        .addCase(fetchTenantById.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        })
+        .addCase(fetchTenantById.fulfilled, (state, action) => {
+            state.loading = false;
+            state.tenantDetails = action.payload;
+        })
+        .addCase(fetchTenantById.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload?.message || "Failed to fetch tenant details";
+        })
       // Handle other actions like addTenant, updateTenant, etc.
       .addCase(addTenant.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(addTenant.fulfilled, (state, action) => {
         state.loading = false;
@@ -67,11 +87,64 @@ const tenantSlice = createSlice({
       })
       .addCase(addTenant.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+          state.error = action.payload?.message || "Failed to add tenant";
       })
+        .addCase(updateTenant.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        })
+        .addCase(updateTenant.fulfilled, (state, action) => {
+            state.loading = false;
+          const updatedTenant = action.payload;
+            state.tenants = state.tenants.map(tenant => tenant._id === updatedTenant._id ? updatedTenant : tenant);
+            state.tenantDetails = updatedTenant
+        })
+        .addCase(updateTenant.rejected, (state, action) => {
+            state.loading = false;
+           state.error = action.payload?.message || "Failed to update tenant";
+        })
+       .addCase(uploadTenantPhoto.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(uploadTenantPhoto.fulfilled, (state, action) => {
+        state.loading = false;
+           const updatedTenant = action.payload;
+          state.tenants = state.tenants.map(tenant => tenant._id === updatedTenant.id ? updatedTenant : tenant);
+            state.tenantDetails = updatedTenant
+      })
+      .addCase(uploadTenantPhoto.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || "Failed to upload photo";
+      })
+        .addCase(deleteTenant.pending, (state) => {
+          state.loading = true;
+          state.error = null
+      })
+        .addCase(deleteTenant.fulfilled, (state, action) => {
+            state.loading = false;
+            state.tenants = state.tenants.filter((tenant) => tenant._id !== action.payload);
+            state.selectedTenant = null;
+        })
+       .addCase(deleteTenant.rejected, (state, action) => {
+            state.loading = false;
+           state.error = action.payload?.message || "Failed to delete tenant";
+      })
+        .addCase(generateTenantReport.pending, (state) => {
+            state.reportLoading = true;
+            state.error = null
+        })
+        .addCase(generateTenantReport.fulfilled, (state, action) => {
+            state.reportLoading = false;
+            state.report = action.payload;
+        })
+       .addCase(generateTenantReport.rejected, (state, action) => {
+          state.reportLoading = false;
+          state.error = action.payload?.message || "Failed to generate report";
+        })
   },
 });
 
 export const { resetState, setSelectedTenant, clearError } = tenantSlice.actions;
-export { fetchTenants };
+export { fetchTenants,  fetchTenantById,  updateTenant, deleteTenant, uploadTenantPhoto, generateTenantReport };
 export default tenantSlice.reducer;

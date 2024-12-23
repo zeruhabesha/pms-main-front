@@ -10,10 +10,21 @@ import {
   CPagination,
   CPaginationItem,
   CFormInput,
-  CCollapse,
 } from '@coreui/react';
 import { CIcon } from '@coreui/icons-react';
-import { cilPencil, cilTrash, cilCheckCircle, cilXCircle, cilPlus, cilMinus, cilShieldAlt, cilArrowTop, cilArrowBottom, cilFile, cilClipboard, cilCloudDownload } from '@coreui/icons';
+import {
+  cilPencil,
+  cilTrash,
+  cilCheckCircle,
+  cilXCircle,
+  cilFile,
+  cilClipboard,
+  cilCloudDownload,
+  cilFullscreen,
+  cilUser,
+  cilSettings,
+  cilSearch
+} from '@coreui/icons';
 import placeholder from '../image/placeholder.png';
 import PermissionsModal from './PermissionsModal';
 import { ToastContainer, toast } from 'react-toastify';
@@ -22,6 +33,7 @@ import { CopyToClipboard } from 'react-copy-to-clipboard';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import 'react-toastify/dist/ReactToastify.css';
+import UserDetailsModal from './UserDetailsModal';
 
 const UserTable = ({
   users,
@@ -35,17 +47,10 @@ const UserTable = ({
   handlePageChange,
   itemsPerPage = 5,
 }) => {
-  const [expandedRows, setExpandedRows] = useState({});
-  const [permissionsModalVisible, setPermissionsModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [permissionsModalVisible, setPermissionsModalVisible] = useState(false);
+  const [userDetailsModalVisible, setUserDetailsModalVisible] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-
-  const toggleRow = (userId) => {
-    setExpandedRows((prev) => ({
-      ...prev,
-      [userId]: !prev[userId],
-    }));
-  };
 
   const handleSort = (key) => {
     setSortConfig((prevConfig) => {
@@ -71,6 +76,19 @@ const UserTable = ({
       return 0;
     });
   }, [users, sortConfig]);
+
+  const getRoleIcon = (role) => {
+    switch (role?.toLowerCase()) {
+      case 'user':
+        return <CIcon icon={cilUser} className="text-primary" title="User" />;
+      case 'maintenance':
+        return <CIcon icon={cilSettings} className="text-warning" title="Maintenance" />;
+      case 'inspector':
+        return <CIcon icon={cilSearch} className="text-success" title="Inspector" />;
+      default:
+        return null;
+    }
+  };
 
   const csvData = users.map((user, index) => ({
     index: (currentPage - 1) * itemsPerPage + index + 1,
@@ -113,7 +131,7 @@ const UserTable = ({
   const renderPaginationItems = () => {
     const items = [];
     const maxVisiblePages = 5;
-  
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         items.push(
@@ -128,14 +146,14 @@ const UserTable = ({
       }
       return items;
     }
-  
+
     let startPage = Math.max(1, currentPage - 2);
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-  
+
     if (endPage === totalPages) {
       startPage = Math.max(1, totalPages - maxVisiblePages + 1);
     }
-  
+
     if (startPage > 1) {
       items.push(
         <CPaginationItem
@@ -154,7 +172,7 @@ const UserTable = ({
         );
       }
     }
-  
+
     for (let i = startPage; i <= endPage; i++) {
       items.push(
         <CPaginationItem
@@ -166,7 +184,7 @@ const UserTable = ({
         </CPaginationItem>
       );
     }
-  
+
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         items.push(
@@ -185,43 +203,20 @@ const UserTable = ({
         </CPaginationItem>
       );
     }
-  
+
     return items;
   };
 
-  const handlePermissionsClose = () => {
-    setPermissionsModalVisible(false); // Close the modal
-    setSelectedUser(null);            // Clear the selected user
+  const handleUserDetailsClick = (user) => {
+    setSelectedUser(user);
+    setUserDetailsModalVisible(true);
   };
-  
-  const handlePermissionsSave = async (updatedUser) => {
-    try {
-      // Dispatch an action or call your API to update user permissions
-      await dispatch(
-        updateUserPermissions({
-          userId: updatedUser._id,
-          permissions: updatedUser.permissions, // Adjust based on your data structure
-        })
-      ).unwrap();
-  
-      // Show success notification
-      toast.success('Permissions updated successfully!');
-  
-      // Close the modal and refresh the user list
-      setPermissionsModalVisible(false);
-      setSelectedUser(null);
-      dispatch(fetchUsers({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
-    } catch (error) {
-      // Handle error and show a notification
-      toast.error('Failed to update permissions');
-    }
+
+  const handleUserDetailsClose = () => {
+    setSelectedUser(null);
+    setUserDetailsModalVisible(false);
   };
-  
-  const handlePermissionsClick = (user) => {
-    setSelectedUser(user); // Set the user whose permissions are being edited
-    setPermissionsModalVisible(true); // Open the modal
-  };
-  
+
   return (
     <div>
       <div className="d-flex mb-3 gap-2">
@@ -251,7 +246,7 @@ const UserTable = ({
         </div>
         <CFormInput
           type="text"
-          placeholder="Search by name, email, or role"
+          placeholder="Search by name, email, role, or status"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-100%"
@@ -281,92 +276,68 @@ const UserTable = ({
                   <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
                 )}
               </CTableHeaderCell>
-              <CTableHeaderCell onClick={() => handleSort('role')} style={{ cursor: 'pointer' }}>
-                Role
-                {sortConfig.key === 'role' && (
-                  <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
-                )}
-              </CTableHeaderCell>
+              <CTableHeaderCell>Role</CTableHeaderCell>
               <CTableHeaderCell>Status</CTableHeaderCell>
               <CTableHeaderCell>Actions</CTableHeaderCell>
             </CTableRow>
           </CTableHead>
           <CTableBody>
             {sortedUsers.map((user, index) => (
-              <React.Fragment key={user._id || `row-${index}`}>
-                <CTableRow>
-                  <CTableDataCell>{(currentPage - 1) * itemsPerPage + index + 1}</CTableDataCell>
-                  <CTableDataCell>
-                    <img
-                      src={user?.photo ? `http://localhost:4000/api/v1/users/${user._id}/photo` : placeholder}
-                      alt="User"
-                      style={{ width: '50px', height: '50px', borderRadius: '50%' }}
-                      className="me-2"
-                    />
-                    <CButton color="light" size="sm" onClick={() => handleEditPhoto(user)} title="Edit photo">
-                      <CIcon icon={cilPencil} />
-                    </CButton>
-                  </CTableDataCell>
-                  <CTableDataCell>{user?.name || 'N/A'}</CTableDataCell>
-                  <CTableDataCell>{user?.email || 'N/A'}</CTableDataCell>
-                  <CTableDataCell>{user?.role || 'N/A'}</CTableDataCell>
-                  <CTableDataCell>
-                    {user?.status?.toLowerCase() === 'active' ? (
-                      <CIcon icon={cilCheckCircle} className="text-success" title="Active" />
-                    ) : (
-                      <CIcon icon={cilXCircle} className="text-danger" title="Inactive" />
-                    )}
-                  </CTableDataCell>
-                  <CTableDataCell>
+              <CTableRow key={user._id || `row-${index}`}>
+                <CTableDataCell>{(currentPage - 1) * itemsPerPage + index + 1}</CTableDataCell>
+                <CTableDataCell>
+                  <img
+                    src={user?.photo ? `http://localhost:4000/api/v1/users/${user._id}/photo` : placeholder}
+                    alt="User"
+                    style={{ width: '50px', height: '50px', borderRadius: '50%' }}
+                    className="me-2"
+                  />
+                  <CButton color="light" size="sm" onClick={() => handleEditPhoto(user)} title="Edit photo">
+                    <CIcon icon={cilPencil} />
+                  </CButton>
+                </CTableDataCell>
+                <CTableDataCell>{user?.name || 'N/A'}</CTableDataCell>
+                <CTableDataCell>{user?.email || 'N/A'}</CTableDataCell>
+                <CTableDataCell>
+                  {getRoleIcon(user?.role)} {user?.role || 'N/A'}
+                </CTableDataCell>
+                <CTableDataCell>
+                  {user?.status?.toLowerCase() === 'active' ? (
+                    <CIcon icon={cilCheckCircle} className="text-success" title="Active" />
+                  ) : (
+                    <CIcon icon={cilXCircle} className="text-danger" title="Inactive" />
+                  )}
+                </CTableDataCell>
+                <CTableDataCell>
                   <CButton
                     color="light"
-                    style={{color:`green`}} 
                     size="sm"
                     className="me-2"
-                    onClick={() => handlePermissionsClick(user)}
-                    title="Permissions"
+                    onClick={() => handleEdit(user)}
+                    title="Edit"
                   >
-                    <CIcon icon={cilShieldAlt} />
+                    <CIcon icon={cilPencil} />
                   </CButton>
-
-                    <CButton color="light" size="sm" className="me-2" onClick={() => handleEdit(user)} title="Edit">
-                      <CIcon icon={cilPencil} />
-                    </CButton>
-                    <CButton color="light" style={{color:`red`}} size="sm" className="me-2" onClick={() => handleDelete(user)} title="Delete">
-                      <CIcon icon={cilTrash} />
-                    </CButton>
-                    <CButton
-                      color="light"
-                      size="sm"
-                      onClick={() => toggleRow(user._id)}
-                      title={expandedRows[user._id] ? 'Collapse' : 'Expand'}
-                    >
-                      <CIcon icon={expandedRows[user._id] ? cilMinus : cilPlus} />
-                    </CButton>
-                  </CTableDataCell>
-                </CTableRow>
-                <CTableRow>
-                  <CTableDataCell colSpan="7">
-                    <CCollapse visible={expandedRows[user._id]}>
-                      <div className="p-3 bg-light">
-                        <h6>Additional User Details</h6>
-                        <div className="row">
-                          <div className="col-md-6">
-                            <p><strong>User ID:</strong> {user._id}</p>
-                            <p><strong>Created At:</strong> {new Date(user.createdAt).toLocaleDateString()}</p>
-                            <p><strong>Last Updated:</strong> {new Date(user.updatedAt).toLocaleDateString()}</p>
-                          </div>
-                          <div className="col-md-6">
-                            <p><strong>Phone:</strong> {user.phone || 'N/A'}</p>
-                            <p><strong>Address:</strong> {user.address || 'N/A'}</p>
-                            <p><strong>Department:</strong> {user.department || 'N/A'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </CCollapse>
-                  </CTableDataCell>
-                </CTableRow>
-              </React.Fragment>
+                  <CButton
+                    color="light"
+                    style={{ color: 'red' }}
+                    size="sm"
+                    className="me-2"
+                    onClick={() => handleDelete(user)}
+                    title="Delete"
+                  >
+                    <CIcon icon={cilTrash} />
+                  </CButton>
+                  <CButton
+                    color="light"
+                    size="sm"
+                    onClick={() => handleUserDetailsClick(user)}
+                    title="Details"
+                  >
+                    <CIcon icon={cilFullscreen} />
+                  </CButton>
+                </CTableDataCell>
+              </CTableRow>
             ))}
           </CTableBody>
         </CTable>
@@ -374,44 +345,53 @@ const UserTable = ({
 
       <div className="d-flex justify-content-between align-items-center mt-3">
         <span>Total Users: {users.length}</span>
- <CPagination className="d-inline-flex">
-  <CPaginationItem
-    aria-label="Previous"
-    disabled={currentPage === 1}
-    onClick={() => handlePageChange(1)}
-  >
-    &laquo;
-  </CPaginationItem>
-  <CPaginationItem
-    disabled={currentPage === 1}
-    onClick={() => handlePageChange(currentPage - 1)}
-  >
-    &lsaquo;
-  </CPaginationItem>
-  {renderPaginationItems()}
-  <CPaginationItem
-    disabled={currentPage === totalPages}
-    onClick={() => handlePageChange(currentPage + 1)}
-  >
-    &rsaquo;
-  </CPaginationItem>
-  <CPaginationItem
-    aria-label="Next"
-    disabled={currentPage === totalPages}
-    onClick={() => handlePageChange(totalPages)}
-  >
-    &raquo;
-  </CPaginationItem>
-</CPagination>
-
+        <CPagination className="d-inline-flex">
+          <CPaginationItem
+            aria-label="Previous"
+            disabled={currentPage === 1}
+            onClick={() => handlePageChange(1)}
+          >
+            &laquo;
+          </CPaginationItem>
+          <CPaginationItem
+            disabled={currentPage === 1}
+            onClick={() => handlePageChange(currentPage - 1)}
+          >
+            &lsaquo;
+          </CPaginationItem>
+          {renderPaginationItems()}
+          <CPaginationItem
+            disabled={currentPage === totalPages}
+            onClick={() => handlePageChange(currentPage + 1)}
+          >
+            &rsaquo;
+          </CPaginationItem>
+          <CPaginationItem
+            aria-label="Next"
+            disabled={currentPage === totalPages}
+            onClick={() => handlePageChange(totalPages)}
+          >
+            &raquo;
+          </CPaginationItem>
+        </CPagination>
       </div>
 
+      <UserDetailsModal
+        visible={userDetailsModalVisible}
+        user={selectedUser}
+        onClose={handleUserDetailsClose}
+      />
+
       <PermissionsModal
-  visible={permissionsModalVisible}
-  user={selectedUser}
-  onClose={handlePermissionsClose}
-  handleSavePermissions={handlePermissionsSave}
-/>
+        visible={permissionsModalVisible}
+        user={selectedUser}
+        onClose={() => setPermissionsModalVisible(false)}
+        handleSavePermissions={(updatedUser) => {
+          setPermissionsModalVisible(false);
+          setSelectedUser(null);
+          toast.success('Permissions updated successfully!');
+        }}
+      />
 
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>

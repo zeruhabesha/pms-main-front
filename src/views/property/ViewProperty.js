@@ -9,9 +9,12 @@ import {
     CButton,
     CSpinner,
     CAlert,
+    CModal,
+    CModalHeader,
+    CModalBody,
+    CModalTitle,
 } from '@coreui/react';
 import PropertyTable from './PropertyTable';
-import AddProperty from './AddProperty';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../Super.scss';
@@ -22,38 +25,46 @@ import { CopyToClipboard } from 'react-copy-to-clipboard';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useDispatch, useSelector } from 'react-redux';
+import AddProperty from './AddProperty';
 import {
-    addProperty,
-    updateProperty,
     deleteProperty,
     filterProperties,
+    updatePhoto,
+    deletePhoto,
 } from '../../api/actions/PropertyAction';
 import {
     setSelectedProperty,
     clearSelectedProperty,
-    resetState,
+     resetState
 } from '../../api/slice/PropertySlice';
-import PropertyDetails from './PropertyDetails'
+import PropertyDetails from './PropertyDetails';
+import AddImage from './AddImage';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
+
 const ViewProperty = () => {
-    const [isModalVisible, setModalVisible] = useState(false);
-      const [viewingProperty, setViewingProperty] = useState(null);
+    const [viewingProperty, setViewingProperty] = useState(null);
+    const [deletePhotoModal, setDeletePhotoModal] = useState({ visible: false, photoId: null });
+    const [updatePhotoModal, setUpdatePhotoModal] = useState({ visible: false, photoId: null });
+     // Remove the modal state
+    const [selectedPropertyToEdit, setSelectedPropertyToEdit] = useState(null); //To set selected 
+
     const dispatch = useDispatch();
+    const navigate = useNavigate();  // Initialize useNavigate
     const {
         properties,
         loading,
         error,
         currentPage,
         totalPages,
-        selectedProperty,
         pagination,
     } = useSelector((state) => state.property);
 
     const itemsPerPage = 5;
 
 
-      useEffect(() => {
-          dispatch(filterProperties({ page: currentPage, limit: itemsPerPage }));
-      }, [dispatch, currentPage, itemsPerPage]);
+    useEffect(() => {
+        dispatch(filterProperties({ page: currentPage, limit: itemsPerPage }));
+    }, [dispatch, currentPage, itemsPerPage]);
 
 
     const handleSearch = (e) => {
@@ -61,16 +72,17 @@ const ViewProperty = () => {
     };
 
 
-    const handleEdit = (property) => {
+  const handleEditProperty = (property) => {
         dispatch(setSelectedProperty(property));
-        setModalVisible(true);
+        navigate(`/property/edit/${property.id}`)
     };
 
-      const handleView = (property) => {
-       setViewingProperty(property);
-        };
+    const handleViewProperty = (property) => {
+        setViewingProperty(property);
+    };
 
-    const handleDelete = async (id) => {
+
+    const handleDeleteProperty = async (id) => {
         try {
             await dispatch(deleteProperty(id)).unwrap();
             toast.success('Property deleted successfully.');
@@ -79,35 +91,70 @@ const ViewProperty = () => {
         }
     };
 
-    const handleSave = async (formData) => {
-      if (!formData.title || !formData.propertyType) {
-          toast.error("Title and Property Type are required fields.");
-          return;
-       }
-        try {
-            if (selectedProperty) {
-              await dispatch(
-                  updateProperty({ id: selectedProperty.id, propertyData: formData })
-              ).unwrap();
-              toast.success('Property updated successfully.');
-            } else {
-                await dispatch(addProperty(formData)).unwrap();
-                toast.success('Property added successfully.');
-            }
-        } catch (err) {
-            toast.error(err.message || 'Failed to save the property.');
+    const handleCloseViewModal = () => {
+        setViewingProperty(null);
+    };
+     const handleOpenDeletePhotoModal = (photo) => {
+        setDeletePhotoModal({ visible: true, photoId: photo.id }); // Access photo.id here
+    };
+
+
+const handleConfirmDeletePhoto = async () => {
+    if (!viewingProperty || !deletePhotoModal.photoId) {
+        toast.error("Property ID or Photo ID is missing. Unable to delete photo.");
+        return;
+    }
+
+    try {
+        const response = await dispatch(
+            deletePhoto({ propertyId: viewingProperty.id, photoId: deletePhotoModal.photoId })
+        ).unwrap();
+
+        if (response.success) {
+            toast.success('Photo deleted successfully.');
+            setViewingProperty((prevProperty) => ({
+                ...prevProperty,
+                photos: prevProperty.photos.filter((p) => p.id !== deletePhotoModal.photoId),
+            }));
         }
+        setDeletePhotoModal({ visible: false, photoId: null });
+    } catch (err) {
+        toast.error(err.message || 'Failed to delete the photo.');
+    }
+};
+
+
+    const handleCancelDeletePhoto = () => {
+        setDeletePhotoModal({ visible: false, photoId: null });
+    };
+     const handleOpenUpdatePhotoModal = (photo) => {
+        setUpdatePhotoModal({ visible: true, photoId: photo.id });
+    };
+   const handleConfirmUpdatePhoto = async (newPhotoFile) => {
+    try {
+        const response = await dispatch(updatePhoto(viewingProperty.id, { photo: newPhotoFile })).unwrap();
+           if(response.success)
+            {
+                toast.success("Photo updated successfully");
+              setViewingProperty((prevProperty) => ({
+                   ...prevProperty,
+                   photos: prevProperty.photos.map((p) =>
+                    p.id === updatePhotoModal.photoId ? { ...p, photoUrl: response.data.photoUrl } : p
+                ),
+                }));
+
+            }
+
+              setUpdatePhotoModal({visible: false, photoId: null})
+        } catch(error) {
+           toast.error(error.message || 'Failed to update the photo.');
+         }
     };
 
+     const handleCancelUpdatePhoto = () => {
+        setUpdatePhotoModal({visible: false, photoId: null})
+    }
 
-    const closeModal = () => {
-        dispatch(clearSelectedProperty());
-        setModalVisible(false);
-    };
-
-      const closeViewModal = () => {
-    setViewingProperty(null);
-  };
 
     const csvData = properties.map((property, index) => ({
         index: (currentPage - 1) * itemsPerPage + index + 1,
@@ -136,7 +183,7 @@ const ViewProperty = () => {
             property.title || 'N/A',
             property.propertyType || 'N/A',
             property.address || 'N/A',
-             `$${property.rentAmount || 'N/A'}`,
+            `$${property.rentAmount || 'N/A'}`,
             property.status || 'N/A',
         ]);
 
@@ -148,12 +195,37 @@ const ViewProperty = () => {
 
         doc.save('properties.pdf');
     };
-        // const handlePageChange = (page) => {
-        //     dispatch(filterProperties({ page, limit: itemsPerPage }));
-        // };
-        const handlePageChange = (newPage) => {
-          dispatch(filterProperties({ ...filters, page: newPage, limit: itemsPerPage }));
-      };
+
+      const handlePageChange = (newPage) => {
+        dispatch(filterProperties({ page: newPage, limit: itemsPerPage }));
+    };
+
+      const handleResetView = () => {
+        dispatch(resetState())
+    }
+
+  const handlePhotoDelete = (fileName) => {
+    if (!fileName || !fileName.id) {
+      toast.error("Photo ID is missing. Unable to delete photo.");
+      return;
+    }
+  
+    setDeletePhotoModal({ visible: true, photoId: fileName.id });
+  };
+  
+  const handlePhotoUpdate = (fileName) => {
+    if (!fileName || !fileName.id) {
+      toast.error("Photo ID is missing. Unable to update photo.");
+      return;
+    }
+  
+    setUpdatePhotoModal({ visible: true, photoId: fileName.id });
+  };
+
+    // Function to handle the "Add Property" button click
+const handleAddPropertyClick = () => {
+    navigate('/property/add');
+};
 
     return (
         <CRow>
@@ -161,28 +233,25 @@ const ViewProperty = () => {
                 <CCard className="mb-4">
                     <CCardHeader className="d-flex justify-content-between align-items-center">
                         <strong>Properties</strong>
-                        <button
+                       <div className="d-flex gap-2">
+                            <button
                             className="learn-more"
-                            onClick={() => {
-                                dispatch(clearSelectedProperty());
-                                setModalVisible(true);
-                            }}
-                        >
-                            <span className="circle" aria-hidden="true">
-                                <span className="icon arrow"></span>
-                            </span>
-                            <span className="button-text">Add Property</span>
-                        </button>
+                             onClick={handleAddPropertyClick}
+                            >
+                                <span className="circle" aria-hidden="true">
+                                    <span className="icon arrow"></span>
+                                </span>
+                                <span className="button-text">Add Property</span>
+                            </button>
+                                {/* <CButton color="dark" onClick={handleResetView} title="Reset View">
+                                   Reset
+                                </CButton> */}
+                         </div>
                     </CCardHeader>
                     <CCardBody>
                         {error && <CAlert color="danger">{error}</CAlert>}
                         <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
-                            <CFormInput
-                                type="text"
-                                placeholder="Search by title or address"
-                                onChange={handleSearch}
-                                className="w-100"
-                            />
+                           
                             <div className="d-flex gap-2">
                                 <CSVLink
                                     data={csvData}
@@ -191,7 +260,7 @@ const ViewProperty = () => {
                                         { label: 'Title', key: 'title' },
                                         { label: 'Property Type', key: 'propertyType' },
                                         { label: 'Address', key: 'address' },
-                                         { label: 'Rent Amount', key: 'rentAmount' },
+                                        { label: 'Rent Amount', key: 'rentAmount' },
                                         { label: 'Status', key: 'status' },
                                     ]}
                                     filename="property_data.csv"
@@ -208,39 +277,65 @@ const ViewProperty = () => {
                                     <CIcon icon={cilCloudDownload} />
                                 </CButton>
                             </div>
+                            <CFormInput
+                                type="text"
+                                placeholder="Search by title or address"
+                                onChange={handleSearch}
+                                className="w-100"
+                            />
                         </div>
                         {loading ? (
                             <CSpinner color="dark" />
                         ) : (
-                          <PropertyTable
-    properties={properties}
-    totalProperties={pagination.totalItems}
-    onEdit={handleEdit}
-    onDelete={handleDelete}
-    onView={handleView}
-    currentPage={pagination.currentPage}
-    handlePageChange={(page) => dispatch(filterProperties({ page, limit: pagination.limit }))}
-    totalPages={pagination.totalPages}
-    itemsPerPage={pagination.limit}
-/>
-
+                            <PropertyTable
+                                properties={properties}
+                                totalProperties={pagination.totalItems}
+                                onEdit={handleEditProperty}
+                                onDelete={handleDeleteProperty}
+                                onView={handleViewProperty}
+                                currentPage={pagination.currentPage}
+                                handlePageChange={(page) => dispatch(filterProperties({ page, limit: pagination.limit }))}
+                                totalPages={pagination.totalPages}
+                                itemsPerPage={pagination.limit}
+                            />
                         )}
                     </CCardBody>
                 </CCard>
             </CCol>
-            <AddProperty
-                visible={isModalVisible}
-                setVisible={closeModal}
-                editingProperty={selectedProperty}
-                handleSave={handleSave}
+             {viewingProperty && (
+                <PropertyDetails
+                    visible={!!viewingProperty}
+                    setVisible={handleCloseViewModal}
+                    viewingProperty={viewingProperty}
+                     handlePhotoDelete={handleOpenDeletePhotoModal}
+                     handlePhotoUpdate={handleOpenUpdatePhotoModal}
+                />
+            )}
+              <CModal visible={deletePhotoModal.visible} onClose={handleCancelDeletePhoto} alignment="center">
+                <CModalHeader>
+                    <CModalTitle>Confirm Delete</CModalTitle>
+                </CModalHeader>
+                <CModalBody>
+                    Are you sure you want to delete this photo?
+                    <div className='mt-2 d-flex justify-content-end'>
+                        <CButton color="secondary" onClick={handleCancelDeletePhoto} className="me-2">
+                            Cancel
+                        </CButton>
+                        <CButton color="danger" onClick={handleConfirmDeletePhoto}>
+                            Delete
+                        </CButton>
+                    </div>
+                </CModalBody>
+            </CModal>
+               <AddImage
+                visible={updatePhotoModal.visible}
+                  onClose={handleCancelUpdatePhoto}
+                propertyId={viewingProperty?.id}
+                propertyTitle={viewingProperty?.title}
+                 propertyType={viewingProperty?.propertyType}
+                  photoId={updatePhotoModal.photoId}
+                 confirmUpdatePhoto={handleConfirmUpdatePhoto}
             />
-              {viewingProperty && (
-        <PropertyDetails
-          visible={!!viewingProperty}
-          setVisible={closeViewModal}
-          viewingProperty={viewingProperty}
-        />
-      )}
             <ToastContainer position="top-right" autoClose={3000} />
         </CRow>
     );

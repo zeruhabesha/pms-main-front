@@ -13,11 +13,6 @@ import {
   CNavLink,
   CNavItem,
   useColorModes,
-  CModal,
-  CModalHeader,
-  CModalBody,
-  CModalFooter,
-  CButton,
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
 import {
@@ -28,20 +23,25 @@ import {
   cilMenu,
   cilMoon,
   cilSun,
+    cilEnvelopeClosed
 } from '@coreui/icons';
 import './AppHeader.scss';
 
 import { AppBreadcrumb } from './index';
 import { AppHeaderDropdown } from './header/index';
-import { setSidebarShow } from './store/sidebarSlice'; // Import the action
+import { setSidebarShow } from './store/sidebarSlice';
+import ComingSoonModal from './ComingSoonModal';
+import EmailInterface from './EmailInterface';
 
 const AppHeader = () => {
   const headerRef = useRef();
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme');
   const [comingSoonVisible, setComingSoonVisible] = useState(false);
+  const [emailModalVisible, setEmailModalVisible] = useState(false);
+
 
   const dispatch = useDispatch();
-  const sidebarShow = useSelector((state) => state.sidebar.sidebarShow); // Access the sidebar state correctly
+  const sidebarShow = useSelector((state) => state.sidebar.sidebarShow);
 
   useEffect(() => {
     document.addEventListener('scroll', () => {
@@ -54,11 +54,19 @@ const AppHeader = () => {
     setComingSoonVisible(true);
   };
 
+  const handleEmail = () => {
+    setEmailModalVisible(true);
+  };
+
+    const handleSendEmail = async (emailData) => {
+        console.log('Sending email:', emailData);
+        // Here you would integrate with your actual email sending logic.
+    };
   return (
     <CHeader position="sticky" className="mb-4 p-0" ref={headerRef}>
       <CContainer className="border-bottom px-4" fluid>
         <CHeaderToggler
-          onClick={() => dispatch(setSidebarShow(!sidebarShow))} // Use the imported action
+          onClick={() => dispatch(setSidebarShow(!sidebarShow))}
           style={{ marginInlineStart: '-14px' }}
         >
           <CIcon icon={cilMenu} size="lg" />
@@ -87,11 +95,11 @@ const AppHeader = () => {
               <CIcon icon={cilList} size="lg" />
             </CNavLink>
           </CNavItem>
-          <CNavItem>
-            <CNavLink >
-              <CIcon icon={cilEnvelopeOpen} size="lg" onClick={handleComingSoon}/>
-            </CNavLink>
-          </CNavItem>
+            <CNavItem>
+                <CNavLink onClick={handleEmail}>
+                    <CIcon icon={cilEnvelopeClosed} size="lg" />
+                </CNavLink>
+            </CNavItem>
         </CHeaderNav>
         <CHeaderNav>
           <li className="nav-item py-1">
@@ -146,33 +154,14 @@ const AppHeader = () => {
       <CContainer className="px-4" fluid>
         <AppBreadcrumb />
       </CContainer>
-
-      <CModal
-  className="coming-soon-modal"
-  visible={comingSoonVisible}
-  onClose={() => setComingSoonVisible(false)}
-  backdrop={true} // Ensure backdrop is enabled
-  scrollable={false} // Prevent scrolling issues
->
-  <CModalHeader className="modal-header" onClose={() => setComingSoonVisible(false)}>
-    <h5>Coming Soon</h5>
-  </CModalHeader>
-  <CModalBody className="modal-body">
-    <p>
-      This feature is currently under development. Please check back later for updates!
-    </p>
-  </CModalBody>
-  <CModalFooter className="modal-footer">
-    <CButton color="primary" onClick={() => setComingSoonVisible(false)}>
-      Got It
-    </CButton>
-  </CModalFooter>
-</CModal>
-
+        <ComingSoonModal visible={comingSoonVisible} setVisible={setComingSoonVisible} />
+        <EmailInterface
+        visible={emailModalVisible}
+        setVisible={setEmailModalVisible}
+        onSend={handleSendEmail}
+      />
     </CHeader>
   );
 };
 
 export default AppHeader;
-
-

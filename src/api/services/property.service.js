@@ -34,7 +34,7 @@ class PropertyService {
     }
 
 
-   async filterProperties(filterCriteria = {}) {
+    async filterProperties(filterCriteria = {}) {
         try {
             const {
                 page = 1,
@@ -112,25 +112,41 @@ class PropertyService {
 
 
 
-    async updateProperty(id, propertyData) {
-        try {
-            if (!id) {
-                throw new Error('Property ID is required for updating');
-            }
-            const formData = this.createFormData(propertyData);
-            const response = await httpCommon.put(`${this.baseURL}/${id}`, formData, {
-                headers: {
+    async updateProperty(id, payload) { // Updated this to accept a generic payload
+       try {
+         if (!id) {
+           throw new Error('Property ID is required for updating');
+         }
+          const formData = this.createFormData(payload);
+          const response = await httpCommon.put(`${this.baseURL}/${id}`, formData, {
+               headers: {
                     ...this.getAuthHeader(),
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            return PropertyAdapter.toDTO(response.data?.data);
-        } catch (error) {
-            throw this.handleError(error);
-        }
+          return PropertyAdapter.toDTO(response.data?.data);
+      } catch (error) {
+          throw this.handleError(error);
+       }
+  }
+
+  async updatePropertyPhotos(id, photos) {
+        try {
+            if (!id) {
+                throw new Error('Property ID is required for updating');
+            }
+          const formData = this.createFormData({ photos }, 'photos');
+            const response = await httpCommon.put(`${this.baseURL}/${id}`, formData, {
+              headers: {
+                  ...this.getAuthHeader(),
+                  'Content-Type': 'multipart/form-data',
+              },
+          });
+          return PropertyAdapter.toDTO(response.data?.data);
+      } catch (error) {
+          throw this.handleError(error);
+      }
     }
-
-
     async deleteProperty(id) {
         try {
             await httpCommon.delete(`${this.baseURL}/${id}`, {
@@ -145,7 +161,7 @@ class PropertyService {
     async updatePhotos(propertyId, photos) {
         try {
             const formData = this.createFormData({ photos }, 'photos');
-            const response = await httpCommon.put(`${this.baseURL}/${propertyId}/photos`, formData, {
+            const response = await httpCommon.put(`${this.baseURL}/${propertyId}`, formData, {
                 headers: {
                     ...this.getAuthHeader(),
                     'Content-Type': 'multipart/form-data',
@@ -160,16 +176,37 @@ class PropertyService {
 
     async deletePhoto(propertyId, photoId) {
         try {
+            console.log('Deleting photo with propertyId:', propertyId, 'photoId:', photoId); // Add debugging logs
             await httpCommon.delete(`${this.baseURL}/${propertyId}/photos/${photoId}`, {
                 headers: this.getAuthHeader(),
             });
-            return { propertyId, photoId };
+            return { success: true, photoId }; // Return success and photoId
         } catch (error) {
             throw this.handleError(error);
         }
     }
-
-
+    
+    async updatePhoto(propertyId, { photo, photoId }) {
+        try {
+            console.log('Updating photo with propertyId:', propertyId, 'photoId:', photoId); // Add debugging logs
+            if (!photoId || !photo) {
+                throw new Error('Photo and Photo ID are required');
+            }
+            const formData = new FormData();
+            formData.append('photo', photo);
+    
+            const response = await httpCommon.put(`${this.baseURL}/${propertyId}/photos/${photoId}`, formData, {
+                headers: {
+                    ...this.getAuthHeader(),
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return { success: true, data: response.data?.data, photoId };
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
     async updateStatus(propertyId, status) {
         try {
             const response = await httpCommon.patch(`${this.baseURL}/${propertyId}/status`, { status }, {
@@ -191,21 +228,8 @@ class PropertyService {
             throw this.handleError(error);
         }
     }
-    async updatePhoto(id, photo) {
-       try {
-        const formData = this.createFormData({photo}, 'photo')
-         const response = await httpCommon.patch(`${this.baseURL}/${id}/photos`, formData, {
-                headers: {
-                    ...this.getAuthHeader(),
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-            return PropertyAdapter.toDTO(response.data?.data);
 
-       } catch(error) {
-        throw this.handleError(error);
-       }
-    }
+
    async downloadPhoto(propertyId, photoId) {
         try {
             const response = await httpCommon.get(`${this.baseURL}/${propertyId}/photos/${photoId}`, {
@@ -235,41 +259,36 @@ class PropertyService {
         }
     }
 
-    createFormData(data, mediaFieldName = 'media') {
-    const formData = new FormData();
+  createFormData(data, mediaFieldName = 'media') {
+      const formData = new FormData();
 
-    if(data && data.photos) {
-         data.photos.forEach(file => {
-        if (file instanceof File) {
-          formData.append(mediaFieldName, file);
-        } else {
-         console.warn('Skipping non-file photo:', file);
+    if (data && data.photos) {
+      data.photos.forEach(photo => {
+        if (photo instanceof File) {
+          formData.append(mediaFieldName, photo);
+        } else if (typeof photo === 'string') {
+          //This is the previous photo id, so skip it
+            console.log('skipping prev photo', photo)
+        }
+        else {
+          console.warn('Skipping non-file photo:', photo);
         }
       });
     }
-      if(data && data.photo) {
-        if(data.photo instanceof File)
-          formData.append(mediaFieldName, data.photo)
-      }
 
-    // Append other fields
-       Object.entries(data).forEach(([key, value]) => {
-         if (value != null && key !== mediaFieldName) {
-           formData.append(key, typeof value === 'object' ? JSON.stringify(value) : value);
-         }
-       });
-    
-     if(data && data.title) {
-       formData.append('title', data.title);
+    if(data && data.photo) {
+       if(data.photo instanceof File)
+         formData.append(mediaFieldName, data.photo)
      }
 
-     if(data && data.propertyType) {
-        formData.append('propertyType', data.propertyType);
-     }
+      Object.entries(data).forEach(([key, value]) => {
+       if (value != null && key !== mediaFieldName && key !== 'photos') { // Exclude photos here
+         formData.append(key, typeof value === 'object' ? JSON.stringify(value) : value);
+       }
+     });
 
-    return formData;
+   return formData;
   }
-
 
 
     async getTenantById(id) {
@@ -285,14 +304,17 @@ class PropertyService {
 
 
 
-    handleError(error) {
+   handleError(error, customMessage) {
         console.error('API Error:', error.response?.data || error.message);
-        throw {
-            message: error.response?.data?.message || error.message || 'An unexpected error occurred',
-            status: error.response?.status || 500,
+        const message = customMessage || error.response?.data?.message || error.message || 'An unexpected error occurred';
+         throw {
+            message: message,
+             status: error.response?.status || 500,
             errors: error.response?.data?.errors || [],
+            httpError: true // Important for differentiating between network and validation errors
         };
-    }
+     }
 }
+
 
 export default PropertyService;

@@ -6,7 +6,7 @@ import PropTypes from "prop-types";
 const TenantPropertySelect = ({ tenantOptions, propertyOptions, formData, setFormData }) => {
   return (
     <>
-      <CCol xs={12}>
+       <CCol xs={12} md={6} className="form-group">
         <label>Tenant</label>
         <Select
           options={tenantOptions}
@@ -21,8 +21,8 @@ const TenantPropertySelect = ({ tenantOptions, propertyOptions, formData, setFor
           isClearable
         />
       </CCol>
-      <CCol xs={12}>
-        <label>Property</label>
+      <CCol xs={12} md={6} className="form-group">
+      <label>Property</label>
         <Select
           options={propertyOptions}
           value={propertyOptions.find((p) => p.value === formData.property) || null}

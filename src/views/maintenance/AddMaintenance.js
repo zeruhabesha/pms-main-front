@@ -17,13 +17,17 @@ import {
   CAlert,
   CSpinner,
 } from '@coreui/react';
-import { addTenant, updateTenant } from '../actions/tenantActions';
-import { fetchProperties } from '../actions/propertyActions'; // Add this import
+import { addTenant, updateTenant } from '../../api/actions/TenantActions';
+import { fetchPropertiesForTenant } from '../../api/actions/PropertyAction'; // Add this import
 
 const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.tenant);
-  const { properties, loading: propertiesLoading, error: propertiesError } = useSelector((state) => state.property);
+    const {
+        properties,
+        loading: propertiesLoading,
+        error: propertiesError,
+    } = useSelector((state) => state.property);
 
   const [tenantData, setTenantData] = useState({
     tenantName: '',
@@ -52,7 +56,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
 
   // Fetch properties when component mounts
   useEffect(() => {
-    dispatch(fetchProperties());
+    dispatch(fetchPropertiesForTenant());
   }, [dispatch]);
 
   useEffect(() => {
@@ -129,7 +133,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
   const handleSubmit = () => {
     const validationError = validateForm();
     if (validationError) {
-      setErrorMessage(validationError);
+      // setErrorMessage(validationError); // If you need an error message
       return;
     }
 

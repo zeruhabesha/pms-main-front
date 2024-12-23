@@ -1,118 +1,92 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
-  CModal,
-  CModalHeader,
-  CModalBody,
-  CModalTitle,
-  CButton,
-  CForm,
-  CFormInput,
-  CFormLabel,
+    CModal,
+    CModalHeader,
+    CModalBody,
+    CModalTitle,
+    CButton,
+    CForm,
+    CFormLabel,
+    CFormInput,
 } from '@coreui/react';
 import PropTypes from 'prop-types';
-import { useDispatch, useSelector } from 'react-redux';
-import { updateProperty } from '../../api/actions/PropertyAction';
-// import './AddImage.css'; // Import custom styles
 
-const AddImage = ({
-  visible,
-  onClose,
-  propertyId,
-  propertyTitle,
-  propertyType,
-}) => {
-  const dispatch = useDispatch();
-  const [newImageFile, setNewImageFile] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { loading } = useSelector((state) => state.property);
+const AddImage = ({ visible, onClose, propertyId, propertyTitle, confirmUpdatePhoto , photoId }) => {
+    const [photo, setPhoto] = useState(null);
+    const [error, setError] = useState('');
 
-  const handlePhotoUpload = (e) => {
-    const files = Array.from(e.target.files);
-    setNewImageFile(files);
-  };
+    useEffect(() => {
+       setPhoto(null)
+    }, [visible])
 
-  const handleAddImageSubmit = async (e) => {
-    e.preventDefault();
-  
-    if (!newImageFile || !propertyId) {
-      setErrors({ general: 'No file selected or invalid property data.' });
-      return;
-    }
-  
-    try {
-      const formData = new FormData();
-      newImageFile.forEach((file) => formData.append('photos', file)); // Add photos
-      formData.append('title', propertyTitle); // Add title
-      formData.append('propertyType', propertyType); // Add property type
-  
-      setIsSubmitting(true);
-  
-      // Send request
-      await dispatch(updateProperty({ id: propertyId, propertyData: formData })).unwrap();
-  
-      setNewImageFile(null);
-      onClose();
-    } catch (error) {
-      setErrors({ general: error.message || 'Failed to update photo' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
+    const handleFileChange = (event) => {
+        const file = event.target.files[0];
+         if (!file) {
+            setError("Please select a valid photo.");
+            return;
+          }
+           if (!file.type.startsWith('image/')) {
+               setError("Please select a valid image file.");
+               setPhoto(null);
+               return;
+             }
+           setError("");
+          setPhoto(file);
 
-  const handleCancel = useCallback(() => {
-    setNewImageFile(null);
-    setErrors({});
-    onClose();
-  }, [onClose]);
+    };
 
-  return (
-    <div className={`custom-modal ${visible ? 'slide-in' : 'slide-out'}`}>
-      <CModal visible={visible} onClose={handleCancel} backdrop="static">
-        <CModalHeader>
-          <CModalTitle>Add New Image</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          {errors.general && (
-            <div className="alert alert-danger">{errors.general}</div>
-          )}
-          <CForm onSubmit={handleAddImageSubmit}>
-            <CFormLabel htmlFor="photos">Photos (Max 5)</CFormLabel>
-            <CFormInput
-              type="file"
-              id="photos"
-              name="photos"
-              multiple
-              accept="image/*"
-              onChange={handlePhotoUpload}
-            />
-            <div className="mt-3 d-flex justify-content-end">
-              <CButton color="secondary" onClick={handleCancel}>
-                Cancel
-              </CButton>
-              <CButton
-                color="primary"
-                className="ms-2"
-                type="submit"
-                disabled={isSubmitting || loading}
-              >
-                Upload
-              </CButton>
-            </div>
-          </CForm>
-        </CModalBody>
-      </CModal>
-    </div>
-  );
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!photo) {
+            setError('Please select a photo.');
+            return;
+        }
+
+        try {
+            if(confirmUpdatePhoto) {
+             await confirmUpdatePhoto(photo);
+            }
+            onClose();
+        } catch(error) {
+             setError(error.message || 'Failed to update the photo.');
+        }
+
+    };
+
+
+    return (
+        <CModal visible={visible} onClose={onClose} alignment="center">
+            <CModalHeader>
+                <CModalTitle>{photoId ? 'Update Photo' : 'Add Photo'}</CModalTitle>
+            </CModalHeader>
+            <CModalBody>
+                <CForm onSubmit={handleSubmit}>
+                     {error && <div className="text-danger mb-2">{error}</div>}
+                    <div className="mb-3">
+                        <CFormLabel htmlFor="photo">Select Photo</CFormLabel>
+                        <CFormInput type="file" id="photo" accept="image/*" onChange={handleFileChange} />
+                    </div>
+                    <div className='d-flex justify-content-end'>
+                    <CButton color="secondary" onClick={onClose} className="me-2">
+                        Cancel
+                    </CButton>
+                        <CButton color="primary" type="submit" disabled={!photo}>
+                           {photoId ? 'Update Photo' : 'Add Photo' }
+                        </CButton>
+                    </div>
+                </CForm>
+            </CModalBody>
+        </CModal>
+    );
 };
 
 AddImage.propTypes = {
-  visible: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  propertyId: PropTypes.string.isRequired,
-  propertyTitle: PropTypes.string.isRequired,
-  propertyType: PropTypes.string.isRequired,
+    visible: PropTypes.bool,
+    onClose: PropTypes.func,
+    propertyId: PropTypes.string,
+    propertyTitle: PropTypes.string,
+    confirmUpdatePhoto: PropTypes.func,
+     photoId: PropTypes.string,
 };
 
 export default AddImage;

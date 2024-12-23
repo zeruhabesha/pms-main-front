@@ -5,6 +5,7 @@ import {
     updateAgreement,
     deleteAgreement,
     uploadAgreementFile,
+    fetchAgreement,
 } from "../actions/AgreementActions";
 
 const initialState = {
@@ -42,6 +43,7 @@ const agreementSlice = createSlice({
           updateAgreement,
           deleteAgreement,
           uploadAgreementFile,
+            fetchAgreement,
         ];
 
         commonActions.forEach((action) => {
@@ -61,6 +63,10 @@ const agreementSlice = createSlice({
                 state.agreements = action.payload.agreements;
                 state.totalPages = action.payload.totalPages;
                 state.currentPage = action.payload.currentPage;
+            })
+            .addCase(fetchAgreement.fulfilled, (state, action) => {
+               state.loading = false;
+               state.selectedAgreement = action.payload;
             })
              .addCase(addAgreement.fulfilled, (state, action) => {
                state.loading = false;

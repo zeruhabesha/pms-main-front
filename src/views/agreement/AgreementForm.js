@@ -1,20 +1,26 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     CForm,
     CRow,
     CCol,
     CButton,
-    CSpinner,
-    CAlert,
     CFormInput,
     CFormTextarea,
+    CFormSelect,
 } from "@coreui/react";
 import PropTypes from "prop-types";
-
+import CIcon from "@coreui/icons-react";
+import "./AgreementForm.scss";
 import TenantPropertySelect from "./TenantPropertySelect";
 import DocumentUpload from "./DocumentUpload";
+import {
+    cilTrash,
+    cilPlus,
+} from "@coreui/icons";
 
 const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, tenants, properties }) => {
+    const navigate = useNavigate();
 
     const tenantOptions = useMemo(
         () =>
@@ -34,31 +40,43 @@ const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, ten
         [properties]
     );
 
-    const [formData, setFormData] = useState(() => {
-        return {
-            tenant: initialData?.tenant?._id || initialData?.tenant || "",
-            property: initialData?.property?._id || initialData?.property || "",
-            leaseStart: initialData?.leaseStart || "",
-            leaseEnd: initialData?.leaseEnd || "",
-            rentAmount: initialData?.rentAmount || "",
-            securityDeposit: initialData?.securityDeposit || "",
-            paymentTerms: {
-                dueDate: initialData?.paymentTerms?.dueDate || "",
-                paymentMethod: initialData?.paymentTerms?.paymentMethod || "",
-            },
-            rulesAndConditions: initialData?.rulesAndConditions || "",
-            additionalOccupants: initialData?.additionalOccupants || [],
-            utilitiesAndServices: initialData?.utilitiesAndServices || "",
-            documents: initialData?.documents || [],
-        };
-    });
-
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    };
-
+    const [formData, setFormData] = useState(() => ({
+        tenant: initialData?.tenant?._id || initialData?.tenant || "",
+        property: initialData?.property?._id || initialData?.property || "",
+        leaseStart: initialData?.leaseStart || "",
+        leaseEnd: initialData?.leaseEnd || "",
+        rentAmount: initialData?.rentAmount || "",
+        securityDeposit: initialData?.securityDeposit || "",
+        paymentTerms: {
+            dueDate: initialData?.paymentTerms?.dueDate || "",
+            paymentMethod: initialData?.paymentTerms?.paymentMethod || "",
+        },
+        rulesAndConditions: initialData?.rulesAndConditions || "",
+        additionalOccupants: initialData?.additionalOccupants || [],
+        utilitiesAndServices: initialData?.utilitiesAndServices || "",
+        documents: initialData?.documents || [],
+    }));
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                tenant: initialData.tenant?._id || initialData.tenant || "",
+                property: initialData.property?._id || initialData.property || "",
+                leaseStart: initialData.leaseStart || "",
+                leaseEnd: initialData.leaseEnd || "",
+                rentAmount: initialData.rentAmount || "",
+                securityDeposit: initialData.securityDeposit || "",
+                paymentTerms: {
+                    dueDate: initialData.paymentTerms?.dueDate || "",
+                    paymentMethod: initialData.paymentTerms?.paymentMethod || "",
+                },
+                rulesAndConditions: initialData.rulesAndConditions || "",
+                additionalOccupants: initialData.additionalOccupants || [],
+                utilitiesAndServices: initialData.utilitiesAndServices || "",
+                documents: initialData.documents || [],
+            });
+        }
+    }, [initialData]);
+    
     const handleArrayChange = (index, value, field) => {
         const updatedArray = [...formData[field]];
         updatedArray[index] = value;
@@ -82,19 +100,37 @@ const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, ten
         }));
     };
 
-      const handleRemoveDocument = (index) => {
+    const handleRemoveDocument = (index) => {
         const updatedDocuments = [...formData.documents];
         updatedDocuments.splice(index, 1);
-         setFormData((prev) => ({ ...prev, documents: updatedDocuments }));
-      };
+        setFormData((prev) => ({ ...prev, documents: updatedDocuments }));
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        console.log("Form Data:", formData);
         onSubmit(formData);
     };
 
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        if (name.startsWith("paymentTerms.")) {
+            const paymentTermField = name.split(".").pop();
+            setFormData((prev) => ({
+                ...prev,
+                paymentTerms: { ...prev.paymentTerms, [paymentTermField]: value },
+            }));
+        } else {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const handleCancel = useCallback(() => {
+        navigate("/agreement");
+    }, [navigate]);
+
     return (
-        <CForm onSubmit={handleSubmit}>
+        <CForm onSubmit={handleSubmit} className="agreement-form">
             <CRow>
                 <TenantPropertySelect
                     tenantOptions={tenantOptions}
@@ -103,7 +139,7 @@ const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, ten
                     setFormData={setFormData}
                 />
 
-                <CCol xs={12} md={6}>
+                <CCol xs={12} md={6} className="form-group">
                     <CFormInput
                         type="date"
                         label="Lease Start Date"
@@ -111,9 +147,10 @@ const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, ten
                         value={formData.leaseStart}
                         onChange={handleInputChange}
                         required
+                        className="form-control-animation"
                     />
                 </CCol>
-                <CCol xs={12} md={6}>
+                <CCol xs={12} md={6} className="form-group">
                     <CFormInput
                         type="date"
                         label="Lease End Date"
@@ -121,9 +158,10 @@ const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, ten
                         value={formData.leaseEnd}
                         onChange={handleInputChange}
                         required
+                        className="form-control-animation"
                     />
                 </CCol>
-                <CCol xs={12} md={6}>
+                <CCol xs={12} md={6} className="form-group">
                     <CFormInput
                         type="number"
                         label="Rent Amount"
@@ -131,9 +169,10 @@ const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, ten
                         value={formData.rentAmount}
                         onChange={handleInputChange}
                         required
+                        className="form-control-animation"
                     />
                 </CCol>
-                <CCol xs={12} md={6}>
+                <CCol xs={12} md={6} className="form-group">
                     <CFormInput
                         type="number"
                         label="Security Deposit"
@@ -141,65 +180,107 @@ const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, ten
                         value={formData.securityDeposit}
                         onChange={handleInputChange}
                         required
+                        className="form-control-animation"
                     />
                 </CCol>
 
-                <CCol xs={12}>
+                <CCol xs={12} md={6} className="form-group">
+                    <CFormSelect
+                        label="Payment Method"
+                        name="paymentTerms.paymentMethod"
+                        value={formData.paymentTerms.paymentMethod}
+                        onChange={handleInputChange}
+                        required
+                        className="form-control-animation"
+                    >
+                        <option value="">Select Method</option>
+                        <option value="cash">Cash</option>
+                        <option value="cheque">Cheque</option>
+                        <option value="bank transfer">Bank Transfer</option>
+                    </CFormSelect>
+                </CCol>
+                <CCol xs={12} md={6} className="form-group">
+                    <CFormInput
+                        type="date"
+                        label="Due Date"
+                        name="paymentTerms.dueDate"
+                        value={formData.paymentTerms.dueDate}
+                        onChange={handleInputChange}
+                        required
+                        className="form-control-animation"
+                    />
+                </CCol>
+
+                <CCol xs={12} className="form-group">
                     <CFormTextarea
                         label="Rules and Conditions"
                         name="rulesAndConditions"
                         rows="3"
                         value={formData.rulesAndConditions}
                         onChange={handleInputChange}
+                        className="form-control-animation"
                     />
                 </CCol>
 
-                <CCol xs={12}>
-                    <label>Additional Occupants</label>
+                <CCol xs={12} className="form-group">
+                    <label className="me-2">Additional Occupants</label>
                     {formData.additionalOccupants?.map((occupant, index) => (
                         <div key={index} className="d-flex align-items-center mb-2">
                             <CFormInput
                                 value={occupant}
                                 onChange={(e) => handleArrayChange(index, e.target.value, "additionalOccupants")}
+                                className="form-control-animation me-2"
                             />
                             <CButton
-                                color="danger"
+                                color="light"
+                                style={{ color: "red" }}
                                 size="sm"
                                 className="ms-2"
                                 onClick={() => handleRemoveFromArray(index, "additionalOccupants")}
+                                title="Remove Occupant"
                             >
-                                Remove
+                                <CIcon icon={cilTrash} />
                             </CButton>
                         </div>
                     ))}
                     <CButton
-                        color="primary"
+                        color="light"
                         size="sm"
                         onClick={() => handleAddToArray("additionalOccupants")}
+                        title="Add Occupant"
+                        className="me-2"
                     >
-                        Add Occupant
+                        <CIcon icon={cilPlus} />
                     </CButton>
                 </CCol>
 
-                <CCol xs={12}>
+                <CCol xs={12} className="form-group">
                     <CFormTextarea
                         label="Utilities and Services"
                         name="utilitiesAndServices"
                         rows="2"
                         value={formData.utilitiesAndServices}
                         onChange={handleInputChange}
+                        className="form-control-animation"
                     />
                 </CCol>
 
                 <DocumentUpload
                     formData={formData}
                     handleFileChange={handleFileChange}
-                    handleRemoveDocument={handleRemoveDocument} // Here is the change
+                    handleRemoveDocument={handleRemoveDocument}
                 />
 
-                <CCol xs={12} className="text-center">
-                    <CButton type="submit" color="primary" className="mt-3" disabled={isSubmitting}>
-                        {isSubmitting ? "Submitting..." : "Submit Agreement"}
+                <CCol xs={12} className="mt-4 d-flex justify-content-end gap-2">
+                    <CButton
+                        color="secondary"
+                        onClick={handleCancel}
+                        disabled={isSubmitting}
+                        className="ms-2 mt-3 form-button">
+                        Cancel
+                    </CButton>
+                    <CButton type="submit" color="dark" className="ms-2 mt-3 form-button" disabled={isSubmitting}>
+                        {isSubmitting ? "Submitting..." : "Submit"}
                     </CButton>
                 </CCol>
             </CRow>
@@ -208,10 +289,11 @@ const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, ten
 };
 
 AgreementForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
-  isSubmitting: PropTypes.bool,
-  initialData: PropTypes.object,
-  tenants: PropTypes.array,
-  properties: PropTypes.array
+    onSubmit: PropTypes.func.isRequired,
+    isSubmitting: PropTypes.bool,
+    initialData: PropTypes.object,
+    tenants: PropTypes.array,
+    properties: PropTypes.array,
 };
+
 export default AgreementForm;

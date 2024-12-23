@@ -1,303 +1,344 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  CTable,
-  CTableHead,
-  CTableBody,
-  CTableHeaderCell,
-  CTableRow,
-  CTableDataCell,
-  CButton,
-  CPagination,
-  CPaginationItem,
-  CFormInput,
-  CBadge,
-  CAlert,
+    CTable,
+    CTableHead,
+    CTableBody,
+    CTableHeaderCell,
+    CTableRow,
+    CTableDataCell,
+    CButton,
+    CPagination,
+    CPaginationItem,
+    CBadge,
+    CAlert,
+    CProgress,
 } from '@coreui/react';
+import {
+    cilCheckCircle,
+    cilXCircle,
+    cilThumbUp,
+    cilThumbDown,
+    cilCheck,
+    cilX,
+    cilTransfer,
+    cilUserPlus,
+    cilTask,
+    cilShare,
+    cilPhone,
+    cilEnvelopeOpen,
+} from '@coreui/icons';
 import { CIcon } from '@coreui/icons-react';
 import {
-  cilPencil,
-  cilTrash,
-  cilZoom,
-  cilArrowTop,
-  cilArrowBottom,
-  cilFile,
-  cilClipboard,
-  cilCloudDownload,
+    cilPencil,
+    cilTrash,
+    cilFullscreen,
+    cilArrowTop,
+    cilArrowBottom,
+    cilPeople,
 } from '@coreui/icons';
-import { CSVLink } from 'react-csv';
-import { CopyToClipboard } from 'react-copy-to-clipboard';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { decryptData } from '../../api/utils/crypto';
+import { useNavigate } from 'react-router-dom';
 
 const MaintenanceTable = ({
-  maintenanceList = [],
-  currentPage,
-  totalPages,
-  totalRequests,
-  searchTerm,
-  setSearchTerm,
-  handleDelete,
-  handleEdit,
-  handleViewDetails,
-  handlePageChange,
+    maintenanceList = [],
+    currentPage,
+    totalPages,
+    totalRequests,
+    searchTerm,
+    setSearchTerm,
+    handleDelete,
+    handleEdit,
+    handleViewDetails,
+    handlePageChange,
 }) => {
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-  const [userPermissions, setUserPermissions] = useState(null);
-  const [role, setRole] = useState(null);
-  const [error, setError] = useState(null);
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+    const [userPermissions, setUserPermissions] = useState(null);
+    const [role, setRole] = useState(null);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
-  // Fetch user permissions and role on component mount
-  useEffect(() => {
-    try {
-      const encryptedUser = localStorage.getItem('user');
-      if (encryptedUser) {
-        const decryptedUser = decryptData(encryptedUser);
-        setUserPermissions(decryptedUser?.permissions || null);
-        setRole(decryptedUser?.role || null);
-      }
-    } catch (err) {
-      setError('Failed to load user permissions');
-      console.error('Permission loading error:', err);
-    }
-  }, []);
 
-  // Sorting handler
-  const handleSort = useCallback((key) => {
-    setSortConfig((prevConfig) => ({
-      key,
-      direction:
-        prevConfig.key === key && prevConfig.direction === 'ascending'
-          ? 'descending'
-          : 'ascending',
-    }));
-  }, []);
+    // Fetch user permissions and role on component mount
+    useEffect(() => {
+        try {
+            const encryptedUser = localStorage.getItem('user');
+            if (encryptedUser) {
+                const decryptedUser = decryptData(encryptedUser);
+                setUserPermissions(decryptedUser?.permissions || null);
+                setRole(decryptedUser?.role || null);
+            }
+        } catch (err) {
+            setError('Failed to load user permissions');
+            console.error('Permission loading error:', err);
+        }
+    }, []);
 
-  // Status color mapping
-  const getStatusColor = useCallback((status) => {
-    const statusColorMap = {
-      pending: 'warning',
-      'in progress': 'info',
-      completed: 'success',
-    };
-    return statusColorMap[status?.toLowerCase()] || 'secondary';
-  }, []);
+    // Sorting handler
+    const handleSort = useCallback((key) => {
+        setSortConfig((prevConfig) => ({
+            key,
+            direction:
+                prevConfig.key === key && prevConfig.direction === 'ascending'
+                    ? 'descending'
+                    : 'ascending',
+        }));
+    }, []);
 
-  // Sorted maintenance list
-  const sortedMaintenance = useMemo(() => {
-    if (!sortConfig.key) return maintenanceList;
+    // Approve handler
+    const handleApprove = useCallback((maintenance) => {
+      //logic for approve maintenance
+         console.log('Approve maintenance', maintenance);
+    }, []);
 
-    return [...maintenanceList].sort((a, b) => {
-      const aValue = a[sortConfig.key]?.toString() || '';
-      const bValue = b[sortConfig.key]?.toString() || '';
+    // Reject handler
+    const handleReject = useCallback((maintenance) => {
+       console.log('Reject maintenance', maintenance);
+      }, []);
 
-      return sortConfig.direction === 'ascending'
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue);
-    });
-  }, [maintenanceList, sortConfig]);
+    //assign handler
+    const handleAssign = useCallback((maintenance) => {
+         navigate(`/maintenance/assign/${maintenance._id}`);
+    }, [navigate]);
 
-  // Data for CSV export
-  const csvData = useMemo(
-    () =>
-      maintenanceList.map((maintenance, index) => ({
-        index: (currentPage - 1) * 5 + index + 1,
-        tenantName: maintenance.tenant?.tenantName || 'N/A',
-        email: maintenance.tenant?.contactInformation?.email || 'N/A',
-        phone: maintenance.tenant?.contactInformation?.phoneNumber || 'N/A',
-        status: maintenance.status || 'N/A',
-      })),
-    [maintenanceList, currentPage]
-  );
 
-  // Data for clipboard
-  const clipboardData = useMemo(
-    () =>
-      maintenanceList
-        .map(
-          (maintenance, index) =>
-            `${(currentPage - 1) * 5 + index + 1}. ${maintenance.tenant?.tenantName || 'N/A'} - ${
-              maintenance.tenant?.contactInformation?.email || 'N/A'
-            } - ${maintenance.status || 'N/A'}`
-        )
-        .join('\n'),
-    [maintenanceList, currentPage]
-  );
+     const generateUsage = (status) => {
+           const statusValues = {
+             pending: 25,
+             'in progress': 50,
+             completed: 100,
+            };
 
-  // Export to PDF
-  const exportToPDF = useCallback(() => {
-    try {
-      const doc = new jsPDF();
-      doc.text('Maintenance Requests', 14, 10);
+            const value = status ?  statusValues[status?.toLowerCase()] || 0 : 0;
+            let color = 'success';
+            if (value < 25) {
+                color = 'danger';
+            } else if (value < 50) {
+                color = 'warning';
+            } else if (value < 75) {
+                color = 'info';
+            }
+           return {
+                value,
+                 period: 'status',
+                  color,
+           };
+       };
 
-      const tableData = maintenanceList.map((maintenance, index) => [
-        (currentPage - 1) * 5 + index + 1,
-        maintenance.tenant?.tenantName || 'N/A',
-        maintenance.tenant?.contactInformation?.email || 'N/A',
-        maintenance.tenant?.contactInformation?.phoneNumber || 'N/A',
-        maintenance.status || 'N/A',
-      ]);
 
-      doc.autoTable({
-        head: [['#', 'Tenant Name', 'Email', 'Phone', 'Status']],
-        body: tableData,
-        startY: 20,
-      });
+    // Status color mapping
+    const getStatusColor = useCallback((status) => {
+         const statusColorMap = {
+             pending: 'warning',
+             'in progress': 'info',
+             completed: 'success',
+        };
+        return statusColorMap[status?.toLowerCase()] || 'secondary';
+   }, []);
 
-      doc.save('maintenance_requests.pdf');
-    } catch (err) {
-      setError('Failed to export PDF');
-      console.error('PDF export error:', err);
-    }
-  }, [maintenanceList, currentPage]);
+    // Sorted maintenance list
+    const sortedMaintenance = useMemo(() => {
+        if (!sortConfig.key) return maintenanceList;
 
-  return (
-    <div>
-      {error && (
-        <CAlert color="danger" dismissible onClose={() => setError(null)}>
-          {error}
-        </CAlert>
-      )}
-      {/* Export and Search */}
-      <div className="d-flex mb-3 gap-2">
-        <CFormInput
-          type="text"
-          placeholder="Search by tenant name or status"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="me-2"
-        />
-        <div className="d-flex gap-2">
-          <CSVLink
-            data={csvData}
-            headers={[
-              { label: '#', key: 'index' },
-              { label: 'Tenant Name', key: 'tenantName' },
-              { label: 'Email', key: 'email' },
-              { label: 'Phone', key: 'phone' },
-              { label: 'Status', key: 'status' },
-            ]}
-            filename="maintenance_requests.csv"
-            className="btn btn-dark"
-            title="Export CSV"
-          >
-            <CIcon icon={cilFile} size="lg" />
-          </CSVLink>
-          <CopyToClipboard text={clipboardData}>
-            <CButton color="dark" title="Copy to Clipboard">
-              <CIcon icon={cilClipboard} size="lg" />
-            </CButton>
-          </CopyToClipboard>
-          <CButton color="dark" onClick={exportToPDF} title="Export PDF">
-            <CIcon icon={cilCloudDownload} size="lg" />
-          </CButton>
+        return [...maintenanceList].sort((a, b) => {
+            const aValue = (a[sortConfig.key]?.toString() || '').toLowerCase();
+            const bValue = (b[sortConfig.key]?.toString() || '').toLowerCase();
+
+            return sortConfig.direction === 'ascending'
+                ? aValue.localeCompare(bValue)
+                : bValue.localeCompare(aValue);
+        });
+    }, [maintenanceList, sortConfig]);
+
+    // Filtered maintenance list
+    const filteredMaintenance = useMemo(() => {
+        if (!searchTerm) return sortedMaintenance;
+
+        const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+        return sortedMaintenance.filter((maintenance) => {
+            const tenantName = maintenance.tenant?.tenantName || '';
+            const status = maintenance.status || '';
+
+            return (
+                tenantName.toLowerCase().includes(lowerCaseSearchTerm) ||
+                status.toLowerCase().includes(lowerCaseSearchTerm)
+            );
+        });
+    }, [sortedMaintenance, searchTerm]);
+
+    return (
+        <div>
+            {error && (
+                <CAlert color="danger" dismissible onClose={() => setError(null)}>
+                    {error}
+                </CAlert>
+            )}
+            {/* Maintenance Table */}
+            <CTable align="middle" className="mb-0 border" hover responsive>
+                <CTableHead className="text-nowrap">
+                    <CTableRow>
+                        <CTableHeaderCell className="bg-body-tertiary text-center">
+                            <CIcon icon={cilPeople} />
+                        </CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('tenant.tenantName')} style={{ cursor: 'pointer' }}>
+                            Tenant
+                            {sortConfig.key === 'tenant.tenantName' && (
+                                <CIcon
+                                    icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom}
+                                />
+                            )}
+                        </CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary" >
+                            Contact
+                        </CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary">
+                            Status
+                        </CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary">
+                            Usage
+                        </CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary">Actions</CTableHeaderCell>
+                    </CTableRow>
+                </CTableHead>
+                <CTableBody>
+                    {filteredMaintenance.map((maintenance, index) => {
+                        const rowNumber = (currentPage - 1) * 5 + index + 1;
+                        const usage = generateUsage(maintenance.status);
+                        return (
+                            <CTableRow key={maintenance._id || index}>
+                                 <CTableDataCell className="text-center">
+                                        {rowNumber}
+                                    </CTableDataCell>
+                                <CTableDataCell>
+                                    <div>{maintenance.tenant?.tenantName || 'N/A'}</div>
+                                    {/* <div className="small text-body-secondary text-nowrap">
+                                         <span>ID: {maintenance.tenant?._id}</span>
+                                  </div> */}
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <CIcon icon={cilEnvelopeOpen} size="sm" className="me-1" />
+                                        {maintenance.tenant?.contactInformation?.email || 'N/A'}
+                                    </div>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <CIcon icon={cilPhone} size="sm" className="me-1" />
+                                        {maintenance.tenant?.contactInformation?.phoneNumber || 'N/A'}
+                                    </div>
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <CBadge color={getStatusColor(maintenance.status)}>
+                                        {maintenance.status || 'N/A'}
+                                    </CBadge>
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <div className="d-flex justify-content-between text-nowrap">
+                                        <div className="fw-semibold">{usage.value}%</div>
+                                        <div className="ms-3">
+                                            <small className="text-body-secondary">{usage.period}</small>
+                                        </div>
+                                    </div>
+                                    <CProgress thin color={usage.color} value={usage.value} />
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <div className="d-flex align-items-center">
+                                        {role === 'User' && userPermissions?.editMaintenance && (
+                                            <CButton
+                                                color="light"
+                                                size="sm"
+                                                className="me-2"
+                                                onClick={() => handleEdit(maintenance)}
+                                                title="Edit"
+                                            >
+                                                <CIcon icon={cilPencil} />
+                                            </CButton>
+                                        )}
+                                        {role === 'User' && userPermissions?.deleteMaintenance && (
+                                            <CButton
+                                                color="light"
+                                                className="me-2"
+                                                style={{ color: `red` }}
+                                                size="sm"
+                                                onClick={() => handleDelete(maintenance)}
+                                                title="Delete"
+                                            >
+                                                <CIcon icon={cilTrash} />
+                                            </CButton>
+                                        )}
+                                        <CButton
+                                            color="light"
+                                            style={{ color: `green` }}
+                                            size="sm"
+                                            className="me-2"
+                                            onClick={() => handleApprove(maintenance)}
+                                            title="Approve"
+                                        > <CIcon icon={cilCheck} /></CButton>
+                                          <CButton
+                                            color="light"
+                                            style={{ color: `red` }}
+                                            size="sm"
+                                            className="me-2"
+                                            onClick={() => handleReject(maintenance)}
+                                            title="Reject"
+                                          > <CIcon icon={cilX} /></CButton>
+                                        <CButton
+                                            color="light"
+                                            size="sm"
+                                            className="me-2"
+                                            onClick={() => handleAssign(maintenance)}
+                                            title="Assign"
+                                        > <CIcon icon={cilShare} /></CButton>
+                                        <CButton
+                                            color="light"
+                                            size="sm"
+                                            className="me-2"
+                                            onClick={() => handleViewDetails(maintenance)}
+                                            title="View Details"
+                                        >
+                                            <CIcon icon={cilFullscreen} />
+                                        </CButton>
+                                    </div>
+                                </CTableDataCell>
+                            </CTableRow>
+                        );
+                    })}
+                </CTableBody>
+            </CTable>
+
+            {/* Pagination */}
+            <div className="d-flex justify-content-between align-items-center mt-3">
+                <span>Total Requests: {totalRequests}</span>
+                <CPagination className="d-inline-flex">
+                    <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
+                        «
+                    </CPaginationItem>
+                    <CPaginationItem
+                        disabled={currentPage === 1}
+                        onClick={() => handlePageChange(currentPage - 1)}
+                    >
+                        ‹
+                    </CPaginationItem>
+                    {[...Array(totalPages)].map((_, index) => (
+                        <CPaginationItem
+                            key={index + 1}
+                            active={index + 1 === currentPage}
+                            onClick={() => handlePageChange(index + 1)}
+                        >
+                            {index + 1}
+                        </CPaginationItem>
+                    ))}
+                    <CPaginationItem
+                        disabled={currentPage === totalPages}
+                        onClick={() => handlePageChange(currentPage + 1)}
+                    >
+                        ›
+                    </CPaginationItem>
+                    <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)}>
+                        »
+                    </CPaginationItem>
+                </CPagination>
+            </div>
         </div>
-      </div>
-
-      {/* Maintenance Table */}
-      <CTable striped hover bordered>
-        <CTableHead className="table-light">
-          <CTableRow>
-            <CTableHeaderCell>#</CTableHeaderCell>
-            <CTableHeaderCell>Tenant Name</CTableHeaderCell>
-            <CTableHeaderCell>Email</CTableHeaderCell>
-            <CTableHeaderCell>Phone</CTableHeaderCell>
-            <CTableHeaderCell onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
-              Status
-              {sortConfig.key === 'status' && (
-                <CIcon
-                  icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom}
-                />
-              )}
-            </CTableHeaderCell>
-            <CTableHeaderCell>Actions</CTableHeaderCell>
-          </CTableRow>
-        </CTableHead>
-        <CTableBody>
-          {sortedMaintenance.map((maintenance, index) => (
-            <CTableRow key={maintenance._id || index}>
-              <CTableDataCell>{(currentPage - 1) * 5 + index + 1}</CTableDataCell>
-              <CTableDataCell>{maintenance.tenant?.tenantName || 'N/A'}</CTableDataCell>
-              <CTableDataCell>{maintenance.tenant?.contactInformation?.email || 'N/A'}</CTableDataCell>
-              <CTableDataCell>{maintenance.tenant?.contactInformation?.phoneNumber || 'N/A'}</CTableDataCell>
-              <CTableDataCell>
-                <CBadge color={getStatusColor(maintenance.status)}>
-                  {maintenance.status || 'N/A'}
-                </CBadge>
-              </CTableDataCell>
-              <CTableDataCell>
-                <CButton
-                  color="light"
-                  size="sm"
-                  className="me-2"
-                  onClick={() => handleViewDetails(maintenance)}
-                  title="View Details"
-                >
-                  <CIcon icon={cilZoom} />
-                </CButton>
-                {role === 'User' && userPermissions?.editMaintenance && (
-                  <CButton
-                    color="light"
-                    size="sm"
-                    className="me-2"
-                    onClick={() => handleEdit(maintenance)}
-                    title="Edit"
-                  >
-                    <CIcon icon={cilPencil} />
-                  </CButton>
-                )}
-                {role === 'User' && userPermissions?.deleteMaintenance && (
-                  <CButton
-                    color="light"
-                    style={{ color: `red` }}
-                    size="sm"
-                    onClick={() => handleDelete(maintenance)}
-                    title="Delete"
-                  >
-                    <CIcon icon={cilTrash} />
-                  </CButton>
-                )}
-              </CTableDataCell>
-            </CTableRow>
-          ))}
-        </CTableBody>
-      </CTable>
-
-      {/* Pagination */}
-      <div className="d-flex justify-content-between align-items-center mt-3">
-        <span>Total Requests: {totalRequests}</span>
-        <CPagination className="d-inline-flex">
-          <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
-            &laquo;
-          </CPaginationItem>
-          <CPaginationItem
-            disabled={currentPage === 1}
-            onClick={() => handlePageChange(currentPage - 1)}
-          >
-            &lsaquo;
-          </CPaginationItem>
-          {[...Array(totalPages)].map((_, index) => (
-            <CPaginationItem
-              key={index + 1}
-              active={index + 1 === currentPage}
-              onClick={() => handlePageChange(index + 1)}
-            >
-              {index + 1}
-            </CPaginationItem>
-          ))}
-          <CPaginationItem
-            disabled={currentPage === totalPages}
-            onClick={() => handlePageChange(currentPage + 1)}
-          >
-            &rsaquo;
-          </CPaginationItem>
-          <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)}>
-            &raquo;
-          </CPaginationItem>
-        </CPagination>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default React.memo(MaintenanceTable);

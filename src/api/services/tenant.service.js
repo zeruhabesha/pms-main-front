@@ -1,3 +1,4 @@
+// tenant.service.js
 import httpCommon from '../http-common';
 import { encryptData, decryptData } from '../utils/crypto';
 
@@ -32,7 +33,7 @@ class TenantService {
         }
     }
 
-  async fetchTenants(page = 1, limit = 5, searchTerm = '') {
+    async fetchTenants(page = 1, limit = 5, searchTerm = '') {
         try {
             const response = await httpCommon.get(this.baseURL, {
                 headers: this.getAuthHeader(),
@@ -75,21 +76,23 @@ class TenantService {
         }
     }
 
-
     async addTenant(tenantData) {
         try {
-            const formData = this.createFormData(tenantData);
-             const response = await httpCommon.post(this.baseURL, formData, {
-              headers: {
-                  ...this.getAuthHeader(),
-                  'Content-Type': 'multipart/form-data',
+            console.log("Sending POST request with data:", tenantData);
+            const response = await httpCommon.post(this.baseURL, tenantData, {
+                headers: {
+                    ...this.getAuthHeader(),
+                    'Content-Type': 'multipart/form-data',
                 },
             });
             return response.data?.data;
         } catch (error) {
+            console.error("API call failed:", error);
             throw this.handleError(error);
         }
     }
+    
+    
 
     async updateTenant(id, tenantData) {
         try {
@@ -106,7 +109,6 @@ class TenantService {
         }
     }
 
-
     async deleteTenant(id) {
         try {
             await httpCommon.delete(`${this.baseURL}/${id}`, {
@@ -118,51 +120,67 @@ class TenantService {
         }
     }
 
-     async uploadPhoto(id, photo) {
+    async uploadPhoto(id, photo) {
         try {
-             const formData = this.createFormData({ photo }, 'photo');
-              const response =  await httpCommon.post(`${this.baseURL}/${id}/photo`, formData, {
+            const formData = new FormData();
+            formData.append('idProof', photo); // Use 'idProof' to match backend
+            const response = await httpCommon.put(`${this.baseURL}/${id}`, formData, {
                 headers: {
-                    ...this.getAuthHeader(),
-                    'Content-Type': 'multipart/form-data',
+                  ...this.getAuthHeader(),
+                   'Content-Type': 'multipart/form-data',
                 },
-            });
-            return response.data?.photoUrl
-        } catch (error) {
-            throw this.handleError(error);
-        }
-    }
-
-    async getTenantById(id) {
-        try {
-            const response = await httpCommon.get(`${this.baseURL}/${id}`, {
-                headers: this.getAuthHeader(),
             });
             return response.data?.data;
         } catch (error) {
             throw this.handleError(error);
         }
     }
+    async getTenantById(id) {
+        try {
+            const response = await httpCommon.get(`${this.baseURL}/${id}`, {
+                headers: this.getAuthHeader(),
+            });
+             return response.data?.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    async generateReport(startDate, endDate) {
+      try {
+          const response = await httpCommon.get(`${this.baseURL}/report`, {
+              headers: this.getAuthHeader(),
+               params: { startDate, endDate },
+          });
+          return response.data?.data;
+      } catch (error) {
+          throw this.handleError(error);
+      }
+  }
 
-    createFormData(data, mediaFieldName = 'media') {
-      const formData = new FormData();
+    createFormData(data) {
+        const formData = new FormData();
 
-       if(data && data.photo) {
-          if (data.photo instanceof File) {
-             formData.append(mediaFieldName, data.photo);
-           } else {
-             console.warn('Skipping non-file photo:', data.photo);
+         for (const key in data) {
+             if (data.hasOwnProperty(key)) {
+            const value = data[key];
+
+                if (Array.isArray(value)) {
+                    value.forEach((file, index) => {
+                       if(file instanceof File){
+                          formData.append(`${key}[${index}]`, file); // Handle multiple files
+                      } else {
+                            formData.append(`${key}[${index}]`, file);
+                      }
+                    });
+                 } else if(value instanceof File) {
+                  formData.append(key, value)
+                 } else if (value != null) {
+                     formData.append(key, typeof value === 'object' ? JSON.stringify(value) : value);
+                  }
            }
         }
-          Object.entries(data).forEach(([key, value]) => {
-             if (value != null && key !== mediaFieldName) {
-               formData.append(key, typeof value === 'object' ? JSON.stringify(value) : value);
-              }
-            });
-
-           return formData;
-   }
-
+       return formData;
+    }
     handleError(error) {
          console.error('API Error:', error.response?.data || error.message);
         throw {

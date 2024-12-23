@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     CTable,
     CTableHead,
@@ -9,6 +9,7 @@ import {
     CPagination,
     CPaginationItem,
     CButton,
+    CBadge,
 } from '@coreui/react';
 import { CSVLink } from 'react-csv';
 import jsPDF from 'jspdf';
@@ -17,14 +18,20 @@ import { CIcon } from '@coreui/icons-react';
 import {
     cilFile,
     cilCloudDownload,
-    cilClipboard,
     cilPencil,
     cilTrash,
     cilFullscreen,
+    cilArrowTop,
+    cilArrowBottom,
+    cilPeople,
+    cilEnvelopeOpen,
+    cilPhone,
+    cilCheckCircle,
+    cilBan,
 } from '@coreui/icons';
-import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { decryptData } from '../../api/utils/crypto';
 import PropTypes from 'prop-types';
+import PropertyDeleteModal from './PropertyDeleteModal';
 
 const PropertyTable = ({
     properties = [],
@@ -39,6 +46,7 @@ const PropertyTable = ({
 }) => {
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
     const [userPermissions, setUserPermissions] = useState(null);
+    const [deleteModal, setDeleteModal] = useState({ visible: false, propertyToDelete: null });
     totalPages = Math.ceil(totalProperties / itemsPerPage);
 
     useEffect(() => {
@@ -58,7 +66,7 @@ const PropertyTable = ({
         }));
     };
 
-    const sortedProperties = React.useMemo(() => {
+    const sortedProperties = useMemo(() => {
         if (!sortConfig.key) return properties;
 
         return [...properties].sort((a, b) => {
@@ -79,6 +87,29 @@ const PropertyTable = ({
         type: property.propertyType || 'N/A',
     }));
 
+    const formatCurrency = (amount) => {
+        if (!amount) return 'N/A';
+        try {
+            return new Intl.NumberFormat(navigator.language, {
+                style: 'currency',
+                currency: 'USD',
+            }).format(amount);
+        } catch (e) {
+            console.error('Error formatting currency', e);
+            return 'N/A';
+        }
+    };
+
+    const generatePDFTableData = () => {
+        return sortedProperties.map((property, index) => [
+            (currentPage - 1) * itemsPerPage + index + 1,
+            property.title || 'N/A',
+            formatCurrency(property.price),
+            property.address || 'N/A',
+            property.propertyType || 'N/A',
+        ]);
+    };
+
     const exportToPDF = () => {
         if (!sortedProperties.length) {
             console.warn('No properties to export to PDF');
@@ -86,216 +117,239 @@ const PropertyTable = ({
         }
         const doc = new jsPDF();
         doc.text('Property Data', 14, 10);
-
-        const tableData = sortedProperties.map((property, index) => [
-            (currentPage - 1) * itemsPerPage + index + 1,
-            property.title || 'N/A',
-            property.price || 'N/A',
-            property.address || 'N/A',
-            property.propertyType || 'N/A',
-        ]);
-
+        const tableData = generatePDFTableData();
         doc.autoTable({
             head: [['#', 'Title', 'Price', 'Address', 'Type']],
             body: tableData,
             startY: 20,
         });
-
         doc.save('property_data.pdf');
     };
 
     const getPaginationRange = (currentPage, totalPages) => {
-      if (totalPages <= 5) {
-          // Display all pages if totalPages is small
-          return Array.from({ length: totalPages }, (_, i) => i + 1);
-      }
-  
-      const range = [];
-      const delta = 2; // Number of pages to show on each side
-  
-      for (let i = Math.max(1, currentPage - delta); i <= Math.min(totalPages, currentPage + delta); i++) {
-          range.push(i);
-      }
-  
-      if (range[0] > 1) {
-          if (range[0] > 2) range.unshift('...');
-          range.unshift(1);
-      }
-  
-      if (range[range.length - 1] < totalPages) {
-          if (range[range.length - 1] < totalPages - 1) range.push('...');
-          range.push(totalPages);
-      }
-  
-      console.log('Pagination range:', range); // Debug output
-      return range;
-  };
-  
-  
-  
+        if (totalPages <= 5) {
+            return Array.from({ length: totalPages }, (_, i) => i + 1);
+        }
+
+        const delta = 2;
+        const range = [];
+
+        for (let i = Math.max(1, currentPage - delta); i <= Math.min(totalPages, currentPage + delta); i++) {
+            range.push(i);
+        }
+
+        if (range[0] > 1) {
+            if (range[0] > 2) range.unshift('...');
+            range.unshift(1);
+        }
+
+        if (range[range.length - 1] < totalPages) {
+            if (range[range.length - 1] < totalPages - 1) range.push('...');
+            range.push(totalPages);
+        }
+
+        return range;
+    };
+
+    const getStatusIcon = (status) => {
+        const statusIconMap = {
+            open: <CIcon icon={cilCheckCircle} className="text-success" title="Open" />,
+            reserved: <CIcon icon={cilBan} className="text-danger" title="Reserved" />,
+        };
+        return statusIconMap[status?.toLowerCase()] || null;
+    };
+
+    const openDeleteModal = (property) => {
+        setDeleteModal({ visible: true, propertyToDelete: property });
+    };
+
+    const closeDeleteModal = () => {
+        setDeleteModal({ visible: false, propertyToDelete: null });
+    };
+
     return (
         <div>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <strong>Total Properties:</strong> {totalProperties}
-                </div>
-                <div className="d-flex gap-2">
-                    <CSVLink
-                        data={csvData}
-                        headers={[
-                            { label: '#', key: 'index' },
-                            { label: 'Title', key: 'title' },
-                            { label: 'Price', key: 'price' },
-                            { label: 'Address', key: 'address' },
-                            { label: 'Type', key: 'type' },
-                        ]}
-                        filename="property_data.csv"
-                        className="btn btn-dark"
-                    >
-                        <CIcon icon={cilFile} title="Export CSV" />
-                    </CSVLink>
-                    <CopyToClipboard text={JSON.stringify(csvData)}>
-                        <button className="btn btn-dark" title="Copy to Clipboard">
-                            <CIcon icon={cilClipboard} />
-                        </button>
-                    </CopyToClipboard>
-                    <button className="btn btn-dark" onClick={exportToPDF} title="Export PDF">
-                        <CIcon icon={cilCloudDownload} />
-                    </button>
-                </div>
-            </div>
-
-            <CTable hover responsive>
-                <CTableHead>
+            <CTable align="middle" className="mb-0 border" hover responsive>
+                <CTableHead className="text-nowrap">
                     <CTableRow>
-                        <CTableHeaderCell>#</CTableHeaderCell>
-                        <CTableHeaderCell onClick={() => handleSort('title')} style={{ cursor: 'pointer' }}>
+                        <CTableHeaderCell className="bg-body-tertiary text-center">
+                            <CIcon icon={cilPeople} />
+                        </CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('title')} style={{ cursor: 'pointer' }}>
                             Title
+                            {sortConfig.key === 'title' && (
+                                <CIcon
+                                    icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom}
+                                />
+                            )}
                         </CTableHeaderCell>
-                        <CTableHeaderCell onClick={() => handleSort('price')} style={{ cursor: 'pointer' }}>
+                        <CTableHeaderCell className="bg-body-tertiary">
+                            Property Type
+                        </CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('price')} style={{ cursor: 'pointer' }}>
                             Price
+                            {sortConfig.key === 'price' && (
+                                <CIcon
+                                    icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom}
+                                />
+                            )}
                         </CTableHeaderCell>
-                        <CTableHeaderCell onClick={() => handleSort('address')} style={{ cursor: 'pointer' }}>
+                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('address')} style={{ cursor: 'pointer' }}>
                             Address
+                            {sortConfig.key === 'address' && (
+                                <CIcon
+                                    icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom}
+                                />
+                            )}
                         </CTableHeaderCell>
-                        <CTableHeaderCell>Type</CTableHeaderCell>
-                        <CTableHeaderCell>Actions</CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary">
+                            Status
+                        </CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary">Actions</CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                    {sortedProperties.length ? (
-                        sortedProperties.map((property, index) => (
-                            <CTableRow key={property.id || index}>
-                                <CTableDataCell>{(currentPage - 1) * itemsPerPage + index + 1}</CTableDataCell>
-                                <CTableDataCell>{property.title || 'N/A'}</CTableDataCell>
-                                <CTableDataCell>{property.price ? `$${property.price}` : 'N/A'}</CTableDataCell>
-                                <CTableDataCell>{property.address || 'N/A'}</CTableDataCell>
-                                <CTableDataCell>{property.propertyType || 'N/A'}</CTableDataCell>
-                                <CTableDataCell>
-                                    <CButton
-                                        color="light"
-                                        size="sm"
-                                        className="me-2"
-                                        onClick={() => onView(property)}
-                                        title="View Property"
-                                    >
-                                        <CIcon icon={cilFullscreen} />
-                                    </CButton>
-                                    {userPermissions?.editProperty && (
-                                        <CButton
-                                            color="light"
-                                            size="sm"
-                                            className="me-2"
-                                            onClick={() => onEdit(property.id)}
-                                            title="Edit Property"
-                                        >
-                                            <CIcon icon={cilPencil} />
-                                        </CButton>
-                                    )}
-                                    {userPermissions?.deleteProperty && (
-                                        <CButton
-                                            color="light"
-                                            size="sm"
-                                            style={{ color: 'red' }}
-                                            onClick={() => onDelete(property.id)}
-                                            title="Delete Property"
-                                        >
-                                            <CIcon icon={cilTrash} />
-                                        </CButton>
-                                    )}
-                                </CTableDataCell>
-                            </CTableRow>
-                        ))
+                    {sortedProperties.length > 0 ? (
+                        sortedProperties.map((property, index) => {
+                            const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
+                            return (
+                                <CTableRow key={property.id || index}>
+                                    <CTableDataCell className="text-center">{rowNumber}</CTableDataCell>
+                                    <CTableDataCell>{property.title || 'N/A'}</CTableDataCell>
+                                    <CTableDataCell>
+                                        {property?.propertyType || 'N/A'}
+                                    </CTableDataCell>
+                                    <CTableDataCell>{formatCurrency(property.price)}</CTableDataCell>
+                                    <CTableDataCell>{property.address || 'N/A'}</CTableDataCell>
+                                    <CTableDataCell>
+                                        {getStatusIcon(property.status)}
+                                    </CTableDataCell>
+                                    <CTableDataCell>
+                                        <div className="d-flex align-items-center">
+                                            {userPermissions?.editProperty && (
+                                                <CButton
+                                                    color="light"
+                                                    size="sm"
+                                                    className="me-2"
+                                                    onClick={() => onEdit(property)}
+                                                    title="Edit Property"
+                                                    aria-label="Edit Property"
+                                                >
+                                                    <CIcon icon={cilPencil} />
+                                                </CButton>
+                                            )}
+                                            {userPermissions?.deleteProperty && (
+                                                <CButton
+                                                    color="light"
+                                                    size="sm"
+                                                    className="me-2"
+                                                    style={{ color: 'red' }}
+                                                    onClick={() => openDeleteModal(property)}
+                                                    title="Delete Property"
+                                                    aria-label="Delete Property"
+                                                >
+                                                    <CIcon icon={cilTrash} />
+                                                </CButton>
+                                            )}
+                                            <CButton
+                                                color="light"
+                                                size="sm"
+                                                className="me-2"
+                                                onClick={() => onView(property)}
+                                                title="View Property"
+                                                aria-label="View Property"
+                                            >
+                                                <CIcon icon={cilFullscreen} />
+                                            </CButton>
+                                        </div>
+                                    </CTableDataCell>
+                                </CTableRow>
+                            );
+                        })
                     ) : (
                         <CTableRow>
-                            <CTableDataCell colSpan="6" className="text-center">
+                            <CTableDataCell colSpan="8" className="text-center">
                                 No properties available.
                             </CTableDataCell>
                         </CTableRow>
                     )}
                 </CTableBody>
+
             </CTable>
 
             {totalPages > 1 && (
                 <div className="d-flex justify-content-between align-items-center mt-3">
-                     <span>Total Properties: {totalProperties}</span>
-                     <CPagination className="d-inline-flex">
-    <CPaginationItem
-        disabled={currentPage <= 1}
-        onClick={() => handlePageChange(1)}
-    >
-        «
-    </CPaginationItem>
-    <CPaginationItem
-        disabled={currentPage <= 1}
-        onClick={() => handlePageChange(currentPage - 1)}
-    >
-        ‹
-    </CPaginationItem>
+                    <span>Total Properties: {totalProperties}</span>
+                    <CPagination className="d-inline-flex">
+                        <CPaginationItem
+                            disabled={currentPage <= 1}
+                            onClick={() => handlePageChange(1)}
+                            aria-label="Go to first page"
+                        >
+                            «
+                        </CPaginationItem>
+                        <CPaginationItem
+                            disabled={currentPage <= 1}
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            aria-label="Go to previous page"
+                        >
+                            ‹
+                        </CPaginationItem>
 
-    {getPaginationRange(currentPage, totalPages).map((page, index) =>
-        page === '...' ? (
-            <CPaginationItem key={`dots-${index}`} disabled>
-                ...
-            </CPaginationItem>
-        ) : (
-            <CPaginationItem
-                key={`page-${page}`}
-                active={page === currentPage}
-                onClick={() => handlePageChange(page)}
-            >
-                {page}
-            </CPaginationItem>
-        )
-    )}
+                        {getPaginationRange(currentPage, totalPages).map((page, index) =>
+                            page === '...' ? (
+                                <CPaginationItem key={`dots-${index}`} disabled>
+                                    ...
+                                </CPaginationItem>
+                            ) : (
+                                <CPaginationItem
+                                    key={`page-${page}`}
+                                    active={page === currentPage}
+                                    onClick={() => handlePageChange(page)}
+                                    aria-label={`Go to page ${page}`}
+                                >
+                                    {page}
+                                </CPaginationItem>
+                            )
+                        )}
 
-    <CPaginationItem
-        disabled={currentPage >= totalPages}
-        onClick={() => handlePageChange(currentPage + 1)}
-    >
-        ›
-    </CPaginationItem>
-    <CPaginationItem
-        disabled={currentPage >= totalPages}
-        onClick={() => handlePageChange(totalPages)}
-    >
-        »
-    </CPaginationItem>
-</CPagination>
+                        <CPaginationItem
+                            disabled={currentPage >= totalPages}
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            aria-label="Go to next page"
+                        >
+                            ›
+                        </CPaginationItem>
+                        <CPaginationItem
+                            disabled={currentPage >= totalPages}
+                            onClick={() => handlePageChange(totalPages)}
+                            aria-label="Go to last page"
+                        >
+                            »
+                        </CPaginationItem>
+                    </CPagination>
                 </div>
             )}
+            <PropertyDeleteModal
+                visible={deleteModal.visible}
+                onClose={closeDeleteModal}
+                confirmDelete={onDelete}
+                propertyToDelete={deleteModal.propertyToDelete}
+            />
         </div>
     );
 };
+
 PropertyTable.propTypes = {
-  properties: PropTypes.array,
-  totalProperties: PropTypes.number,
-  onEdit: PropTypes.func,
-  onDelete: PropTypes.func,
-  onView: PropTypes.func,
-  currentPage: PropTypes.number,
-  handlePageChange: PropTypes.func,
-  totalPages: PropTypes.number,
-  itemsPerPage: PropTypes.number,
-}
+    properties: PropTypes.array,
+    totalProperties: PropTypes.number,
+    onEdit: PropTypes.func,
+    onDelete: PropTypes.func,
+    onView: PropTypes.func,
+    currentPage: PropTypes.number,
+    handlePageChange: PropTypes.func,
+    totalPages: PropTypes.number,
+    itemsPerPage: PropTypes.number,
+};
+
 export default PropertyTable;

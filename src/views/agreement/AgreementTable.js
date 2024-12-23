@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     CTable,
     CTableBody,
@@ -9,19 +9,27 @@ import {
     CButton,
     CPagination,
     CPaginationItem,
+    CProgress
 } from "@coreui/react";
 import { CIcon } from "@coreui/icons-react";
 import {
-    cilPencil,
     cilTrash,
-    cilPlus,
-    cilMinus,
     cilCloudDownload as cilDocumentDownload,
+    cilFullscreen,
+    cilPeople,
+    cilFlagAlt,
+    cilPencil,
+    cilCreditCard,
+    cilMoney,
+    cilBank,
+    cilDescription, // Changed from cilNote to cilDescription
 } from "@coreui/icons";
+
 import PropTypes from "prop-types";
-import { useDispatch, useSelector } from "react-redux";
-import { toggleExpandedRow, selectExpandedRows } from "../../api/slice/AgreementSlice";
+import { useDispatch } from "react-redux";
 import { downloadAgreementFile } from "../../api/actions/AgreementActions";
+import AgreementDetailsModal from "./AgreementDetailsModal";
+import { useNavigate } from "react-router-dom";
 
 const AgreementTable = ({
     agreements,
@@ -33,7 +41,9 @@ const AgreementTable = ({
     itemsPerPage,
 }) => {
     const dispatch = useDispatch();
-    const expandedRows = useSelector(selectExpandedRows);
+     const navigate = useNavigate();
+    const [selectedAgreement, setSelectedAgreement] = useState(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
 
     const handleDownloadDocument = (fileName) => {
         if (!fileName) {
@@ -43,8 +53,14 @@ const AgreementTable = ({
         dispatch(downloadAgreementFile(fileName));
     };
 
-    const handleToggleRow = (agreementId) => {
-        dispatch(toggleExpandedRow(agreementId));
+    const handleViewDetails = (agreement) => {
+        setSelectedAgreement(agreement);
+        setIsModalVisible(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalVisible(false);
+        setSelectedAgreement(null);
     };
 
     const formatDate = (dateString) => {
@@ -53,43 +69,141 @@ const AgreementTable = ({
             const date = new Date(dateString);
             return date.toLocaleDateString();
         } catch (e) {
-             console.warn('Invalid Date', dateString)
-             return 'N/A'
+            console.warn('Invalid Date', dateString);
+            return 'N/A';
         }
+    };
+
+    const generateUsage = (rentAmount) => {
+        const value = rentAmount ? Math.min(Math.max(parseInt(rentAmount), 0), 100) : 0;
+        let color = 'success';
+        if (value < 25) {
+            color = 'danger';
+        } else if (value < 50) {
+            color = 'warning';
+        } else if (value < 75) {
+            color = 'info';
+        }
+        return {
+            value,
+            period: 'rent amount',
+            color,
+        };
+    };
+
+    const getPaymentMethodIcon = (paymentMethod) => {
+        switch (paymentMethod) {
+            case 'cash':
+                return cilMoney;
+            case 'cheque':
+                return cilDescription;
+            case 'bank transfer':
+                return cilBank;
+            default:
+                return cilCreditCard;
+        }
+    };
+    const handleEditClick = (agreement) => {
+        onEdit(agreement);
     };
 
     return (
         <div>
-            <CTable responsive>
-                <CTableHead>
+            <CTable align="middle" className="mb-0 border" hover responsive>
+                <CTableHead className="text-nowrap">
                     <CTableRow>
-                        <CTableHeaderCell>#</CTableHeaderCell>
-                        <CTableHeaderCell>Tenant</CTableHeaderCell>
-                        <CTableHeaderCell>Property</CTableHeaderCell>
-                        <CTableHeaderCell>Lease Start</CTableHeaderCell>
-                        <CTableHeaderCell>Lease End</CTableHeaderCell>
-                        <CTableHeaderCell>Rent Amount</CTableHeaderCell>
-                        <CTableHeaderCell>Documents</CTableHeaderCell>
-                        <CTableHeaderCell>Actions</CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary text-center">
+                            <CIcon icon={cilPeople} />
+                        </CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary">Tenant</CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary">Property</CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary">Lease</CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary">Usage</CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary text-center">
+                            Payment
+                        </CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary">Actions</CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
                 <CTableBody>
                     {agreements.map((agreement, index) => {
                         const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
+                        const usage = generateUsage(agreement.rentAmount);
+                        const paymentIcon = getPaymentMethodIcon(agreement.paymentTerms?.paymentMethod);
                         return (
-                            <React.Fragment key={agreement._id}>
-                                <CTableRow>
-                                    <CTableDataCell>{rowNumber}</CTableDataCell>
-                                    <CTableDataCell>{agreement.tenant?.tenantName || "N/A"}</CTableDataCell>
-                                    <CTableDataCell>{agreement.property?.title || "N/A"}</CTableDataCell>
-                                    <CTableDataCell>{formatDate(agreement.leaseStart)}</CTableDataCell>
-                                    <CTableDataCell>{formatDate(agreement.leaseEnd)}</CTableDataCell>
-                                    <CTableDataCell>
+                            <CTableRow key={agreement._id}>
+                                <CTableDataCell className="text-center">{rowNumber}</CTableDataCell>
+                                <CTableDataCell>
+                                    <div>{agreement.tenant?.tenantName || "N/A"}</div>
+                                    {/*  <div className="small text-body-secondary text-nowrap">
+                                         <span>ID:{agreement.tenant?._id}</span>
+                                  </div> */}
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <div>{agreement.property?.title || "N/A"}</div>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <span>Address:{agreement.property?.address}</span>
+                                    </div>
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <span>Start:{formatDate(agreement.leaseStart)}</span>
+                                    </div>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <span>End:{formatDate(agreement.leaseEnd)}</span>
+                                    </div>
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                  <div className="d-flex justify-content-between text-nowrap">
+                                      <div className="fw-semibold">
                                         {agreement.rentAmount ? `$${agreement.rentAmount}` : "N/A"}
-                                    </CTableDataCell>
-                                    <CTableDataCell>
-                                        {agreement.documents?.length > 0 ? (
-                                            agreement.documents.map((doc, i) => (
+                                      </div>
+                                      <div className="ms-3">
+                                          <small className="text-body-secondary">{usage.period}</small>
+                                       </div>
+                                  </div>
+                                    <CProgress thin color={usage.color} value={usage.value} />
+                                </CTableDataCell>
+                                <CTableDataCell className="text-center">
+                                    <CIcon
+                                        size="xl"
+                                        icon={paymentIcon}
+                                        title={agreement.paymentTerms?.paymentMethod}
+                                    />
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <div className="d-flex align-items-center">
+                                         <CButton
+                                            color="light"
+                                            size="sm"
+                                           onClick={() => handleEditClick(agreement)}
+                                            className="me-2"
+                                            title="Edit Agreement"
+                                        >
+                                              <CIcon icon={cilPencil} />
+                                         </CButton>
+                                        <CButton
+                                            color="light"
+                                            size="sm"
+                                            style={{ color: "red" }}
+                                            onClick={() => onDelete(agreement._id)}
+                                            className="me-2"
+                                            title="Delete Agreement"
+                                        >
+                                            <CIcon icon={cilTrash} />
+                                        </CButton>
+                                        <CButton
+                                            color="light"
+                                            size="sm"
+                                            className="me-2"
+                                            onClick={() => handleViewDetails(agreement)}
+                                            title="View Details"
+                                        >
+                                            <CIcon icon={cilFullscreen} />
+                                        </CButton>
+                                          {agreement.documents?.length > 0 &&
+                                        <>
+                                            {agreement.documents.map((doc, i) => (
                                                 <CButton
                                                     key={i}
                                                     color="light"
@@ -98,112 +212,69 @@ const AgreementTable = ({
                                                     onClick={() => handleDownloadDocument(doc)}
                                                     title={`Download ${doc}`}
                                                 >
-                                                    <CIcon icon={cilDocumentDownload} /> {doc}
+                                                    <CIcon icon={cilDocumentDownload} />
                                                 </CButton>
-                                            ))
-                                        ) : (
-                                            "No Documents"
-                                        )}
-                                    </CTableDataCell>
-                                    <CTableDataCell>
-                                        <CButton
-                                            color="light"
-                                            size="sm"
-                                            onClick={() => onEdit(agreement)}
-                                            className="me-2"
-                                            title="Edit"
-                                        >
-                                            <CIcon icon={cilPencil} />
-                                        </CButton>
-                                        <CButton
-                                            color="light"
-                                            size="sm"
-                                            style={{ color: "red" }}
-                                            onClick={() => onDelete(agreement._id)}
-                                            className="me-2"
-                                            title="Delete"
-                                        >
-                                            <CIcon icon={cilTrash} />
-                                        </CButton>
-                                        <CButton
-                                            color="light"
-                                            size="sm"
-                                            onClick={() => handleToggleRow(agreement._id)}
-                                            title={expandedRows[agreement._id] ? "Collapse" : "Expand"}
-                                        >
-                                            <CIcon icon={expandedRows[agreement._id] ? cilMinus : cilPlus} />
-                                        </CButton>
-                                    </CTableDataCell>
-                                </CTableRow>
-                                {expandedRows[agreement._id] && (
-                                    <CTableRow>
-                                        <CTableDataCell colSpan="8" className="bg-light p-3">
-                                            <div>
-                                                <strong>Security Deposit:</strong> ${agreement.securityDeposit || "N/A"}
-                                            </div>
-                                            <div>
-                                                <strong>Payment Terms:</strong> {agreement.paymentTerms?.dueDate || "N/A"} - {agreement.paymentTerms?.paymentMethod || "N/A"}
-                                            </div>
-                                            <div>
-                                                <strong>Rules and Conditions:</strong> {agreement.rulesAndConditions || "N/A"}
-                                            </div>
-                                            <div>
-                                                <strong>Additional Occupants:</strong> {agreement.additionalOccupants?.join(", ") || "None"}
-                                            </div>
-                                            <div>
-                                                <strong>Utilities and Services:</strong> {agreement.utilitiesAndServices || "N/A"}
-                                            </div>
-                                        </CTableDataCell>
-                                    </CTableRow>
-                                )}
-                            </React.Fragment>
+                                            ))}
+                                        </> }
+                                    </div>
+                                </CTableDataCell>
+                            </CTableRow>
                         );
                     })}
                 </CTableBody>
             </CTable>
 
-            {totalPages > 1 && (
-                <CPagination className="mt-3">
-                    <CPaginationItem
-                        disabled={currentPage === 1}
-                        onClick={() => handlePageChange(1)}
-                        title="First Page"
-                    >
-                        «
-                    </CPaginationItem>
-                    <CPaginationItem
-                        disabled={currentPage === 1}
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        title="Previous Page"
-                    >
-                        ‹
-                    </CPaginationItem>
-                    {Array.from({ length: totalPages }, (_, index) => (
+            <div className="d-flex justify-content-between align-items-center mt-3">
+                <span>Total Agreements: {agreements.length}</span>
+                {totalPages > 1 && (
+                    <CPagination className="mt-3">
                         <CPaginationItem
-                            key={index + 1}
-                            active={index + 1 === currentPage}
-                            onClick={() => handlePageChange(index + 1)}
-                            title={`Go to page ${index + 1}`}
+                            disabled={currentPage === 1}
+                            onClick={() => handlePageChange(1)}
+                            title="First Page"
                         >
-                            {index + 1}
+                            «
                         </CPaginationItem>
-                    ))}
-                    <CPaginationItem
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        title="Next Page"
-                    >
-                        ›
-                    </CPaginationItem>
-                    <CPaginationItem
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(totalPages)}
-                        title="Last Page"
-                    >
-                        »
-                    </CPaginationItem>
-                </CPagination>
-            )}
+                        <CPaginationItem
+                            disabled={currentPage === 1}
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            title="Previous Page"
+                        >
+                            ‹
+                        </CPaginationItem>
+                        {Array.from({ length: totalPages }, (_, index) => (
+                            <CPaginationItem
+                                key={index + 1}
+                                active={index + 1 === currentPage}
+                                onClick={() => handlePageChange(index + 1)}
+                                title={`Go to page ${index + 1}`}
+                            >
+                                {index + 1}
+                            </CPaginationItem>
+                        ))}
+                        <CPaginationItem
+                            disabled={currentPage === totalPages}
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            title="Next Page"
+                        >
+                            ›
+                        </CPaginationItem>
+                        <CPaginationItem
+                            disabled={currentPage === totalPages}
+                            onClick={() => handlePageChange(totalPages)}
+                            title="Last Page"
+                        >
+                            »
+                        </CPaginationItem>
+                    </CPagination>
+                )}
+            </div>
+
+            <AgreementDetailsModal
+                visible={isModalVisible}
+                onClose={handleCloseModal}
+                agreement={selectedAgreement}
+            />
         </div>
     );
 };
@@ -214,9 +285,11 @@ AgreementTable.propTypes = {
             _id: PropTypes.string.isRequired,
             tenant: PropTypes.shape({
                 tenantName: PropTypes.string,
+                _id: PropTypes.string,
             }),
             property: PropTypes.shape({
                 title: PropTypes.string,
+                address: PropTypes.string,
             }),
             leaseStart: PropTypes.string,
             leaseEnd: PropTypes.string,
