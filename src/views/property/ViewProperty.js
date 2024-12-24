@@ -37,12 +37,11 @@ import {
     clearSelectedProperty,
     resetState
 } from '../../api/slice/PropertySlice';
-import PropertyDetails from './PropertyDetails';
+
 import AddImage from './AddImage';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const ViewProperty = () => {
-    const [viewingProperty, setViewingProperty] = useState(null);
     const [deletePhotoModal, setDeletePhotoModal] = useState({ visible: false, photoId: null });
     const [updatePhotoModal, setUpdatePhotoModal] = useState({ visible: false, photoId: null });
     // Remove the modal state
@@ -79,11 +78,9 @@ const ViewProperty = () => {
 
 
     const handleViewProperty = (property) => {
-        console.log("View Property Clicked:", property); // Log to check property
-        setViewingProperty(property); // Verify this updates state
+        console.log("View Property Clicked:", property);
+        navigate(`/property/${property.id}`);
     };
-    
-
 
     const handleDeleteProperty = async (id) => {
         try {
@@ -94,10 +91,6 @@ const ViewProperty = () => {
         }
     };
 
-    const handleCloseViewModal = () => {
-        console.log("Closing modal");
-        setViewingProperty(null);
-    };
     
     const handleOpenDeletePhotoModal = (photo) => {
         setDeletePhotoModal({ visible: true, photoId: photo.id }); // Access photo.id here
@@ -105,23 +98,23 @@ const ViewProperty = () => {
 
 
     const handleConfirmDeletePhoto = async () => {
-        if (!viewingProperty || !deletePhotoModal.photoId) {
-            toast.error("Property ID or Photo ID is missing. Unable to delete photo.");
-            return;
-        }
+        //if (!viewingProperty || !deletePhotoModal.photoId) {
+            //toast.error("Property ID or Photo ID is missing. Unable to delete photo.");
+           // return;
+       // }
 
         try {
-            const response = await dispatch(
-                deletePhoto({ propertyId: viewingProperty.id, photoId: deletePhotoModal.photoId })
-            ).unwrap();
+            //const response = await dispatch(
+                //deletePhoto({ propertyId: viewingProperty.id, photoId: deletePhotoModal.photoId })
+            //).unwrap();
 
-            if (response.success) {
-                toast.success('Photo deleted successfully.');
-                setViewingProperty((prevProperty) => ({
-                    ...prevProperty,
-                    photos: prevProperty.photos.filter((p) => p.id !== deletePhotoModal.photoId),
-                }));
-            }
+            //if (response.success) {
+            //    toast.success('Photo deleted successfully.');
+              //  setViewingProperty((prevProperty) => ({
+               //     ...prevProperty,
+                //    photos: prevProperty.photos.filter((p) => p.id !== deletePhotoModal.photoId),
+               // }));
+           // }
             setDeletePhotoModal({ visible: false, photoId: null });
         } catch (err) {
             toast.error(err.message || 'Failed to delete the photo.');
@@ -137,17 +130,17 @@ const ViewProperty = () => {
     };
     const handleConfirmUpdatePhoto = async (newPhotoFile) => {
         try {
-            const response = await dispatch(updatePhoto(viewingProperty.id, { photo: newPhotoFile })).unwrap();
-            if (response.success) {
-                toast.success("Photo updated successfully");
-                setViewingProperty((prevProperty) => ({
-                    ...prevProperty,
-                    photos: prevProperty.photos.map((p) =>
-                        p.id === updatePhotoModal.photoId ? { ...p, photoUrl: response.data.photoUrl } : p
-                    ),
-                }));
+            //const response = await dispatch(updatePhoto(viewingProperty.id, { photo: newPhotoFile })).unwrap();
+            //if (response.success) {
+             //   toast.success("Photo updated successfully");
+              //  setViewingProperty((prevProperty) => ({
+               //     ...prevProperty,
+                //    photos: prevProperty.photos.map((p) =>
+                //        p.id === updatePhotoModal.photoId ? { ...p, photoUrl: response.data.photoUrl } : p
+                //    ),
+               // }));
 
-            }
+           // }
 
             setUpdatePhotoModal({ visible: false, photoId: null })
         } catch (error) {
@@ -305,19 +298,7 @@ const ViewProperty = () => {
                     </CCardBody>
                 </CCard>
             </CCol>
-            {/* Add console log here to check if the PropertyDetail render */}
-            {console.log("PropertyDetails render", viewingProperty)}
-            {viewingProperty && (
-                <PropertyDetails
-                    visible={!!viewingProperty}
-                    setVisible={(isVisible) => {
-                        if (!isVisible) setViewingProperty(null);
-                    }}
-                    viewingProperty={viewingProperty}
-                    handlePhotoDelete={handlePhotoDelete}
-                    handlePhotoUpdate={handlePhotoUpdate}
-                />
-            )}
+           
 
             <CModal visible={deletePhotoModal.visible} onClose={handleCancelDeletePhoto} alignment="center">
                 <CModalHeader>
@@ -338,9 +319,9 @@ const ViewProperty = () => {
             <AddImage
                 visible={updatePhotoModal.visible}
                 onClose={handleCancelUpdatePhoto}
-                propertyId={viewingProperty?.id}
-                propertyTitle={viewingProperty?.title}
-                propertyType={viewingProperty?.propertyType}
+                //propertyId={viewingProperty?.id}
+                //propertyTitle={viewingProperty?.title}
+                //propertyType={viewingProperty?.propertyType}
                 photoId={updatePhotoModal.photoId}
                 confirmUpdatePhoto={handleConfirmUpdatePhoto}
             />

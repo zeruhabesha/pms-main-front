@@ -42,9 +42,9 @@ const PermissionsModal = ({ visible, user, onClose }) => {
         editAgreement: false,
         deleteAgreement: false,
         downloadAgreement: false,
-        addMaintenanceRecord: false,
-        editMaintenance: false,
-        deleteMaintenance: false,
+        // addMaintenanceRecord: false,
+        // editMaintenance: false,
+        // deleteMaintenance: false,
       };
 
       setPermissions({ ...defaultPermissions, ...(response.data.data.permissions || {}) });
@@ -117,15 +117,15 @@ const PermissionsModal = ({ visible, user, onClose }) => {
         downloadAgreement: 'Download Agreement',
       },
     },
-    maintenance: {
-      title: 'Maintenance Management',
-      icon: '🔧',
-      permissions: {
-        addMaintenanceRecord: 'Add Maintenance',
-        editMaintenance: 'Edit Maintenance',
-        deleteMaintenance: 'Delete Maintenance',
-      },
-    },
+    // maintenance: {
+    //   title: 'Maintenance Management',
+    //   icon: '🔧',
+    //   permissions: {
+    //     addMaintenanceRecord: 'Add Maintenance',
+    //     editMaintenance: 'Edit Maintenance',
+    //     deleteMaintenance: 'Delete Maintenance',
+    //   },
+    // },
   };
 
   return (

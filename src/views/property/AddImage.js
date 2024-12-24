@@ -11,9 +11,10 @@ import {
 } from '@coreui/react';
 import PropTypes from 'prop-types';
 
-const AddImage = ({ visible, onClose, propertyId, propertyTitle, confirmUpdatePhoto, setVisible }) => {
+const AddImage = ({ visible, onClose, propertyId, propertyTitle, confirmUpdatePhoto, photoId }) => {
     const [photo, setPhoto] = useState(null);
     const [error, setError] = useState('');
+    
 
     const handleFileChange = (event) => {
         const file = event.target.files[0];
@@ -41,7 +42,6 @@ const AddImage = ({ visible, onClose, propertyId, propertyTitle, confirmUpdatePh
             if (confirmUpdatePhoto) {
                 await confirmUpdatePhoto(photo);
             }
-            setVisible(true); // Reopen PropertyDetails modal
             onClose(); // Close AddImage modal
         } catch (error) {
             setError(error.message || 'Failed to update the photo.');
@@ -49,9 +49,9 @@ const AddImage = ({ visible, onClose, propertyId, propertyTitle, confirmUpdatePh
     };
 
     const handleClose = () => {
-        setVisible(true); // Reopen PropertyDetails modal
-        onClose(); // Close AddImage modal
+          onClose(); // Close AddImage modal
     };
+
 
     return (
         <CModal visible={visible} onClose={handleClose} alignment="center">
@@ -85,7 +85,6 @@ AddImage.propTypes = {
     propertyTitle: PropTypes.string,
     confirmUpdatePhoto: PropTypes.func,
      photoId: PropTypes.string,
-     setVisible: PropTypes.func,
 };
 
 export default AddImage;

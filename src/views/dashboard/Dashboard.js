@@ -152,47 +152,6 @@ const Dashboard = () => {
             </CRow>
 
 
-              <CRow>
-                  <CCol xs={12} sm={6} lg={3}>
-                    <CCard className="mb-4 colored-card">
-                      <div className="border-start border-start-4 border-start-info py-1 px-3">
-                          <div className="text-body-secondary text-truncate small">Pending Requests</div>
-                           <div className="fs-5 fw-semibold">{stats.pendingRequests.toString()}</div>
-                         <div className="chart-container">{generateSparkLineSVG([1,3,5,8,6])}</div>
-                        </div>
-                    </CCard>
-                   </CCol>
-                  <CCol xs={12} sm={6} lg={3}>
-                      <CCard className="mb-4 colored-card">
-                         <div className="border-start border-start-4 border-start-info py-1 px-3">
-                             <div className="text-body-secondary text-truncate small">New Tenants This Month</div>
-                            <div className="fs-5 fw-semibold">{stats.newTenants.toString()}</div>
-                            <div className="chart-container">{generateSparkLineSVG([1,3,10,9,12])}</div>
-                         </div>
-                      </CCard>
-                 </CCol>
-                 <CCol xs={12} sm={6} lg={3}>
-                    <CCard className="mb-4 colored-card">
-                       <div className="border-start border-start-4 border-start-info py-1 px-3">
-                         <div className="text-body-secondary text-truncate small">Average Rent</div>
-                         <div className="fs-5 fw-semibold">${stats.avgRent}</div>
-                            <div className="chart-container">{generateSparkLineSVG([1400, 1500, 1600, 1550, 1700])}</div>
-                       </div>
-                    </CCard>
-                 </CCol>
-                <CCol xs={12} sm={6} lg={3}>
-                   <CCard className="mb-4 colored-card">
-                      <div className="border-start border-start-4 border-start-info py-1 px-3">
-                         <div className="text-body-secondary text-truncate small">Open Maintenance Tasks</div>
-                         <div className="fs-5 fw-semibold">{stats.maintenanceTasks.toString()}</div>
-                            <div className="chart-container">{generateBarChartSVG([1,3,2],3)}</div>
-                      </div>
-                   </CCard>
-                 </CCol>
-
-
-            </CRow>
-
 
 
             <CRow>
@@ -262,7 +221,46 @@ const Dashboard = () => {
                </CCol>
 
             </CRow>
+            <CRow>
+                  <CCol xs={12} sm={6} lg={3}>
+                    <CCard className="mb-4 colored-card">
+                      <div className="border-start border-start-4 border-start-info py-1 px-3">
+                          <div className="text-body-secondary text-truncate small">Pending Requests</div>
+                           <div className="fs-5 fw-semibold">{stats.pendingRequests.toString()}</div>
+                         <div className="chart-container">{generateSparkLineSVG([1,3,5,8,6])}</div>
+                        </div>
+                    </CCard>
+                   </CCol>
+                  <CCol xs={12} sm={6} lg={3}>
+                      <CCard className="mb-4 colored-card">
+                         <div className="border-start border-start-4 border-start-info py-1 px-3">
+                             <div className="text-body-secondary text-truncate small">New Tenants This Month</div>
+                            <div className="fs-5 fw-semibold">{stats.newTenants.toString()}</div>
+                            <div className="chart-container">{generateSparkLineSVG([1,3,10,9,12])}</div>
+                         </div>
+                      </CCard>
+                 </CCol>
+                 <CCol xs={12} sm={6} lg={3}>
+                    <CCard className="mb-4 colored-card">
+                       <div className="border-start border-start-4 border-start-info py-1 px-3">
+                         <div className="text-body-secondary text-truncate small">Average Rent</div>
+                         <div className="fs-5 fw-semibold">${stats.avgRent}</div>
+                            <div className="chart-container">{generateSparkLineSVG([1400, 1500, 1600, 1550, 1700])}</div>
+                       </div>
+                    </CCard>
+                 </CCol>
+                <CCol xs={12} sm={6} lg={3}>
+                   <CCard className="mb-4 colored-card">
+                      <div className="border-start border-start-4 border-start-info py-1 px-3">
+                         <div className="text-body-secondary text-truncate small">Open Maintenance Tasks</div>
+                         <div className="fs-5 fw-semibold">{stats.maintenanceTasks.toString()}</div>
+                            <div className="chart-container">{generateBarChartSVG([1,3,2],3)}</div>
+                      </div>
+                   </CCard>
+                 </CCol>
 
+
+            </CRow>
             <CRow className="mt-4">
                 <CCol lg={6}>
                     <CCard className="animated-card table-card">

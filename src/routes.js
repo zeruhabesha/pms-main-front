@@ -15,6 +15,7 @@ const MaintenanceAssign = React.lazy(() => import('./views/maintenance/Maintenan
 const Property = React.lazy(() => import('./views/property/Property'));
 // const ViewProperty = React.lazy(() => import('./views/property/ViewProperty'));
 const AddProperty = React.lazy(() => import('./views/property/AddProperty'));
+const PropertyDetails = React.lazy(() => import('./views/property/PropertyDetails'));
 const Report = React.lazy(() => import('./views/report/ComingSoon'));
 const About = React.lazy(() => import('./front/pages/AboutPage'));
 const HomePage = React.lazy(() => import('./front/pages/HomePage'));
@@ -31,22 +32,23 @@ const routes = [
 
   // Protected routes (requires authentication)
   { path: '/dashboard', name: 'Dashboard', element: () => <ProtectedRoute element={Dashboard} /> },
-  { path: '/account/superadmin', name: 'Super Admin', element: () => <ProtectedRoute element={SuperAdmin} /> },
-  { path: '/account/admin', name: 'Admin', element: () => <ProtectedRoute element={Admin} /> },
-  { path: '/account/users', name: 'Users', element: () => <ProtectedRoute element={User} /> },
-  { path: '/agreement', name: 'Agreement', element: () => <ProtectedRoute element={Agreement} /> },
-  { path: '/agreement/add', name: 'Agreement', element: () => <ProtectedRoute element={AddAgreement} /> },
-  { path: '/agreement/edit/:id', name: 'Agreement', element: () => <ProtectedRoute element={AddAgreement} /> },
-  { path: '/tenant', name: 'Tenant', element: () => <ProtectedRoute element={Tenant} /> },
-  { path: '/tenant/add', name: 'Tenant', element: () => <ProtectedRoute element={AddTenant} /> },
-  { path: '/tenant/edit/:id', name: 'Tenant', element: () => <ProtectedRoute element={AddTenant} /> },
-  { path: '/maintenance', name: 'Maintenance', element: () => <ProtectedRoute element={Maintenance} /> },
-  { path: '/maintenance/add', name: 'Maintenance', element: () => <ProtectedRoute element={TenantRequestForm} /> },
-  { path: '/maintenance/edit/:id', name: 'Maintenance', element: () => <ProtectedRoute element={TenantRequestForm} /> },
-  { path: '/maintenance/assign/:id', name: 'Maintenance', element: () => <ProtectedRoute element={MaintenanceAssign} /> },
-  { path: '/property', name: 'Property', element: () => <ProtectedRoute element={Property} /> },
-  { path: '/property/edit/:id', name: 'Property', element: () => <ProtectedRoute element={AddProperty} /> },
-  { path: '/property/add', name: 'Property', element: () => <ProtectedRoute element={AddProperty} /> },
+  { path: '/account/superadmin', name: 'Super Admin List', element: () => <ProtectedRoute element={SuperAdmin} /> },
+  { path: '/account/admin', name: 'Admin List', element: () => <ProtectedRoute element={Admin} /> },
+  { path: '/account/users', name: 'Users List', element: () => <ProtectedRoute element={User} /> },
+  { path: '/agreement', name: 'Agreement List', element: () => <ProtectedRoute element={Agreement} /> },
+  { path: '/agreement/add', name: 'Agreement Add', element: () => <ProtectedRoute element={AddAgreement} /> },
+  { path: '/agreement/edit/:id', name: 'Agreement Edit', element: () => <ProtectedRoute element={AddAgreement} /> },
+  { path: '/tenant', name: 'Tenant List', element: () => <ProtectedRoute element={Tenant} /> },
+  { path: '/tenant/add', name: 'Tenant Add', element: () => <ProtectedRoute element={AddTenant} /> },
+  { path: '/tenant/edit/:id', name: 'Tenant Edit', element: () => <ProtectedRoute element={AddTenant} /> },
+  { path: '/maintenance', name: 'Maintenance List', element: () => <ProtectedRoute element={Maintenance} /> },
+  { path: '/maintenance/add', name: 'Maintenance Add', element: () => <ProtectedRoute element={TenantRequestForm} /> },
+  { path: '/maintenance/edit/:id', name: 'Maintenance Edit', element: () => <ProtectedRoute element={TenantRequestForm} /> },
+  { path: '/maintenance/assign/:id', name: 'Maintenance Assign', element: () => <ProtectedRoute element={MaintenanceAssign} /> },
+  { path: '/property', name: 'Property List', element: () => <ProtectedRoute element={Property} /> },
+  { path: '/property/edit/:id', name: 'Property Edit', element: () => <ProtectedRoute element={AddProperty} /> },
+  { path: '/property/add', name: 'Property Add', element: () => <ProtectedRoute element={AddProperty} /> },
+  { path: '/property/:id', name: 'Property Details', element: () => <ProtectedRoute element={PropertyDetails} /> },
   { path: '/report', name: 'Report', element: () => <ProtectedRoute element={Report} /> },
   { path: '/widgets', name: 'Widgets', element: () => <ProtectedRoute element={Widgets} /> },
   { path: '/profile', name: 'Profile', element: () => <ProtectedRoute element={Profile} /> },

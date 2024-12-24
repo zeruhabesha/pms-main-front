@@ -155,9 +155,14 @@ const PropertyTable = ({
         const statusIconMap = {
             open: <CIcon icon={cilCheckCircle} className="text-success" title="Open" />,
             reserved: <CIcon icon={cilBan} className="text-danger" title="Reserved" />,
+            closed: <CIcon icon={cilPeople} className="text-dark" title="Closed" />, // Updated icon
+            'under maintenance': <CIcon icon={cilPhone} className="text-warning" title="Under Maintenance" />, // Updated icon
+            leased: <CIcon icon={cilFile} className="text-info" title="Leased" />, // Updated icon
+            sold: <CIcon icon={cilArrowBottom} className="text-primary" title="Sold" />, // Updated icon
         };
         return statusIconMap[status?.toLowerCase()] || null;
     };
+    
 
     const openDeleteModal = (property) => {
         setDeleteModal({ visible: true, propertyToDelete: property });

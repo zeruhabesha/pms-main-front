@@ -366,13 +366,15 @@ const TenantTable = ({
           ‹
         </CPaginationItem>
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-          <CPaginationItem
-            key={page}
-            active={page === currentPage}
-            onClick={() => handlePageChange(page)}
-          >
-            {page}
-          </CPaginationItem>
+        <CPaginationItem
+        key={page}
+        active={page === currentPage}
+        className="page-item"
+        onClick={() => handlePageChange(page)}
+      >
+        {page}
+      </CPaginationItem>
+      
         ))}
         <CPaginationItem
           disabled={currentPage === totalPages}

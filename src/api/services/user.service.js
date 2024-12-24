@@ -70,6 +70,179 @@ class UserService {
     }
   }
 
+  async fetchUsers(page = 1, limit = 5, searchTerm = '') {
+    try {
+      const response = await httpCommon.get('/users/user', {
+        headers: this.getAuthHeader(),
+        params: { page, limit, search: searchTerm },
+      });
+      const { data } = response.data;
+      
+      // Encrypt and store the fetched users data in localStorage if needed
+      if (data?.users) {
+        localStorage.setItem('user', encryptData({
+          timestamp: new Date().getTime(),
+          users: data.users,
+          totalPages: data.totalPages,
+          totalUsers: data.totalUsers,
+          currentPage: data.currentPage
+        }));
+      }
+
+      return {
+        users: data?.users || [],
+        totalPages: data?.totalPages || 1,
+        totalUsers: data?.totalUsers || 0,
+        currentPage: data?.currentPage || page,
+      };
+    } catch (error) {
+      // Try to get cached data if request fails
+      const encryptedCache = localStorage.getItem('user');
+      if (encryptedCache) {
+        const cachedData = decryptData(encryptedCache);
+        if (cachedData && (new Date().getTime() - cachedData.timestamp < 3600000)) { // 1 hour cache
+          return {
+            users: cachedData.users,
+            totalPages: cachedData.totalPages,
+            totalUsers: cachedData.totalUsers,
+            currentPage: cachedData.currentPage,
+            fromCache: true
+          };
+        }
+      }
+      throw this.handleError(error);
+    }
+  }
+
+async fetchUsers(page = 1, limit = 5, searchTerm = '') {
+    try {
+      const response = await httpCommon.get('/users/user', {
+        headers: this.getAuthHeader(),
+        params: { page, limit, search: searchTerm },
+      });
+      const { data } = response.data;
+      
+      // Encrypt and store the fetched users data in localStorage if needed
+      if (data?.users) {
+        localStorage.setItem('user', encryptData({
+          timestamp: new Date().getTime(),
+          users: data.users,
+          totalPages: data.totalPages,
+          totalUsers: data.totalUsers,
+          currentPage: data.currentPage
+        }));
+      }
+
+      return {
+        users: data?.users || [],
+        totalPages: data?.totalPages || 1,
+        totalUsers: data?.totalUsers || 0,
+        currentPage: data?.currentPage || page,
+      };
+    } catch (error) {
+      // Try to get cached data if request fails
+      const encryptedCache = localStorage.getItem('user');
+      if (encryptedCache) {
+        const cachedData = decryptData(encryptedCache);
+        if (cachedData && (new Date().getTime() - cachedData.timestamp < 3600000)) { // 1 hour cache
+          return {
+            users: cachedData.users,
+            totalPages: cachedData.totalPages,
+            totalUsers: cachedData.totalUsers,
+            currentPage: cachedData.currentPage,
+            fromCache: true
+          };
+        }
+      }
+      throw this.handleError(error);
+    }
+  }
+  async fetchMaintenance(page = 1, limit = 5, searchTerm = '') {
+    try {
+      const response = await httpCommon.get('/users/maintainer', {
+        headers: this.getAuthHeader(),
+        params: { page, limit, search: searchTerm },
+      });
+      const { data } = response.data;
+       // Encrypt and store the fetched maintenance data in localStorage if needed
+      if (data?.users) {
+          localStorage.setItem('maintenance', encryptData({
+              timestamp: new Date().getTime(),
+              users: data.users,
+              totalPages: data.totalPages,
+              totalUsers: data.totalUsers,
+              currentPage: data.currentPage
+          }));
+      }
+      return {
+           maintainers: data?.users || [],
+        totalPages: data?.totalPages || 1,
+        totalMaintainers: data?.totalUsers || 0,
+        currentPage: data?.currentPage || page,
+      };
+    } catch (error) {
+      // Try to get cached data if request fails
+        const encryptedCache = localStorage.getItem('maintenance');
+      if (encryptedCache) {
+          const cachedData = decryptData(encryptedCache);
+          if (cachedData && (new Date().getTime() - cachedData.timestamp < 3600000)) { // 1 hour cache
+            return {
+                 maintainers: cachedData.users,
+                totalPages: cachedData.totalPages,
+                totalMaintainers: cachedData.totalUsers,
+                currentPage: cachedData.currentPage,
+                fromCache: true
+            };
+          }
+      }
+      throw this.handleError(error);
+    }
+  }
+  
+
+  async fetchInspector(page = 1, limit = 5, searchTerm = '') {
+     try {
+      const response = await httpCommon.get('/users/inspector', {
+        headers: this.getAuthHeader(),
+        params: { page, limit, search: searchTerm },
+      });
+      const { data } = response.data;
+       // Encrypt and store the fetched inspector data in localStorage if needed
+      if (data?.users) {
+        localStorage.setItem('inspector', encryptData({
+          timestamp: new Date().getTime(),
+          users: data.users,
+            totalPages: data.totalPages,
+            totalUsers: data.totalUsers,
+          currentPage: data.currentPage
+        }));
+      }
+      return {
+        inspectors: data?.users || [],
+        totalPages: data?.totalPages || 1,
+        totalInspectors: data?.totalUsers || 0,
+        currentPage: data?.currentPage || page,
+      };
+    } catch (error) {
+      // Try to get cached data if request fails
+        const encryptedCache = localStorage.getItem('inspector');
+      if (encryptedCache) {
+          const cachedData = decryptData(encryptedCache);
+          if (cachedData && (new Date().getTime() - cachedData.timestamp < 3600000)) { // 1 hour cache
+            return {
+                inspectors: cachedData.users,
+                totalPages: cachedData.totalPages,
+                totalInspectors: cachedData.totalUsers,
+                currentPage: cachedData.currentPage,
+                fromCache: true
+            };
+        }
+      }
+      throw this.handleError(error);
+    }
+  }
+
+  
   async addUser(userData) {
     try {
       console.log('Adding user:', userData);

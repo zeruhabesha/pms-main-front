@@ -198,7 +198,10 @@ const AddUser = ({ visible, setVisible, editingUser }) => {
                 </CCol>
                 <CCol xs={12}>
                   <CFormSelect name="role" value={userData.role} onChange={handleChange}>
-                    <option value="user">User</option>
+                    <option value="user">Employee</option>
+                    <option value="maintainer">Maintainer</option>
+                    <option value="inspector">Inspector</option>
+
                   </CFormSelect>
                 </CCol>
                 <CCol xs={12}>
