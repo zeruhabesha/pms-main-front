@@ -1,8 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import { PropertyTypes } from '../types/propertyTypes'
-import PropertyService from '../services/property.service'
-
-const propertyService = new PropertyService()
+import propertyService from '../services/property.service'
 
 export const filterProperties = createAsyncThunk(
   PropertyTypes.FILTER_PROPERTIES,

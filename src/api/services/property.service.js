@@ -186,7 +186,6 @@ class PropertyService {
 
   async updatePhoto(propertyId, { photo, photoId }) {
     try {
-      console.log('Updating photo with propertyId:', propertyId, 'photoId:', photoId) // Add debugging logs
       if (!photoId || !photo) {
         throw new Error('Photo and Photo ID are required')
       }
@@ -199,7 +198,7 @@ class PropertyService {
         {
           headers: {
             ...this.getAuthHeader(),
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'multipart/form-data', // Add This Line to overwrite json header for formdata
           },
         },
       )
@@ -343,4 +342,5 @@ class PropertyService {
   }
 }
 
-export default PropertyService
+const propertyService = new PropertyService()
+export default propertyService
