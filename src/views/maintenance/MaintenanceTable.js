@@ -38,6 +38,12 @@ import {
 } from '@coreui/icons';
 import { decryptData } from '../../api/utils/crypto';
 import { useNavigate } from 'react-router-dom';
+import MaintenanceApproveModal from './MaintenanceApproveModal';
+import MaintenanceRejectModal from './MaintenanceRejectModal';
+import { updateMaintenance } from '../../api/actions/MaintenanceActions';
+import { useDispatch } from 'react-redux';
+
+
 
 const MaintenanceTable = ({
     maintenanceList = [],
@@ -55,7 +61,12 @@ const MaintenanceTable = ({
     const [userPermissions, setUserPermissions] = useState(null);
     const [role, setRole] = useState(null);
     const [error, setError] = useState(null);
+    const [approveModalVisible, setApproveModalVisible] = useState(false);
+    const [rejectModalVisible, setRejectModalVisible] = useState(false);
+    const [maintenanceToApprove, setMaintenanceToApprove] = useState(null);
+    const [maintenanceToReject, setMaintenanceToReject] = useState(null);
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
 
     // Fetch user permissions and role on component mount
@@ -86,14 +97,54 @@ const MaintenanceTable = ({
 
     // Approve handler
     const handleApprove = useCallback((maintenance) => {
-      //logic for approve maintenance
-         console.log('Approve maintenance', maintenance);
+        setMaintenanceToApprove(maintenance);
+        setApproveModalVisible(true);
     }, []);
+
+   const confirmApprove = useCallback(async () => {
+        if (maintenanceToApprove) {
+            try {
+                await dispatch(
+                    updateMaintenance({
+                        id: maintenanceToApprove._id,
+                        maintenanceData: { status: 'in progress' },
+                    })
+                );
+                 //Update the maintenanceList ( status )
+                 setApproveModalVisible(false);
+            } catch (error) {
+                console.error('Failed to approve maintenance:', error);
+            }
+        }
+    }, [dispatch, maintenanceToApprove]);
+
 
     // Reject handler
     const handleReject = useCallback((maintenance) => {
-       console.log('Reject maintenance', maintenance);
+        setMaintenanceToReject(maintenance);
+        setRejectModalVisible(true);
       }, []);
+
+
+    const confirmReject = useCallback(async () => {
+       if(maintenanceToReject){
+            try {
+                await dispatch(
+                    updateMaintenance({
+                        id: maintenanceToReject._id,
+                        maintenanceData: { status: 'cancelled' },
+                    })
+                );
+                 //Update the maintenanceList ( status )
+                setRejectModalVisible(false);
+
+            } catch (error) {
+                console.error('Failed to reject maintenance:', error);
+            }
+       }
+    }, [dispatch, maintenanceToReject]);
+
+
 
     //assign handler
     const handleAssign = useCallback((maintenance) => {
@@ -131,6 +182,7 @@ const MaintenanceTable = ({
              pending: 'warning',
              'in progress': 'info',
              completed: 'success',
+              cancelled: 'danger',
         };
         return statusColorMap[status?.toLowerCase()] || 'secondary';
    }, []);
@@ -166,6 +218,7 @@ const MaintenanceTable = ({
         });
     }, [sortedMaintenance, searchTerm]);
 
+
     return (
         <div>
             {error && (
@@ -173,6 +226,19 @@ const MaintenanceTable = ({
                     {error}
                 </CAlert>
             )}
+             <MaintenanceApproveModal
+                visible={approveModalVisible}
+                setApproveModalVisible={setApproveModalVisible}
+                maintenanceToApprove={maintenanceToApprove}
+                 confirmApprove={confirmApprove}
+             />
+             <MaintenanceRejectModal
+                visible={rejectModalVisible}
+                setRejectModalVisible={setRejectModalVisible}
+                maintenanceToReject={maintenanceToReject}
+                confirmReject={confirmReject}
+             />
+
             {/* Maintenance Table */}
             <CTable align="middle" className="mb-0 border" hover responsive>
                 <CTableHead className="text-nowrap">
