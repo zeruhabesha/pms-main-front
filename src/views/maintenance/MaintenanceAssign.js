@@ -8,11 +8,12 @@ import {
   CTableDataCell,
   CFormCheck,
   CAlert,
-  CButton
+  CButton,
 } from '@coreui/react';
 import { fetchUsers } from '../../api/actions/UserActions';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import './MaintenanceAssign.scss'; // Add custom styles here
 
 const MaintenanceAssign = ({ maintenance, onAssign }) => {
   const dispatch = useDispatch();
@@ -22,9 +23,8 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
   const { users } = useSelector((state) => state.user);
 
   useEffect(() => {
-       dispatch(fetchUsers());
+    dispatch(fetchUsers());
   }, [dispatch]);
-
 
   const handleCheckboxChange = (userId) => {
     setSelectedUsers((prevSelected) => {
@@ -36,38 +36,42 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
     });
   };
 
-    const handleAssignUsers = useCallback(async () => {
-        if (selectedUsers.length === 0) {
-            setError('Please select at least one user.');
-            return;
-        }
-        try {
-            await onAssign(maintenance._id, selectedUsers);
-             navigate('/maintenances');
-             setSelectedUsers([])
-             setError(null)
-        }
-        catch(error) {
-           setError('Failed to assign users');
-           console.error('Assign error:', error)
-        }
+  const handleAssignUsers = useCallback(async () => {
+    if (selectedUsers.length === 0) {
+      setError('Please select at least one user.');
+      return;
+    }
+    try {
+      await onAssign(maintenance._id, selectedUsers);
+      navigate('/maintenances');
+      setSelectedUsers([]);
+      setError(null);
+    } catch (error) {
+      setError('Failed to assign users');
+      console.error('Assign error:', error);
+    }
+  }, [maintenance, selectedUsers, navigate, onAssign]);
 
-    }, [maintenance, selectedUsers, navigate, onAssign])
-    
-     const handleClose = useCallback(() => {
-        navigate('/maintenance');
-         setSelectedUsers([])
-         setError(null)
-    }, [navigate]);
+  const handleClose = useCallback(() => {
+    navigate('/maintenance');
+    setSelectedUsers([]);
+    setError(null);
+  }, [navigate]);
 
   return (
-    <div>
-        <div className="text-center mt-4">
-            <h2>Assign Users to Maintenance Request</h2>
-        </div>
-        <div className="d-flex justify-content-center">
-           {error && <CAlert color="danger" dismissible onClose={() => setError(null)}>{error}</CAlert>}
-        <CTable striped hover className="">
+    <div className="maintenance-assign-container">
+      <div className="text-center mt-4">
+        <h2 className="assign-title">Assign Users to Maintenance Request</h2>
+      </div>
+      <div className="alert-container">
+        {error && (
+          <CAlert color="danger" dismissible onClose={() => setError(null)}>
+            {error}
+          </CAlert>
+        )}
+      </div>
+      <div className="table-container">
+        <CTable striped bordered hover className="user-table">
           <CTableHead>
             <CTableRow>
               <CTableHeaderCell>Select</CTableHeaderCell>
@@ -86,22 +90,22 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
                     checked={selectedUsers.includes(user._id)}
                   />
                 </CTableDataCell>
-                <CTableDataCell>{user.firstName} {user.lastName}</CTableDataCell>
+                <CTableDataCell>{user.name}</CTableDataCell>
                 <CTableDataCell>{user.email}</CTableDataCell>
-                  <CTableDataCell>{user.role}</CTableDataCell>
+                <CTableDataCell>{user.role}</CTableDataCell>
               </CTableRow>
             ))}
           </CTableBody>
         </CTable>
-         </div>
-          <div className="d-flex justify-content-end mt-4 gap-2 w-75 mx-auto">
-              <CButton color="secondary" onClick={handleClose}>
-                  Cancel
-              </CButton>
-              <CButton color="dark" onClick={handleAssignUsers}>
-                  Assign
-              </CButton>
-          </div>
+      </div>
+      <div className="button-container d-flex justify-content-end mt-4 gap-2 w-75 mx-auto">
+        <CButton color="secondary" onClick={handleClose} className="cancel-button">
+          Cancel
+        </CButton>
+        <CButton color="dark" onClick={handleAssignUsers} className="assign-button">
+          Assign
+        </CButton>
+      </div>
     </div>
   );
 };

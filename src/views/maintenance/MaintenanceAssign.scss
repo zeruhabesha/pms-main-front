@@ -1,0 +1,54 @@
+.maintenance-assign-container {
+    padding: 20px;
+  
+    .assign-title {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+  
+    .alert-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+  
+    .table-container {
+      max-width: 90%;
+      margin: auto;
+    }
+  
+    .user-table {
+      th {
+        text-align: center;
+        font-weight: bold;
+        background-color: #f4f4f4;
+      }
+  
+      td {
+        text-align: center;
+      }
+    }
+  
+    .button-container {
+      margin-top: 30px;
+  
+      .cancel-button {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        color: #495057;
+        &:hover {
+          background-color: #e2e6ea;
+        }
+      }
+  
+      .assign-button {
+        background-color: #343a40;
+        color: #fff;
+        &:hover {
+          background-color: #495057;
+        }
+      }
+    }
+  }
+  
