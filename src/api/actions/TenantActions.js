@@ -5,7 +5,7 @@ import TenantService from '../services/tenant.service';
 // Fetch tenants
 export const fetchTenants = createAsyncThunk(
     'tenant/fetchTenants',
-    async ({ page = 1, limit = 5, search = '' } = {}, { rejectWithValue }) => {
+    async ({ page = 1, limit = 10, search = '' } = {}, { rejectWithValue }) => {
         try {
             const response = await TenantService.fetchTenants(page, limit, search);
             return response;

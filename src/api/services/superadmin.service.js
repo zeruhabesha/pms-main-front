@@ -14,7 +14,7 @@ class SuperAdminService {
     };
   }
 
-  async fetchSuperAdmins(page = 1, limit = 5, searchTerm = '') {
+  async fetchSuperAdmins(page = 1, limit = 10, searchTerm = '') {
     try {
       const response = await httpCommon.get(`/users/super-admin`, {
         headers: this.getAuthHeader(),

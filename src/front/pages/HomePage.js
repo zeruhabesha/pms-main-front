@@ -20,10 +20,10 @@ const SectionWrapper = styled(motion.div)`
   padding: ${props => props.noPadding ? '0' : '100px 50px'};
   position: relative;
   overflow: hidden;
-  margin: ${props => props.noMargin ? '0' : '100px 50'};
+  margin: ${props => props.noMargin ? '0' : '100px -20px'};
   @media (min-width: 768px) {
      padding: ${props => props.noPadding ? '0' : '100px 0px'};
-       margin: ${props => props.noMargin ? '0' : '10% 0'};
+       margin: ${props => props.noMargin ? '0' : '10% 0px'};
   }
 `;
 

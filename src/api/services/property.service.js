@@ -35,7 +35,7 @@ class PropertyService {
 
   async filterProperties(filterCriteria = {}) {
     try {
-      const { page = 1, limit = 5, ...otherCriteria } = filterCriteria
+      const { page = 1, limit = 10, ...otherCriteria } = filterCriteria
 
       const response = await httpCommon.get(this.baseURL, {
         headers: { ...this.defaultHeaders, ...this.getAuthHeader() },

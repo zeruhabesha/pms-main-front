@@ -4,7 +4,7 @@ import AgreementService from "../services/agreement.service";
 // Fetch agreements
 export const fetchAgreements = createAsyncThunk(
     "agreement/fetchAgreements",
-    async ({ page = 1, limit = 5, searchTerm = "" }, { rejectWithValue }) => {
+    async ({ page = 1, limit = 10, searchTerm = "" }, { rejectWithValue }) => {
         try {
             const response = await AgreementService.fetchAgreements(page, limit, searchTerm);
             return response;

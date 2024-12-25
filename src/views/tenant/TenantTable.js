@@ -50,7 +50,7 @@ const TenantTable = ({
   handleDelete,
   handlePageChange,
   handleFetchTenants,
-  itemsPerPage = 5,
+  itemsPerPage = 10,
 }) => {
     const dispatch = useDispatch();
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
@@ -369,7 +369,7 @@ const TenantTable = ({
         <CPaginationItem
         key={page}
         active={page === currentPage}
-        className="page-item"
+        className= ""
         onClick={() => handlePageChange(page)}
       >
         {page}

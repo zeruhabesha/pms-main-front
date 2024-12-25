@@ -202,7 +202,7 @@ const MaintenanceTable = ({
                 </CTableHead>
                 <CTableBody>
                     {filteredMaintenance.map((maintenance, index) => {
-                        const rowNumber = (currentPage - 1) * 5 + index + 1;
+                        const rowNumber = (currentPage - 1) * 10 + index + 1;
                         const usage = generateUsage(maintenance.status);
                         return (
                             <CTableRow key={maintenance._id || index}>

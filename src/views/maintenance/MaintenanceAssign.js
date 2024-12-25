@@ -98,7 +98,7 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
               <CButton color="secondary" onClick={handleClose}>
                   Cancel
               </CButton>
-              <CButton color="primary" onClick={handleAssignUsers}>
+              <CButton color="dark" onClick={handleAssignUsers}>
                   Assign
               </CButton>
           </div>

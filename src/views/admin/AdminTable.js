@@ -102,7 +102,7 @@ const AdminTable = ({
   };
 
   const csvData = admins.map((admin, index) => ({
-    index: (currentPage - 1) * 5 + index + 1,
+    index: (currentPage - 1) * 10 + index + 1,
     name: admin?.name || 'N/A',
     email: admin?.email || 'N/A',
     role: admin?.role || 'N/A',
@@ -112,7 +112,7 @@ const AdminTable = ({
   const clipboardData = admins
     .map(
       (admin, index) =>
-        `${(currentPage - 1) * 5 + index + 1}. ${admin?.name || 'N/A'} - ${admin?.email || 'N/A'} - ${admin?.role || 'N/A'} - ${
+        `${(currentPage - 1) * 10 + index + 1}. ${admin?.name || 'N/A'} - ${admin?.email || 'N/A'} - ${admin?.role || 'N/A'} - ${
           admin?.status || 'N/A'
         }`
     )
@@ -123,7 +123,7 @@ const AdminTable = ({
     doc.text('Admin Data', 14, 10);
   
     const tableData = admins.map((admin, index) => [
-      (currentPage - 1) * 5 + index + 1,
+      (currentPage - 1) * 10 + index + 1,
       admin?.name || 'N/A',
       admin?.email || 'N/A',
       admin?.role || 'N/A',
@@ -212,7 +212,7 @@ const AdminTable = ({
             {sortedAdmins.map((admin, index) => (
               <React.Fragment key={admin._id || `row-${index}`}>
                 <CTableRow>
-                  <CTableDataCell>{(currentPage - 1) * 5 + index + 1}</CTableDataCell>
+                  <CTableDataCell>{(currentPage - 1) * 10 + index + 1}</CTableDataCell>
                   <CTableDataCell>
                     <img
                       src={admin?.photo ? `http://localhost:4000/api/v1/users/${admin._id}/photo` : placeholder}

@@ -37,7 +37,7 @@ const ViewTenant = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [tenantToDelete, setTenantToDelete] = useState(null);
   const [userToEdit, setUserToEdit] = useState(null);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
   const [userPermissions, setUserPermissions] = useState(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [tenantDetails, setTenantDetails] = useState(null);

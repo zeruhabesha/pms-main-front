@@ -26,7 +26,7 @@ const ViewUser = () => {
     const [errorMessage, setErrorMessage] = useState('');
     const [activeTab, setActiveTab] = useState(0);
 
-    const itemsPerPage = 5;
+    const itemsPerPage = 10;
     const [localCurrentPage, setLocalCurrentPage] = useState(1);
 
     const dispatch = useDispatch();

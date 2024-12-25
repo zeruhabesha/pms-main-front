@@ -49,7 +49,7 @@ const ViewAdmin = () => {
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [adminToEdit, setAdminToEdit] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   useEffect(() => {
     console.log('Fetching admins with dispatch');
@@ -84,6 +84,10 @@ const ViewAdmin = () => {
     }
   };
   
+  const handleEdit = (admin) => {
+    setEditingAdmin(admin);
+    setAdminModalVisible(true);
+  };
 
   const handleEditPhoto = (admin) => {
     setAdminToEdit(admin);

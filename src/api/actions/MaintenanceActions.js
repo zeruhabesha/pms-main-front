@@ -5,7 +5,7 @@ import MaintenanceService from '../services/maintenance.service';
 
 export const fetchMaintenances = createAsyncThunk(
   'maintenance/fetchMaintenances',
-  async ({ page = 1, limit = 5, searchTerm = '' }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10, searchTerm = '' }, { rejectWithValue }) => {
     try {
       const data = await MaintenanceService.fetchMaintenances(page, limit, searchTerm)
       console.log('data', data)

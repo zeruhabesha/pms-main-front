@@ -2,30 +2,37 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
     CFormInput,
     CFormLabel,
-    CFormSelect,
     CRow,
     CCol,
     CCard,
     CCardBody,
     CSpinner,
     CAlert,
-    CButton
+    CButton,
+     CFormSelect // keep the import for the other selects
 } from '@coreui/react';
-import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
 import { decryptData } from '../../api/utils/crypto';
 import { useNavigate } from 'react-router-dom';
-import '../Super.scss'
-import "./MaintenanceForm.scss"
+import '../Super.scss';
+import "./MaintenanceForm.scss";
+import { filterProperties } from '../../api/actions/propertyAction';
+import Select from 'react-select'; // Import react-select
+
 
 const TenantRequestForm = ({
     onSubmit,
     editingRequest = null
 }) => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [properties, setProperties] = useState([]);
-    const [propertiesLoading, setPropertiesLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const dispatch = useDispatch();
     const navigate = useNavigate();
+
+    // Redux state for properties and loading
+    const properties = useSelector((state) => state.property.properties);
+    const isLoading = useSelector((state) => state.property.loading);
+    const error = useSelector((state) => state.property.error)
+    const [noPropertiesMessage, setNoPropertiesMessage] = useState(null);
+
 
     // Initial form state with default values
     const initialFormState = {
@@ -43,28 +50,24 @@ const TenantRequestForm = ({
     };
 
     const [formData, setFormData] = useState(initialFormState);
+    const [localError, setError] = useState(null); // Separate local error state
 
-    // Fetch properties with improved error handling
-    const fetchProperties = useCallback(async () => {
-        setPropertiesLoading(true);
-        try {
-            const response = await axios.get('http://localhost:4000/api/v1/properties');
+    // Fetch properties with Redux
+    const fetchProperties = useCallback(() => {
+       dispatch(filterProperties());
+    }, [dispatch]);
 
-            const propertiesData = response.data?.data?.properties ||
-                response.data?.properties ||
-                [];
-
-            setProperties(propertiesData);
-        } catch (error) {
-            console.error('Failed to fetch properties:', error);
-            setError('Unable to load properties. Please try again later.');
-        } finally {
-            setPropertiesLoading(false);
+     useEffect(() => {
+        if(properties.length === 0 && !isLoading && !error){
+             setNoPropertiesMessage('No properties available for this tenant.');
+        } else {
+            setNoPropertiesMessage(null);
         }
-    }, []);
+    }, [properties, isLoading, error]);
+
 
     // Initialize form data on component mount or when editing
-    useEffect(() => {
+     useEffect(() => {
         const initializeForm = () => {
             const encryptedUser = localStorage.getItem('user');
             const decryptedUser = decryptData(encryptedUser);
@@ -82,11 +85,12 @@ const TenantRequestForm = ({
                     tenant: tenantId,
                 });
             }
+            fetchProperties();
         };
-
         initializeForm();
-        fetchProperties();
+
     }, [editingRequest, fetchProperties]);
+
 
     // Form change handlers
     const handleChange = (e) => {
@@ -103,7 +107,19 @@ const TenantRequestForm = ({
                 [field]: value
             }
         }));
-        setError(null);
+       setError(null);
+    };
+
+
+     const handlePropertySelectChange = (selectedOption) => {
+        handleNestedChange('propertyInformation', 'propertyId', selectedOption ? selectedOption.value : '');
+    };
+
+      const getPropertyOptions = () => {
+        return properties.map(property => ({
+            value: property._id,
+            label: property.name || property.title,
+        }));
     };
 
 
@@ -113,58 +129,63 @@ const TenantRequestForm = ({
     };
 
     // Form validation
-    const validateForm = () => {
-        const requiredFields = {
-            tenant: 'Tenant',
-            'propertyInformation.propertyId': 'Property',
-            'propertyInformation.unit': 'Unit',
-            typeOfRequest: 'Type of Request',
-            description: 'Description',
-            urgencyLevel: 'Urgency Level'
-        };
-
-        for (const [field, label] of Object.entries(requiredFields)) {
-            const value = field.includes('.')
-                ? formData[field.split('.')[0]][field.split('.')[1]]
-                : formData[field];
-
-            if (!value) {
-                return `${label} is required.`;
-            }
-        }
-        return null;
+// Form validation
+const validateForm = () => {
+    const requiredFields = {
+        tenant: 'Tenant',
+        'propertyInformation.propertyId': 'Property', // Nested property field
+        'propertyInformation.unit': 'Unit',
+        typeOfRequest: 'Type of Request',
+        description: 'Description',
+        urgencyLevel: 'Urgency Level',
     };
+
+    for (const [field, label] of Object.entries(requiredFields)) {
+        let value;
+        if (field.includes('.')) {
+            // Handle nested fields
+            const [parent, child] = field.split('.');
+            value = formData[parent]?.[child];
+        } else {
+            value = formData[field];
+        }
+
+        if (!value || value === '') {
+            return `${label} is required.`;
+        }
+    }
+    return null;
+};
 
     // Submit handler with comprehensive error management
     const handleSubmit = async () => {
         setError(null);
         const validationError = validateForm();
-
+    
         if (validationError) {
-            setError(validationError);
+            setError(validationError); // Display validation error
             return;
         }
-
+    
         setIsLoading(true);
         try {
             const formDataToSubmit = new FormData();
-
+    
             // Flatten the nested structure for FormData
             const flattenedData = {
                 ...formData,
                 propertyId: formData.propertyInformation.propertyId,
-                unit: formData.propertyInformation.unit
+                unit: formData.propertyInformation.unit,
             };
-
+    
             Object.entries(flattenedData).forEach(([key, value]) => {
                 if (key === 'photosOrVideos' && value.length) {
                     value.forEach((file) => formDataToSubmit.append('photosOrVideos', file));
-                } else if (key !== 'propertyInformation') {
+                } else if (key !== 'propertyInformation' && value != null && value !== '') {
                     formDataToSubmit.append(key, value);
                 }
             });
-
-
+    
             await onSubmit(formDataToSubmit);
             navigate('/maintenance');
         } catch (submitError) {
@@ -174,6 +195,7 @@ const TenantRequestForm = ({
             setIsLoading(false);
         }
     };
+    
     const handleClose = () => {
         navigate('/maintenance');
     };
@@ -183,12 +205,17 @@ const TenantRequestForm = ({
             <div className="d-flex justify-content-center">
                 <CCard className="border-0 shadow-sm">
                     <CCardBody>
-                        <div className="text-center mb-4">
+                         <div className="text-center mb-4">
                            <h2>{editingRequest ? 'Edit Tenant Request' : 'Add Tenant Request'}</h2>
                        </div>
-                        {error && (
+                        {localError && (
                             <CAlert color="danger" className="mb-3">
-                                {error}
+                                {localError}
+                            </CAlert>
+                        )}
+                        {noPropertiesMessage && (
+                            <CAlert color="info" className="mb-3">
+                                {noPropertiesMessage}
                             </CAlert>
                         )}
 
@@ -205,26 +232,21 @@ const TenantRequestForm = ({
                                 />
                             </CCol>
                             <CCol xs={12} md={6} className="form-group">
-                                <CFormLabel htmlFor="propertyId">Property</CFormLabel>
-                                {propertiesLoading ? (
+                              <CFormLabel htmlFor="propertyId">Property</CFormLabel>
+                                {isLoading ? (
                                     <CSpinner size="sm" />
                                 ) : (
-                                    <CFormSelect
-                                        id="propertyId"
-                                        value={formData.propertyInformation.propertyId}
-                                        onChange={(e) => handleNestedChange('propertyInformation', 'propertyId', e.target.value)}
-                                        disabled={propertiesLoading}
-                                        className="form-control-animation"
-                                    >
-                                        <option value="">Select Property</option>
-                                        {properties.map((property) => (
-                                            <option key={property._id} value={property._id}>
-                                                {property.name || property.title}
-                                            </option>
-                                        ))}
-                                    </CFormSelect>
+                                      <Select
+                                            id="propertyId"
+                                            value={getPropertyOptions().find(option => option.value === formData.propertyInformation.propertyId)}
+                                             onChange={handlePropertySelectChange}
+                                            options={getPropertyOptions()}
+                                             placeholder="Select Property"
+                                            isDisabled={isLoading}
+                                            isSearchable
+                                        />
                                 )}
-                            </CCol>
+                             </CCol>
                             <CCol xs={12} md={6} className="form-group">
                                 <CFormLabel htmlFor="unit">Unit Number</CFormLabel>
                                 <CFormInput
@@ -238,7 +260,7 @@ const TenantRequestForm = ({
                             </CCol>
                             <CCol xs={12} className="form-group">
                                 <CFormLabel htmlFor="typeOfRequest">Type of Request</CFormLabel>
-                                <CFormSelect
+                                <CFormSelect // this is the correct CFormSelect
                                     id="typeOfRequest"
                                     name="typeOfRequest"
                                     value={formData.typeOfRequest}
@@ -256,7 +278,7 @@ const TenantRequestForm = ({
                             </CCol>
                             <CCol xs={12} className="form-group">
                                 <CFormLabel htmlFor="urgencyLevel">Urgency Level</CFormLabel>
-                                <CFormSelect
+                                <CFormSelect // this is the correct CFormSelect
                                     id="urgencyLevel"
                                     name="urgencyLevel"
                                     value={formData.urgencyLevel}

@@ -42,7 +42,7 @@ const PropertyTable = ({
     currentPage = 1,
     handlePageChange = () => {},
     totalPages = 1,
-    itemsPerPage = 5,
+    itemsPerPage = 10,
 }) => {
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
     const [userPermissions, setUserPermissions] = useState(null);
@@ -127,7 +127,7 @@ const PropertyTable = ({
     };
 
     const getPaginationRange = (currentPage, totalPages) => {
-        if (totalPages <= 5) {
+        if (totalPages <= 10) {
             return Array.from({ length: totalPages }, (_, i) => i + 1);
         }
 

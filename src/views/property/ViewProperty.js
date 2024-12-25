@@ -32,6 +32,8 @@ import {
     updatePhoto,
     deletePhoto,
 } from '../../api/actions/PropertyAction';
+import { decryptData } from '../../api/utils/crypto';
+
 import {
     setSelectedProperty,
     clearSelectedProperty,
@@ -58,7 +60,7 @@ const ViewProperty = () => {
         pagination,
     } = useSelector((state) => state.property);
 
-    const itemsPerPage = 5;
+    const itemsPerPage = 10;
 
 
     useEffect(() => {
@@ -222,6 +224,16 @@ const ViewProperty = () => {
     const handleAddPropertyClick = () => {
         navigate('/property/add');
     };
+    const [userPermissions, setUserPermissions] = useState(null);
+    useEffect(() => {
+        const encryptedUser = localStorage.getItem('user');
+        if (encryptedUser) {
+            const decryptedUser = decryptData(encryptedUser);
+            if (decryptedUser && decryptedUser.permissions) {
+                setUserPermissions(decryptedUser.permissions);
+            }
+        }
+    }, []);
 
     return (
         <CRow>
@@ -229,7 +241,8 @@ const ViewProperty = () => {
                 <CCard className="mb-4">
                     <CCardHeader className="d-flex justify-content-between align-items-center">
                         <strong>Properties</strong>
-                        <div className="d-flex gap-2">
+                        {userPermissions?.addProperty && (
+                             <div className="d-flex gap-2">
                             <button
                                 className="learn-more"
                                 onClick={handleAddPropertyClick}
@@ -243,6 +256,7 @@ const ViewProperty = () => {
                                    Reset
                                 </CButton> */}
                         </div>
+                        )}
                     </CCardHeader>
                     <CCardBody>
                         {error && <CAlert color="danger">{error}</CAlert>}

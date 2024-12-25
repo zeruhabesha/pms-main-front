@@ -71,19 +71,19 @@ const AppHeader = () => {
         >
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>
-        <CHeaderNav className="d-none d-md-flex">
-          <CNavItem>
+        {/* <CHeaderNav className="d-none d-md-flex"> */}
+          {/* <CNavItem>
             <CNavLink to="/dashboard" as={NavLink}>
               Dashboard
             </CNavLink>
-          </CNavItem>
-          <CNavItem>
+          </CNavItem> */}
+          {/* <CNavItem>
             <CNavLink href="">Users</CNavLink>
           </CNavItem>
           <CNavItem>
             <CNavLink href="">Settings</CNavLink>
-          </CNavItem>
-        </CHeaderNav>
+          </CNavItem> */}
+        {/* </CHeaderNav> */}
         <CHeaderNav className="ms-auto">
           <CNavItem>
             <CNavLink  onClick={handleComingSoon}>
@@ -96,7 +96,7 @@ const AppHeader = () => {
             </CNavLink>
           </CNavItem>
             <CNavItem>
-                <CNavLink onClick={handleEmail}>
+                <CNavLink onClick={handleComingSoon}>
                     <CIcon icon={cilEnvelopeClosed} size="lg" />
                 </CNavLink>
             </CNavItem>

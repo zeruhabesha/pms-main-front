@@ -25,6 +25,8 @@ import {
   fetchAgreements,
   deleteAgreement,
 } from "../../api/actions/AgreementActions";
+import { decryptData } from '../../api/utils/crypto';
+
 import {
   setSelectedAgreement,
   clearSelectedAgreement,
@@ -44,7 +46,7 @@ const ViewAgreement = () => {
         totalPages,
 
     } = useSelector((state) => state.agreement);
-    const itemsPerPage = 5;
+    const itemsPerPage = 10;
 
     useEffect(() => {
         dispatch(fetchAgreements({ page: currentPage, limit: itemsPerPage }));
@@ -69,7 +71,16 @@ const ViewAgreement = () => {
         }
     };
 
-
+    const [userPermissions, setUserPermissions] = useState(null);
+    useEffect(() => {
+        const encryptedUser = localStorage.getItem('user');
+        if (encryptedUser) {
+            const decryptedUser = decryptData(encryptedUser);
+            if (decryptedUser && decryptedUser.permissions) {
+                setUserPermissions(decryptedUser.permissions);
+            }
+        }
+    }, []);
 
     const csvData = agreements.map((agreement, index) => ({
         index: (currentPage - 1) * itemsPerPage + index + 1,
@@ -119,12 +130,14 @@ const ViewAgreement = () => {
                 <CCard className="mb-4">
                     <CCardHeader className="d-flex justify-content-between align-items-center">
                         <strong>Agreements</strong>
-                      <Link to="/agreement/add" className="learn-more">
+                        {userPermissions?.addAgreement && (
+ <Link to="/agreement/add" className="learn-more">
                              <span className="circle" aria-hidden="true">
                                 <span className="icon arrow"></span>
                             </span>
                             <span className="button-text">Add Agreement</span>
                       </Link>
+                        )}
                     </CCardHeader>
                     <CCardBody>
                         {error && <CAlert color="danger">{error}</CAlert>}

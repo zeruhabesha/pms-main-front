@@ -14,7 +14,7 @@ class AdminService {
     };
   }
 
-  async fetchAdmins(page = 1, limit = 5, searchTerm = '') {
+  async fetchAdmins(page = 1, limit = 10, searchTerm = '') {
     try {
       const response = await httpCommon.get('/users/admin', {
         headers: this.getAuthHeader(),

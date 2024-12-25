@@ -25,7 +25,7 @@ class MaintenanceService {
     };
   }
 
-  async fetchMaintenances(page = 1, limit = 5, searchTerm = '') {
+  async fetchMaintenances(page = 1, limit = 10, searchTerm = '') {
     try {
       const response = await httpCommon.get('/maintenances', {
         headers: this.getAuthHeader(),

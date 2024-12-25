@@ -46,7 +46,7 @@ const ViewMaintenance = () => {
 
     const [userPermissions, setUserPermissions] = useState(null);
 
-    const ITEMS_PER_PAGE = 5;
+    const ITEMS_PER_PAGE = 10;
 
     const fetchMaintenanceRequests = useCallback(() => {
         dispatch(
@@ -118,7 +118,7 @@ const ViewMaintenance = () => {
     const csvData = useMemo(
         () =>
             maintenances.map((maintenance, index) => ({
-                index: (currentPage - 1) * 5 + index + 1,
+                index: (currentPage - 1) * 10 + index + 1,
                 tenantName: maintenance.tenant?.tenantName || 'N/A',
                 email: maintenance.tenant?.contactInformation?.email || 'N/A',
                 phone: maintenance.tenant?.contactInformation?.phoneNumber || 'N/A',
@@ -133,7 +133,7 @@ const ViewMaintenance = () => {
             maintenances
                 .map(
                     (maintenance, index) =>
-                        `${(currentPage - 1) * 5 + index + 1}. ${maintenance.tenant?.tenantName || 'N/A'} - ${
+                        `${(currentPage - 1) * 10 + index + 1}. ${maintenance.tenant?.tenantName || 'N/A'} - ${
                             maintenance.tenant?.contactInformation?.email || 'N/A'
                         } - ${maintenance.status || 'N/A'}`
                 )
@@ -148,7 +148,7 @@ const ViewMaintenance = () => {
             doc.text('Maintenance Requests', 14, 10);
 
             const tableData = maintenances.map((maintenance, index) => [
-                (currentPage - 1) * 5 + index + 1,
+                (currentPage - 1) * 10 + index + 1,
                 maintenance.tenant?.tenantName || 'N/A',
                 maintenance.tenant?.contactInformation?.email || 'N/A',
                 maintenance.tenant?.contactInformation?.phoneNumber || 'N/A',

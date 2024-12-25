@@ -19,7 +19,7 @@ const ComingSoonModal = ({ visible, setVisible }) => {
         </p>
       </CModalBody>
       <CModalFooter className="modal-footer">
-        <CButton color="primary" onClick={() => setVisible(false)}>
+        <CButton color="dark" onClick={() => setVisible(false)}>
           Got It
         </CButton>
       </CModalFooter>

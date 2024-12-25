@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect  } from "react";
 import {
     CTable,
     CTableBody,
@@ -24,6 +24,7 @@ import {
     cilBank,
     cilDescription, // Changed from cilNote to cilDescription
 } from "@coreui/icons";
+import { decryptData } from '../../api/utils/crypto';
 
 import PropTypes from "prop-types";
 import { useDispatch } from "react-redux";
@@ -106,7 +107,16 @@ const AgreementTable = ({
     const handleEditClick = (agreement) => {
         onEdit(agreement);
     };
-
+    const [userPermissions, setUserPermissions] = useState(null);
+    useEffect(() => {
+        const encryptedUser = localStorage.getItem('user');
+        if (encryptedUser) {
+            const decryptedUser = decryptData(encryptedUser);
+            if (decryptedUser && decryptedUser.permissions) {
+                setUserPermissions(decryptedUser.permissions);
+            }
+        }
+    }, []);
     return (
         <div>
             <CTable align="middle" className="mb-0 border" hover responsive>
@@ -173,6 +183,7 @@ const AgreementTable = ({
                                 </CTableDataCell>
                                 <CTableDataCell>
                                     <div className="d-flex align-items-center">
+                                    {userPermissions?.editAgreement && (
                                          <CButton
                                             color="light"
                                             size="sm"
@@ -180,9 +191,12 @@ const AgreementTable = ({
                                             className="me-2"
                                             title="Edit Agreement"
                                         >
+                                            
                                               <CIcon icon={cilPencil} />
                                          </CButton>
-                                        <CButton
+                                        )}
+                                         {userPermissions?.deleteAgreement && (
+                                            <CButton
                                             color="light"
                                             size="sm"
                                             style={{ color: "red" }}
@@ -192,6 +206,7 @@ const AgreementTable = ({
                                         >
                                             <CIcon icon={cilTrash} />
                                         </CButton>
+                                    )}
                                         <CButton
                                             color="light"
                                             size="sm"

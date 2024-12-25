@@ -22,7 +22,7 @@ const UserTable = ({
   handleDelete,
   handleEditPhoto,
   handlePageChange,
-  itemsPerPage = 5,
+  itemsPerPage = 10,
     activeTab,
     setActiveTab
 }) => {

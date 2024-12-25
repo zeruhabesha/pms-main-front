@@ -20,7 +20,7 @@ const AppBreadcrumb = () => {
       const routeName = getRouteName(currentPathname, routes)
       routeName &&
         breadcrumbs.push({
-          pathname: currentPathname,
+          pathname: `/#${currentPathname}`, // Add /#/ to the pathname
           name: routeName,
           active: index + 1 === array.length ? true : false,
         })
@@ -33,7 +33,7 @@ const AppBreadcrumb = () => {
 
   return (
     <CBreadcrumb className="my-0">
-      <CBreadcrumbItem href="/dashboard">Home</CBreadcrumbItem>
+      <CBreadcrumbItem href="/#/dashboard">Home</CBreadcrumbItem>
       {breadcrumbs.map((breadcrumb, index) => {
         return (
           <CBreadcrumbItem

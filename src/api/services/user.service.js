@@ -26,7 +26,7 @@ class UserService {
     };
   }
 
-  async fetchUsers(page = 1, limit = 5, searchTerm = '') {
+  async fetchUsers(page = 1, limit = 10, searchTerm = '') {
     try {
       const response = await httpCommon.get('/users/user', {
         headers: this.getAuthHeader(),
@@ -70,7 +70,7 @@ class UserService {
     }
   }
 
-  async fetchUsers(page = 1, limit = 5, searchTerm = '') {
+  async fetchUsers(page = 1, limit = 10, searchTerm = '') {
     try {
       const response = await httpCommon.get('/users/user', {
         headers: this.getAuthHeader(),
@@ -114,7 +114,7 @@ class UserService {
     }
   }
 
-async fetchUsers(page = 1, limit = 5, searchTerm = '') {
+async fetchUsers(page = 1, limit = 10, searchTerm = '') {
     try {
       const response = await httpCommon.get('/users/user', {
         headers: this.getAuthHeader(),
@@ -157,7 +157,7 @@ async fetchUsers(page = 1, limit = 5, searchTerm = '') {
       throw this.handleError(error);
     }
   }
-  async fetchMaintenance(page = 1, limit = 5, searchTerm = '') {
+  async fetchMaintenance(page = 1, limit = 10, searchTerm = '') {
     try {
       const response = await httpCommon.get('/users/maintainer', {
         headers: this.getAuthHeader(),
@@ -200,7 +200,7 @@ async fetchUsers(page = 1, limit = 5, searchTerm = '') {
   }
   
 
-  async fetchInspector(page = 1, limit = 5, searchTerm = '') {
+  async fetchInspector(page = 1, limit = 10, searchTerm = '') {
      try {
       const response = await httpCommon.get('/users/inspector', {
         headers: this.getAuthHeader(),

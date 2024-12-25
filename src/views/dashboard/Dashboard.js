@@ -48,7 +48,7 @@ const Dashboard = () => {
         datasets: [
             {
                 data: [10, 8, 2],
-                backgroundColor: ['#4CAF50', '#FF9800', '#F44336'],
+                backgroundColor: ['#39597d', '#1b1c4c', '#000000'],
                 hoverOffset: 10,
             },
         ],
@@ -59,8 +59,8 @@ const Dashboard = () => {
         datasets: [
             {
                 label: 'Revenue (in $)',
-                backgroundColor: '#42A5F5',
-                borderColor: '#1E88E5',
+                backgroundColor: '#39597d',
+                borderColor: '#1b1c4c',
                 borderWidth: 2,
                 hoverBackgroundColor: '#64B5F6',
                 data: [2000, 3000, 2500, 4000, 5000, 6000],
@@ -108,7 +108,7 @@ const Dashboard = () => {
                         value={stats.admins.toString()}
                         title="Total Admins"
                         icon={<CIcon icon={cilUser} height={36} />}
-                        progress={{ color: 'info', value: 75 }}
+                        progress={{ color: 'secondary', value: 75 }}
 
                     />
                 </CCol>
@@ -119,7 +119,7 @@ const Dashboard = () => {
                         color="light"
                         value={stats.properties.toString()}
                         title="Total Properties"
-                        progress={{ color: 'info', value: 75 }}
+                        progress={{ color: 'secondary', value: 75 }}
 
                     />
                 </CCol>
@@ -130,7 +130,7 @@ const Dashboard = () => {
                         value={stats.tenants.toString()}
                         title="Total Tenants"
                         icon={<CIcon icon={cilPeople} height={36} />}
-                        progress={{ color: 'info', value: 75 }}
+                        progress={{ color: 'secondary', value: 75 }}
 
                     />
                 </CCol>
@@ -141,7 +141,7 @@ const Dashboard = () => {
                   value={`$${stats.revenue}`}
                   title="Monthly Revenue"
                   icon={<CIcon icon={cilMoney} height={36} />}
-                        progress={{ color: 'info', value: 75 }}
+                        progress={{ color: 'secondary', value: 75 }}
 
                 >
                   <span className="trend-arrow up">▲ 10%</span>
@@ -158,6 +158,7 @@ const Dashboard = () => {
                  <CCol lg={6}>
                     <CCard className="animated-card chart-card">
                         <CCardHeader className="chart-header">Property Distribution</CCardHeader>
+                        <br></br> 
                         <CCardBody className="chart-body">
                             <CChartDoughnut
                                 data={propertyDistribution}
@@ -165,12 +166,18 @@ const Dashboard = () => {
                                     plugins: {
                                         legend: { position: 'bottom' },
                                     },
+                                
+                                    animation: {
+                                        animateScale: true,
+                                        animateRotate: true,
+                                    },
                                     animation: {
                                         animateScale: true,
                                         animateRotate: true,
                                     },
                                 }}
                             />
+                            <br></br><br></br><br></br><br></br> 
                         </CCardBody>
                     </CCard>
                  </CCol>
@@ -224,7 +231,7 @@ const Dashboard = () => {
             <CRow>
                   <CCol xs={12} sm={6} lg={3}>
                     <CCard className="mb-4 colored-card">
-                      <div className="border-start border-start-4 border-start-info py-1 px-3">
+                      <div className="border-start border-start-4 border-start-secondary py-1 px-3">
                           <div className="text-body-secondary text-truncate small">Pending Requests</div>
                            <div className="fs-5 fw-semibold">{stats.pendingRequests.toString()}</div>
                          <div className="chart-container">{generateSparkLineSVG([1,3,5,8,6])}</div>
@@ -233,7 +240,7 @@ const Dashboard = () => {
                    </CCol>
                   <CCol xs={12} sm={6} lg={3}>
                       <CCard className="mb-4 colored-card">
-                         <div className="border-start border-start-4 border-start-info py-1 px-3">
+                         <div className="border-start border-start-4 border-start-secondary py-1 px-3">
                              <div className="text-body-secondary text-truncate small">New Tenants This Month</div>
                             <div className="fs-5 fw-semibold">{stats.newTenants.toString()}</div>
                             <div className="chart-container">{generateSparkLineSVG([1,3,10,9,12])}</div>
@@ -242,7 +249,7 @@ const Dashboard = () => {
                  </CCol>
                  <CCol xs={12} sm={6} lg={3}>
                     <CCard className="mb-4 colored-card">
-                       <div className="border-start border-start-4 border-start-info py-1 px-3">
+                       <div className="border-start border-start-4 border-start-secondary py-1 px-3">
                          <div className="text-body-secondary text-truncate small">Average Rent</div>
                          <div className="fs-5 fw-semibold">${stats.avgRent}</div>
                             <div className="chart-container">{generateSparkLineSVG([1400, 1500, 1600, 1550, 1700])}</div>
@@ -251,7 +258,7 @@ const Dashboard = () => {
                  </CCol>
                 <CCol xs={12} sm={6} lg={3}>
                    <CCard className="mb-4 colored-card">
-                      <div className="border-start border-start-4 border-start-info py-1 px-3">
+                      <div className="border-start border-start-4 border-start-secondary py-1 px-3">
                          <div className="text-body-secondary text-truncate small">Open Maintenance Tasks</div>
                          <div className="fs-5 fw-semibold">{stats.maintenanceTasks.toString()}</div>
                             <div className="chart-container">{generateBarChartSVG([1,3,2],3)}</div>

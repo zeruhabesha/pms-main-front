@@ -33,7 +33,7 @@ class TenantService {
         }
     }
 
-    async fetchTenants(page = 1, limit = 5, searchTerm = '') {
+    async fetchTenants(page = 1, limit = 10, searchTerm = '') {
         try {
             const response = await httpCommon.get(this.baseURL, {
                 headers: this.getAuthHeader(),

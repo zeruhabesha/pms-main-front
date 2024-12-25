@@ -105,7 +105,7 @@ const MaintenanceProfessionalForm = ({
         <CButton color="secondary" onClick={() => setVisible(false)}>
           Cancel
         </CButton>
-        <CButton color="primary" onClick={handleSubmit}>
+        <CButton color="dark" onClick={handleSubmit}>
           {isLoading ? <CSpinner size="sm" /> : 'Submit'}
         </CButton>
       </CModalFooter>

@@ -33,7 +33,7 @@ class AgreementService {
      }
 
 
-    async fetchAgreements(page = 1, limit = 5, searchTerm = "") {
+    async fetchAgreements(page = 1, limit = 10, searchTerm = "") {
         try {
             const response = await httpCommon.get(this.baseURL, {
                 headers: this.getAuthHeader(),
