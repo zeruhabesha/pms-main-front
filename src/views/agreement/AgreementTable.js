@@ -31,15 +31,16 @@ import { useDispatch } from "react-redux";
 import { downloadAgreementFile } from "../../api/actions/AgreementActions";
 import AgreementDetailsModal from "./AgreementDetailsModal";
 import { useNavigate } from "react-router-dom";
+import DeleteConfirmationModal from "./DeleteConfirmationModal"; // Import the modal
 
 const AgreementTable = ({
-    agreements,
-    onEdit,
-    onDelete,
-    currentPage,
-    totalPages,
-    handlePageChange,
-    itemsPerPage,
+  agreements,
+  onEdit,
+  onDelete,
+  currentPage,
+  totalPages,
+  handlePageChange,
+  itemsPerPage,
 }) => {
     const dispatch = useDispatch();
      const navigate = useNavigate();
@@ -117,6 +118,27 @@ const AgreementTable = ({
             }
         }
     }, []);
+
+    const [agreementToDelete, setAgreementToDelete] = useState(null);
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+
+    const handleDeleteClick = (agreement) => {
+      setAgreementToDelete(agreement);
+      setDeleteModalVisible(true);
+    };
+  
+    const handleConfirmDelete = () => {
+      if (agreementToDelete) {
+        onDelete(agreementToDelete._id); // Call the delete handler passed via props
+        setDeleteModalVisible(false); // Close the modal
+        setAgreementToDelete(null);
+      }
+    };
+  
+    const handleCloseDeleteModal = () => {
+      setDeleteModalVisible(false);
+      setAgreementToDelete(null);
+    };
     return (
         <div>
             <CTable align="middle" className="mb-0 border" hover responsive>
@@ -196,16 +218,16 @@ const AgreementTable = ({
                                          </CButton>
                                         )}
                                          {userPermissions?.deleteAgreement && (
-                                            <CButton
-                                            color="light"
-                                            size="sm"
-                                            style={{ color: "red" }}
-                                            onClick={() => onDelete(agreement._id)}
-                                            className="me-2"
-                                            title="Delete Agreement"
-                                        >
-                                            <CIcon icon={cilTrash} />
-                                        </CButton>
+                                           <CButton
+                                           color="light"
+                                           size="sm"
+                                           style={{ color: "red" }}
+                                           onClick={() => handleDeleteClick(agreement)}
+                                           className="me-2"
+                                           title="Delete Agreement"
+                                         >
+                                           <CIcon icon={cilTrash} />
+                                         </CButton>
                                     )}
                                         <CButton
                                             color="light"
@@ -290,6 +312,13 @@ const AgreementTable = ({
                 onClose={handleCloseModal}
                 agreement={selectedAgreement}
             />
+             {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        visible={deleteModalVisible}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        itemName={agreementToDelete?.property?.title || "this agreement"}
+      />
         </div>
     );
 };

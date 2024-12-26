@@ -107,7 +107,7 @@ const MaintenanceTable = ({
                 await dispatch(
                     updateMaintenance({
                         id: maintenanceToApprove._id,
-                        maintenanceData: { status: 'in progress' },
+                        maintenanceData: { status: 'Approved' },
                     })
                 );
                  //Update the maintenanceList ( status )
@@ -126,23 +126,22 @@ const MaintenanceTable = ({
       }, []);
 
 
-    const confirmReject = useCallback(async () => {
-       if(maintenanceToReject){
-            try {
-                await dispatch(
-                    updateMaintenance({
-                        id: maintenanceToReject._id,
-                        maintenanceData: { status: 'cancelled' },
-                    })
-                );
-                 //Update the maintenanceList ( status )
-                setRejectModalVisible(false);
-
-            } catch (error) {
-                console.error('Failed to reject maintenance:', error);
-            }
-       }
-    }, [dispatch, maintenanceToReject]);
+      const confirmReject = useCallback(async () => {
+        if (maintenanceToReject) {
+          try {
+            await dispatch(
+              updateMaintenance({
+                id: maintenanceToReject._id,
+                maintenanceData: { status: 'Cancelled' },
+              })
+            ).unwrap(); // Ensure we handle the async properly
+            setRejectModalVisible(false); // Close the modal after successful update
+          } catch (error) {
+            console.error('Failed to reject maintenance:', error);
+          }
+        }
+      }, [dispatch, maintenanceToReject]);
+      
 
 
 
@@ -152,40 +151,56 @@ const MaintenanceTable = ({
     }, [navigate]);
 
 
-     const generateUsage = (status) => {
-           const statusValues = {
-             pending: 25,
-             'in progress': 50,
-             completed: 100,
-            };
-
-            const value = status ?  statusValues[status?.toLowerCase()] || 0 : 0;
-            let color = 'success';
-            if (value < 25) {
-                color = 'danger';
-            } else if (value < 50) {
-                color = 'warning';
-            } else if (value < 75) {
-                color = 'info';
-            }
-           return {
-                value,
-                 period: 'status',
-                  color,
-           };
-       };
+    const generateUsage = (status) => {
+        const statusValues = {
+            Pending: 20,
+            Approved: 40,
+            'In Progress': 60,
+            Completed: 100,
+            Cancelled: 0,
+            Inspected: 80,
+            Incomplete: 80,
+        };
+    
+        const value = status ? statusValues[status] || 0 : 0; // Default to 0 if status is not defined
+        let color = 'success';
+    
+        if (value === 0) {
+            color = 'danger';
+        } else if (value <= 20) {
+            color = 'warning';
+        } else if (value <= 60) {
+            color = 'info';
+        } else if (value < 80) {
+            color = 'primary'; // Assign your preferred color here
+        } else if (value < 100) {
+            color = 'secondary'; // Adjust if a specific color is required for 80 <= value < 100
+        }
+    
+        return {
+            value,
+            period: 'status',
+            color,
+        };
+    };
+    
+    
 
 
     // Status color mapping
     const getStatusColor = useCallback((status) => {
-         const statusColorMap = {
-             pending: 'warning',
-             'in progress': 'info',
-             completed: 'success',
-              cancelled: 'danger',
+        const statusColorMap = {
+            pending: 'warning',
+            approved: 'primary',
+            'in progress': 'info',
+            completed: 'success',
+            cancelled: 'danger',
+            inspected: 'info',
+            incomplete: 'dark',
         };
         return statusColorMap[status?.toLowerCase()] || 'secondary';
-   }, []);
+    }, []);
+    
 
     // Sorted maintenance list
     const sortedMaintenance = useMemo(() => {
@@ -267,107 +282,120 @@ const MaintenanceTable = ({
                     </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                    {filteredMaintenance.map((maintenance, index) => {
-                        const rowNumber = (currentPage - 1) * 10 + index + 1;
-                        const usage = generateUsage(maintenance.status);
-                        return (
-                            <CTableRow key={maintenance._id || index}>
-                                 <CTableDataCell className="text-center">
-                                        {rowNumber}
-                                    </CTableDataCell>
-                                <CTableDataCell>
-                                    <div>{maintenance.tenant?.tenantName || 'N/A'}</div>
-                                    {/* <div className="small text-body-secondary text-nowrap">
-                                         <span>ID: {maintenance.tenant?._id}</span>
-                                  </div> */}
-                                </CTableDataCell>
-                                <CTableDataCell>
-                                    <div className="small text-body-secondary text-nowrap">
-                                        <CIcon icon={cilEnvelopeOpen} size="sm" className="me-1" />
-                                        {maintenance.tenant?.contactInformation?.email || 'N/A'}
-                                    </div>
-                                    <div className="small text-body-secondary text-nowrap">
-                                        <CIcon icon={cilPhone} size="sm" className="me-1" />
-                                        {maintenance.tenant?.contactInformation?.phoneNumber || 'N/A'}
-                                    </div>
-                                </CTableDataCell>
-                                <CTableDataCell>
-                                    <CBadge color={getStatusColor(maintenance.status)}>
-                                        {maintenance.status || 'N/A'}
-                                    </CBadge>
-                                </CTableDataCell>
-                                <CTableDataCell>
-                                    <div className="d-flex justify-content-between text-nowrap">
-                                        <div className="fw-semibold">{usage.value}%</div>
-                                        <div className="ms-3">
-                                            <small className="text-body-secondary">{usage.period}</small>
-                                        </div>
-                                    </div>
-                                    <CProgress thin color={usage.color} value={usage.value} />
-                                </CTableDataCell>
-                                <CTableDataCell>
-                                    <div className="d-flex align-items-center">
-                                        {role === 'User' && userPermissions?.editMaintenance && (
-                                            <CButton
-                                                color="light"
-                                                size="sm"
-                                                className="me-2"
-                                                onClick={() => handleEdit(maintenance)}
-                                                title="Edit"
-                                            >
-                                                <CIcon icon={cilPencil} />
-                                            </CButton>
-                                        )}
-                                        {role === 'User' && userPermissions?.deleteMaintenance && (
-                                            <CButton
-                                                color="light"
-                                                className="me-2"
-                                                style={{ color: `red` }}
-                                                size="sm"
-                                                onClick={() => handleDelete(maintenance)}
-                                                title="Delete"
-                                            >
-                                                <CIcon icon={cilTrash} />
-                                            </CButton>
-                                        )}
-                                        <CButton
-                                            color="light"
-                                            style={{ color: `green` }}
-                                            size="sm"
-                                            className="me-2"
-                                            onClick={() => handleApprove(maintenance)}
-                                            title="Approve"
-                                        > <CIcon icon={cilCheck} /></CButton>
-                                          <CButton
-                                            color="light"
-                                            style={{ color: `red` }}
-                                            size="sm"
-                                            className="me-2"
-                                            onClick={() => handleReject(maintenance)}
-                                            title="Reject"
-                                          > <CIcon icon={cilX} /></CButton>
-                                        <CButton
-                                            color="light"
-                                            size="sm"
-                                            className="me-2"
-                                            onClick={() => handleAssign(maintenance)}
-                                            title="Assign"
-                                        > <CIcon icon={cilShare} /></CButton>
-                                        <CButton
-                                            color="light"
-                                            size="sm"
-                                            className="me-2"
-                                            onClick={() => handleViewDetails(maintenance)}
-                                            title="View Details"
-                                        >
-                                            <CIcon icon={cilFullscreen} />
-                                        </CButton>
-                                    </div>
-                                </CTableDataCell>
-                            </CTableRow>
-                        );
-                    })}
-                </CTableBody>
+    {filteredMaintenance.map((maintenance, index) => {
+        const rowNumber = (currentPage - 1) * 10 + index + 1;
+        const usage = generateUsage(maintenance.status);
+
+        // Define statuses for which the Assign button should be displayed
+        const assignableStatuses = [
+            'In Progress',
+            'Completed',
+            'Inspected',
+            'Incomplete',
+            'Approved',
+        ];
+
+        return (
+            <CTableRow key={maintenance._id || index}>
+                <CTableDataCell className="text-center">{rowNumber}</CTableDataCell>
+                <CTableDataCell>
+                    <div>{maintenance.tenant?.tenantName || 'N/A'}</div>
+                </CTableDataCell>
+                <CTableDataCell>
+                    <div className="small text-body-secondary text-nowrap">
+                        <CIcon icon={cilEnvelopeOpen} size="sm" className="me-1" />
+                        {maintenance.tenant?.contactInformation?.email || 'N/A'}
+                    </div>
+                    <div className="small text-body-secondary text-nowrap">
+                        <CIcon icon={cilPhone} size="sm" className="me-1" />
+                        {maintenance.tenant?.contactInformation?.phoneNumber || 'N/A'}
+                    </div>
+                </CTableDataCell>
+                <CTableDataCell>
+                    <CBadge color={getStatusColor(maintenance.status)}>
+                        {maintenance.status || 'N/A'}
+                    </CBadge>
+                </CTableDataCell>
+                <CTableDataCell>
+                    <div className="d-flex justify-content-between text-nowrap">
+                        <div className="fw-semibold">{usage.value}%</div>
+                        <div className="ms-3">
+                            <small className="text-body-secondary">{usage.period}</small>
+                        </div>
+                    </div>
+                    <CProgress thin color={usage.color} value={usage.value} />
+                </CTableDataCell>
+                <CTableDataCell>
+                    <div className="d-flex align-items-center">
+                        {role === 'User' && userPermissions?.editMaintenance && (
+                            <CButton
+                                color="light"
+                                size="sm"
+                                className="me-2"
+                                onClick={() => handleEdit(maintenance)}
+                                title="Edit"
+                            >
+                                <CIcon icon={cilPencil} />
+                            </CButton>
+                        )}
+                        {role === 'User' && userPermissions?.deleteMaintenance && (
+                            <CButton
+                                color="light"
+                                className="me-2"
+                                style={{ color: `red` }}
+                                size="sm"
+                                onClick={() => handleDelete(maintenance)}
+                                title="Delete"
+                            >
+                                <CIcon icon={cilTrash} />
+                            </CButton>
+                        )}
+                        <CButton
+                            color="light"
+                            style={{ color: `green` }}
+                            size="sm"
+                            className="me-2"
+                            onClick={() => handleApprove(maintenance)}
+                            title="Approve"
+                        >
+                            <CIcon icon={cilCheck} />
+                        </CButton>
+                        <CButton
+                            color="light"
+                            style={{ color: `red` }}
+                            size="sm"
+                            className="me-2"
+                            onClick={() => handleReject(maintenance)}
+                            title="Reject"
+                        >
+                            <CIcon icon={cilX} />
+                        </CButton>
+                        {assignableStatuses.includes(maintenance.status) && (
+                            <CButton
+                                color="light"
+                                size="sm"
+                                className="me-2"
+                                onClick={() => handleAssign(maintenance)}
+                                title="Assign"
+                            >
+                                <CIcon icon={cilShare} />
+                            </CButton>
+                        )}
+                        <CButton
+                            color="light"
+                            size="sm"
+                            className="me-2"
+                            onClick={() => handleViewDetails(maintenance)}
+                            title="View Details"
+                        >
+                            <CIcon icon={cilFullscreen} />
+                        </CButton>
+                    </div>
+                </CTableDataCell>
+            </CTableRow>
+        );
+    })}
+</CTableBody>
             </CTable>
 
             {/* Pagination */}

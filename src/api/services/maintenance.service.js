@@ -85,33 +85,36 @@ class MaintenanceService {
     }
     try {
       const formData = this.createFormData(maintenanceData);
-
+  
       const response = await httpCommon.put(`/maintenances/${id}`, formData, {
         headers: {
           ...this.getAuthHeader(),
           'Content-Type': 'multipart/form-data',
         },
       });
-
+  
       // Update cached maintenance data if exists
       const encryptedCache = localStorage.getItem('maintenances');
       if (encryptedCache) {
         const cachedData = decryptData(encryptedCache);
         if (cachedData) {
-          cachedData.maintenances = cachedData.maintenances.map((item) =>
+          // Ensure cachedData.maintenances is an array before using map
+          const maintenances = Array.isArray(cachedData.maintenances) ? cachedData.maintenances : [];
+          cachedData.maintenances = maintenances.map((item) =>
             item.id === id ? { ...item, ...response.data?.data } : item
           );
           cachedData.timestamp = new Date().getTime();
           localStorage.setItem('maintenances', encryptData(cachedData));
         }
       }
-
+  
       return response.data?.data;
     } catch (error) {
       console.error('Maintenance Update Error:', error.response?.data || error);
       throw this.handleError(error);
     }
   }
+  
 
   async deleteMaintenance(id) {
     try {

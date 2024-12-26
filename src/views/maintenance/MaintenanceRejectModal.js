@@ -8,7 +8,8 @@ const MaintenanceRejectModal = ({
   maintenanceToReject,
   confirmReject,
 }) => {
-    const maintenanceTitle = maintenanceToReject?.title || maintenanceToReject?.property?.title || "Untitled Maintenance";
+  const maintenanceTitle =
+    maintenanceToReject?.title || maintenanceToReject?.property?.title || 'Untitled Maintenance';
 
   return (
     <CModal
@@ -21,13 +22,20 @@ const MaintenanceRejectModal = ({
         <CModalTitle id="reject-modal-title">Confirm Reject</CModalTitle>
       </CModalHeader>
       <CModalBody id="reject-modal-description">
-          Are you sure you want to reject the maintenance record titled: <strong>{maintenanceTitle}</strong>?
-        </CModalBody>
+        Are you sure you want to reject the maintenance record titled:{' '}
+        <strong>{maintenanceTitle}</strong>?
+      </CModalBody>
       <CModalFooter>
         <CButton color="secondary" onClick={() => setRejectModalVisible(false)}>
           Cancel
         </CButton>
-        <CButton color="danger" onClick={confirmReject}>
+        <CButton
+          color="danger"
+          onClick={async () => {
+            await confirmReject(); // Confirm reject logic here
+            setRejectModalVisible(false); // Close modal on success
+          }}
+        >
           Reject
         </CButton>
       </CModalFooter>
@@ -35,15 +43,14 @@ const MaintenanceRejectModal = ({
   );
 };
 
-
 MaintenanceRejectModal.propTypes = {
   visible: PropTypes.bool.isRequired,
   setRejectModalVisible: PropTypes.func.isRequired,
   maintenanceToReject: PropTypes.shape({
     title: PropTypes.string,
-      property: PropTypes.shape({
-          title: PropTypes.string,
-      }),
+    property: PropTypes.shape({
+      title: PropTypes.string,
+    }),
   }),
   confirmReject: PropTypes.func.isRequired,
 };
