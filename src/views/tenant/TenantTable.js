@@ -1,4 +1,3 @@
-// TenantTable.js
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -13,6 +12,7 @@ import {
   CPaginationItem,
   CFormInput,
 } from '@coreui/react';
+import "../paggination.scss";
 import { CIcon } from '@coreui/icons-react';
 import {
   cilPencil,
@@ -202,11 +202,15 @@ const TenantTable = ({
 
     doc.save(`tenant_clearance_${tenant?.tenantName?.replace(/ /g, "_") || 'unknown'}.pdf`);
   };
-    const handleViewDetails = (id) => {
-      dispatch(setSelectedTenant(id));
-      setIsModalVisible(true);
-      dispatch(clearError())
-    };
+// In TenantTable.js
+const handleViewDetails = (id) => {
+  if (id) {
+    dispatch(setSelectedTenant(id));
+    setIsModalVisible(true);
+    dispatch(clearError());
+  }
+};
+
 
   return (
     <div>
@@ -263,8 +267,8 @@ const TenantTable = ({
             </CTableRow>
           </CTableHead>
           <CTableBody>
-            {sortedTenants.map((tenant, index) => (
-              <CTableRow key={tenant._id}>
+          {sortedTenants?.map((tenant, index) => (
+  <CTableRow key={tenant?._id || index}>
                   <CTableDataCell className="text-center">
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </CTableDataCell>
@@ -318,7 +322,7 @@ const TenantTable = ({
                       <CButton
                           color="light"
                           size="sm"
-                          onClick={() => handleEdit(tenant._id)}  // Pass tenant._id here
+                          onClick={() => handleEdit(tenant?._id)}  // Pass tenant._id here
                           title="Edit"
                           className="ms-2"
                       >
@@ -330,7 +334,7 @@ const TenantTable = ({
                          color="light"
                          size="sm"
                           className="ms-2"
-                         onClick={() => handleDelete(tenant._id)}
+                         onClick={() => handleDelete(tenant?._id)}
                           title="Delete"
                         style={{ color: 'red' }}
                       >
@@ -342,7 +346,7 @@ const TenantTable = ({
                     size="sm"
                     className="ms-2"
                     title="View Details"
-                    onClick={() => handleViewDetails(tenant._id)}
+                    onClick={() => handleViewDetails(tenant?._id)}
                   >
                        <CIcon icon={cilFullscreen} />
                   </CButton>
@@ -353,7 +357,7 @@ const TenantTable = ({
         ))}
     </CTableBody>
  </CTable>
-      <div className="d-flex justify-content-between align-items-center mt-3">
+      <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
       <span>Total Tenants: {tenants.length}</span>
        <CPagination className="mt-3">
         <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>

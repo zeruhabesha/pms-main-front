@@ -89,7 +89,7 @@ const UserTablePagination = ({
   };
 
   return (
-    <div className="d-flex justify-content-between align-items-center mt-3">
+    <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
          <span>Total Users: {filteredUsers.length}</span>
           <CPagination className="d-inline-flex">
             <CPaginationItem

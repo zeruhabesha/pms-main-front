@@ -66,6 +66,35 @@ class PropertyService {
     }
   }
 
+  async getProperties() {
+    try {
+      const response = await httpCommon.get(`${this.baseURL}/properties`, {
+        headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
+      });
+        
+        return (response.data?.data?.properties || []).map(PropertyAdapter.toDTO);
+    } catch (error) {
+      throw new Error('Failed to fetch properties');
+    }
+  }
+
+
+  async addTenant(tenantData) {
+    try {
+       const response = await httpCommon.post(this.baseURL, tenantData, {
+            headers: {
+                ...this.getAuthHeader(),
+                'Content-Type': 'application/json', // Send JSON
+            },
+        });
+        return response.data?.data;
+    } catch (error) {
+        console.error("API call failed:", error);
+        throw this.handleError(error);
+    }
+}
+
+
   async createProperty(propertyData) {
     try {
       this.validatePropertyData(propertyData)
@@ -77,6 +106,26 @@ class PropertyService {
         },
       })
       return PropertyAdapter.toDTO(response.data?.data)
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async addPropertyImage(id, photo) {
+    try {
+      const formData = new FormData()
+      formData.append('photos', photo)
+      const response = await httpCommon.put(
+        `${this.baseURL}/${id}`, // Updated to use the correct put endpoint
+        formData,
+        {
+          headers: {
+            ...this.getAuthHeader(),
+            'Content-Type': 'multipart/form-data', // Overwrite json header for formdata
+          },
+        },
+      )
+      return PropertyAdapter.toDTO(response.data?.data) // Adapt the data
     } catch (error) {
       throw this.handleError(error)
     }
@@ -174,11 +223,11 @@ class PropertyService {
 
   async deletePhoto(propertyId, photoId) {
     try {
-      console.log('Deleting photo with propertyId:', propertyId, 'photoId:', photoId) // Add debugging logs
+      console.log('Deleting photo with propertyId:', propertyId, 'photoId:', photoId)
       await httpCommon.delete(`${this.baseURL}/${propertyId}/photos/${photoId}`, {
         headers: this.getAuthHeader(),
       })
-      return { success: true, photoId } // Return success and photoId
+      return { success: true, photoId }
     } catch (error) {
       throw this.handleError(error)
     }
@@ -281,39 +330,54 @@ class PropertyService {
     }
   }
 
-  createFormData(data, mediaFieldName = 'photos') {
-    // Changed default to 'photos'
-    const formData = new FormData()
-
-    // Handle text fields first
-    Object.entries(data).forEach(([key, value]) => {
-      if (value != null && key !== 'photos') {
-        if (key === 'amenities' && Array.isArray(value)) {
-          formData.append(key, JSON.stringify(value))
-        } else if (typeof value === 'object' && !Array.isArray(value)) {
-          formData.append(key, JSON.stringify(value))
-        } else {
-          formData.append(key, value)
-        }
-      }
-    })
-
-    // Handle photos
-    if (data.photos && Array.isArray(data.photos)) {
-      data.photos.forEach((photo, index) => {
-        if (photo instanceof File) {
-          formData.append('photos', photo)
-        }
-      })
+  async uploadPhoto(id, photo) {
+    try {
+        const formData = new FormData();
+        formData.append('photo', photo); // Changed from 'idProof' to 'photo' to be consistent
+        const response = await httpCommon.put(`${this.baseURL}/${id}/photo`, formData, { // Added /photo endpoint
+            headers: {
+                ...this.getAuthHeader(),
+                // Remove Content-Type here as it's automatically set for FormData
+            },
+        });
+        return response.data?.data;
+    } catch (error) {
+        throw this.handleError(error);
     }
+}
 
-    // Debug FormData contents
-    // for (let pair of formData.entries()) {
-    //   console.log('FormData entry:', pair[0], pair[1])
-    // }
 
-    return formData
+
+createFormData(data) {
+  const formData = new FormData();
+  
+  for (const key in data) {
+      if (data.hasOwnProperty(key)) {
+          const value = data[key];
+          
+          if (value === null || value === undefined) {
+              continue; // Skip null or undefined values
+          }
+
+          if (Array.isArray(value)) {
+              value.forEach((item, index) => {
+                  if (item instanceof File) {
+                      formData.append(`${key}`, item); // Changed to handle multiple files better
+                  } else {
+                      formData.append(`${key}[${index}]`, item);
+                  }
+              });
+          } else if (value instanceof File) {
+              formData.append(key, value);
+          } else if (typeof value === 'object') {
+              formData.append(key, JSON.stringify(value));
+          } else {
+              formData.append(key, value);
+          }
+      }
   }
+  return formData;
+}
 
   async getTenantById(id) {
     try {

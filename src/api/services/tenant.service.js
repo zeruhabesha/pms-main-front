@@ -36,7 +36,10 @@ class TenantService {
     async fetchTenants(page = 1, limit = 10, searchTerm = '') {
         try {
             const response = await httpCommon.get(this.baseURL, {
-                headers: this.getAuthHeader(),
+                headers: {
+                    ...this.getAuthHeader(),
+                    'Content-Type': 'multipart/form-data',
+                },
                 params: { page, limit, search: searchTerm },
             });
             const { data } = response.data;
@@ -157,30 +160,36 @@ class TenantService {
       }
   }
 
-    createFormData(data) {
-        const formData = new FormData();
-
-         for (const key in data) {
-             if (data.hasOwnProperty(key)) {
+  createFormData(data) {
+    const formData = new FormData();
+    for (const key in data) {
+        if (data.hasOwnProperty(key)) {
             const value = data[key];
+            if (Array.isArray(value)) {
+              value.forEach((file, index) => {
+                   if (file instanceof File) {
+                          formData.append(`${key}[${index}]`, file);
+                        } else {
+                          formData.append(`${key}`, file);
+                     }
+                });
+            } else if (value instanceof File) {
+                formData.append(key, value);
+            } else if (typeof value === 'object' && value !== null) {
+               for (const innerKey in value) {
+                   if(value.hasOwnProperty(innerKey)){
+                    formData.append(`${key}[${innerKey}]`, value[innerKey]);
+                   }
+                }
+            }else if (value !== null) {
+              formData.append(key, value);
+            }
 
-                if (Array.isArray(value)) {
-                    value.forEach((file, index) => {
-                       if(file instanceof File){
-                          formData.append(`${key}[${index}]`, file); // Handle multiple files
-                      } else {
-                            formData.append(`${key}[${index}]`, file);
-                      }
-                    });
-                 } else if(value instanceof File) {
-                  formData.append(key, value)
-                 } else if (value != null) {
-                     formData.append(key, typeof value === 'object' ? JSON.stringify(value) : value);
-                  }
-           }
         }
-       return formData;
     }
+    return formData;
+}
+          
     handleError(error) {
          console.error('API Error:', error.response?.data || error.message);
         throw {

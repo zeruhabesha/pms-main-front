@@ -11,6 +11,7 @@ import {
     CPaginationItem,
     CProgress
 } from "@coreui/react";
+import "../paggination.scss";
 import { CIcon } from "@coreui/icons-react";
 import {
     cilTrash,
@@ -261,7 +262,7 @@ const AgreementTable = ({
                 </CTableBody>
             </CTable>
 
-            <div className="d-flex justify-content-between align-items-center mt-3">
+            <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
                 <span>Total Agreements: {agreements.length}</span>
                 {totalPages > 1 && (
                     <CPagination className="mt-3">

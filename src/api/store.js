@@ -1,3 +1,4 @@
+// store/index.js
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slice/authSlice';
 import superAdminReducer from './slice/superAdminSlice';
@@ -7,8 +8,10 @@ import propertyReducer from './slice/PropertySlice';
 import sidebarReducer from '../components/store/sidebarSlice';
 import tenantReducer from './slice/TenantSlice';
 import agreementReducer from './slice/AgreementSlice';
-import maintenanceReducer from './slice/MaintenanceSlice'; // Import MaintenanceSlice reducer
-import reportReducer from './slice/ReportSlices'; // Import MaintenanceSlice reducer
+import maintenanceReducer from './slice/MaintenanceSlice';
+import reportReducer from './slice/ReportSlices';
+import complaintReducer from './slice/ComplaintSlice';
+
 
 export const store = configureStore({
   reducer: {
@@ -20,9 +23,9 @@ export const store = configureStore({
     sidebar: sidebarReducer,
     tenant: tenantReducer,
     agreement: agreementReducer,
-    maintenance: maintenanceReducer, // Add maintenance reducer
-    report: reportReducer, // Add report reducer
-
+    maintenance: maintenanceReducer,
+    report: reportReducer,
+    complaint: complaintReducer, // Add complaint reducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

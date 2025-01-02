@@ -13,6 +13,7 @@ import {
     CAlert,
     CProgress,
 } from '@coreui/react';
+import "../paggination.scss";
 import {
     cilCheckCircle,
     cilXCircle,
@@ -42,7 +43,8 @@ import MaintenanceApproveModal from './MaintenanceApproveModal';
 import MaintenanceRejectModal from './MaintenanceRejectModal';
 import { updateMaintenance } from '../../api/actions/MaintenanceActions';
 import { useDispatch } from 'react-redux';
-
+import MaintenanceInspectionModal from './MaintenanceInspectionModal';
+import MaintenanceCompletionModal from './MaintenanceCompletionModal';
 
 
 const MaintenanceTable = ({
@@ -54,6 +56,7 @@ const MaintenanceTable = ({
     setSearchTerm,
     handleDelete,
     handleEdit,
+    handleEdit1,
     handleViewDetails,
     handlePageChange,
 }) => {
@@ -63,8 +66,12 @@ const MaintenanceTable = ({
     const [error, setError] = useState(null);
     const [approveModalVisible, setApproveModalVisible] = useState(false);
     const [rejectModalVisible, setRejectModalVisible] = useState(false);
+    const [inspectionModalVisible, setInspectionModalVisible] = useState(false);
+    const [completionModalVisible, setCompletionModalVisible] = useState(false);
     const [maintenanceToApprove, setMaintenanceToApprove] = useState(null);
     const [maintenanceToReject, setMaintenanceToReject] = useState(null);
+    const [maintenanceToInspect, setMaintenanceToInspect] = useState(null)
+     const [maintenanceToComplete, setMaintenanceToComplete] = useState(null)
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -143,7 +150,51 @@ const MaintenanceTable = ({
       }, [dispatch, maintenanceToReject]);
       
 
+     //  Inspection handler
+            const handleInspection = useCallback((maintenance) => {
+                setMaintenanceToInspect(maintenance);
+            setInspectionModalVisible(true);
+            }, []);
 
+            const confirmInspection = useCallback(async (expense, estimatedCompletionTime) => {
+            if (maintenanceToInspect) {
+            try {
+            await dispatch(
+                updateMaintenance({
+                id: maintenanceToInspect._id,
+                maintenanceData: { status: 'Inspected', expense: Number(expense), estimatedCompletionTime },
+                })
+            );
+                setInspectionModalVisible(false)
+            } catch (error) {
+            console.error('Failed to update and set to inspected:', error);
+            }
+            }
+            }, [dispatch, maintenanceToInspect]);
+
+
+      //  Completion handler
+    const handleDone = useCallback((maintenance) => {
+        setMaintenanceToComplete(maintenance);
+        setCompletionModalVisible(true);
+    }, []);
+
+
+    const confirmCompletion = useCallback(async (status, notes='') => {
+        if (maintenanceToComplete) {
+            try {
+                await dispatch(
+                    updateMaintenance({
+                        id: maintenanceToComplete._id,
+                        maintenanceData: { status, notes},
+                    })
+                );
+                setCompletionModalVisible(false);
+            } catch (error) {
+                console.error('Failed to update status:', error);
+            }
+        }
+    }, [dispatch, maintenanceToComplete]);
 
     //assign handler
     const handleAssign = useCallback((maintenance) => {
@@ -253,6 +304,18 @@ const MaintenanceTable = ({
                 maintenanceToReject={maintenanceToReject}
                 confirmReject={confirmReject}
              />
+              <MaintenanceInspectionModal
+                visible={inspectionModalVisible}
+                  setInspectionModalVisible={setInspectionModalVisible}
+                  maintenanceToInspect={maintenanceToInspect}
+                  confirmInspection={confirmInspection}
+              />
+              <MaintenanceCompletionModal
+                visible={completionModalVisible}
+                setCompletionModalVisible={setCompletionModalVisible}
+                maintenanceToComplete={maintenanceToComplete}
+                confirmCompletion={confirmCompletion}
+             />
 
             {/* Maintenance Table */}
             <CTable align="middle" className="mb-0 border" hover responsive>
@@ -295,6 +358,7 @@ const MaintenanceTable = ({
             'Approved',
         ];
 
+
         return (
             <CTableRow key={maintenance._id || index}>
                 <CTableDataCell className="text-center">{rowNumber}</CTableDataCell>
@@ -327,7 +391,7 @@ const MaintenanceTable = ({
                 </CTableDataCell>
                 <CTableDataCell>
                     <div className="d-flex align-items-center">
-                        {role === 'User' && userPermissions?.editMaintenance && (
+                        {role === 'Tenant' && (
                             <CButton
                                 color="light"
                                 size="sm"
@@ -338,7 +402,29 @@ const MaintenanceTable = ({
                                 <CIcon icon={cilPencil} />
                             </CButton>
                         )}
-                        {role === 'User' && userPermissions?.deleteMaintenance && (
+                        {role === 'Maintainer' && (
+                            <CButton
+                                color="light"
+                                size="sm"
+                                className="me-2"
+                                onClick={() => handleInspection(maintenance)}
+                                title="Edit"
+                            >
+                                <CIcon icon={cilPencil} />
+                            </CButton>
+                        )}
+                          {role === 'Inspector' && (
+                            <CButton
+                                color="light"
+                                size="sm"
+                                className="me-2"
+                                onClick={() => handleDone(maintenance)}
+                                title="Edit"
+                            >
+                                <CIcon icon={cilPencil} />
+                            </CButton>
+                        )}
+                        {role === 'Tenant' && (
                             <CButton
                                 color="light"
                                 className="me-2"
@@ -350,6 +436,8 @@ const MaintenanceTable = ({
                                 <CIcon icon={cilTrash} />
                             </CButton>
                         )}
+                       {role === 'Admin' && (
+
                         <CButton
                             color="light"
                             style={{ color: `green` }}
@@ -360,6 +448,8 @@ const MaintenanceTable = ({
                         >
                             <CIcon icon={cilCheck} />
                         </CButton>
+                       )}
+                        {role === 'Admin' && (
                         <CButton
                             color="light"
                             style={{ color: `red` }}
@@ -370,7 +460,8 @@ const MaintenanceTable = ({
                         >
                             <CIcon icon={cilX} />
                         </CButton>
-                        {assignableStatuses.includes(maintenance.status) && (
+                        )}
+                        {assignableStatuses.includes(maintenance.status) && role === 'Admin' && (
                             <CButton
                                 color="light"
                                 size="sm"
@@ -398,39 +489,44 @@ const MaintenanceTable = ({
 </CTableBody>
             </CTable>
 
-            {/* Pagination */}
-            <div className="d-flex justify-content-between align-items-center mt-3">
-                <span>Total Requests: {totalRequests}</span>
-                <CPagination className="d-inline-flex">
-                    <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
-                        «
-                    </CPaginationItem>
-                    <CPaginationItem
-                        disabled={currentPage === 1}
-                        onClick={() => handlePageChange(currentPage - 1)}
-                    >
-                        ‹
-                    </CPaginationItem>
-                    {[...Array(totalPages)].map((_, index) => (
-                        <CPaginationItem
-                            key={index + 1}
-                            active={index + 1 === currentPage}
-                            onClick={() => handlePageChange(index + 1)}
-                        >
-                            {index + 1}
-                        </CPaginationItem>
-                    ))}
-                    <CPaginationItem
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(currentPage + 1)}
-                    >
-                        ›
-                    </CPaginationItem>
-                    <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)}>
-                        »
-                    </CPaginationItem>
-                </CPagination>
-            </div>
+            <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
+      <span>Total Requests: {totalRequests}</span>
+      <CPagination className="d-inline-flex">
+        <CPaginationItem
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(1)}
+        >
+          «
+        </CPaginationItem>
+        <CPaginationItem
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+        >
+          ‹
+        </CPaginationItem>
+        {[...Array(totalPages)].map((_, index) => (
+          <CPaginationItem
+            key={index + 1}
+            active={index + 1 === currentPage}
+            onClick={() => handlePageChange(index + 1)}
+          >
+            {index + 1}
+          </CPaginationItem>
+        ))}
+        <CPaginationItem
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(currentPage + 1)}
+        >
+          ›
+        </CPaginationItem>
+        <CPaginationItem
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(totalPages)}
+        >
+          »
+        </CPaginationItem>
+      </CPagination>
+    </div>
         </div>
     );
 };

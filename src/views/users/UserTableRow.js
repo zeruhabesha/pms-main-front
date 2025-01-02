@@ -14,7 +14,8 @@ const UserTableRow = ({
   handleEdit,
   handleDelete,
   handleEditPhoto,
-    handleUserDetailsClick
+    handleUserDetailsClick,
+    handlePermissionsClick
 }) => {
   return (
     <CTableRow key={user._id || `row-${index}`}>
@@ -49,6 +50,7 @@ const UserTableRow = ({
               handleDelete={handleDelete}
               handleEditPhoto={handleEditPhoto}
               handleUserDetailsClick={handleUserDetailsClick}
+              handlePermissionsClick={handlePermissionsClick}
           />
       </CTableDataCell>
     </CTableRow>

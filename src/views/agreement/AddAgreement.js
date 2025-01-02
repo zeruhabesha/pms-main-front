@@ -59,7 +59,7 @@ const AddAgreement = () => {
         };
     }, [dispatch, id, isEditing]);
 
-    const handleFormSubmit = async (formData) => {
+   const handleFormSubmit = async (formData) => {
         if (!formData.tenant || !formData.property) {
             setFormError("Tenant and Property are required fields.");
             toast.error("Tenant and Property are required fields.");

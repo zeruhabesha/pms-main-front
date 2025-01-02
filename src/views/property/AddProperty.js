@@ -25,7 +25,25 @@ const PROPERTY_TYPES = [
   { value: 'house', label: 'House' },
   { value: 'commercial', label: 'Commercial' },
   { value: 'land', label: 'Land' },
-]
+  { value: 'condominium', label: 'Condominium' },
+  { value: 'villa', label: 'Villa' },
+  { value: 'office', label: 'Office' },
+  { value: 'warehouse', label: 'Warehouse' },
+  { value: 'industrial', label: 'Industrial' },
+  { value: 'retail', label: 'Retail' },
+  { value: 'farm', label: 'Farm' },
+  { value: 'cottage', label: 'Cottage' },
+  { value: 'studio', label: 'Studio' },
+  { value: 'townhouse', label: 'Townhouse' },
+  { value: 'mobile_home', label: 'Mobile Home' },
+  { value: 'duplex', label: 'Duplex' },
+  { value: 'penthouse', label: 'Penthouse' },
+  { value: 'hostel', label: 'Hostel' },
+  { value: 'resort', label: 'Resort' },
+  { value: 'motel', label: 'Motel' },
+  { value: 'hotel', label: 'Hotel' },
+  { value: 'mixed_use', label: 'Mixed Use' },
+];
 
 const MAX_PHOTOS = 5
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp']

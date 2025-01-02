@@ -14,4 +14,5 @@ export const PropertyTypes = {
   FILTER_PROPERTIES: 'property/filterProperties', // Filter properties based on criteria
   DOWNLOAD_PHOTO: 'property/downloadPhoto', // Download a photo for a property
   UPDATE_PHOTO: 'property/updatePhoto', // Update a single photo by its ID
+  ADD_PROPERTY_IMAGE: 'property/addPropertyImage', //add an image to a property
 }

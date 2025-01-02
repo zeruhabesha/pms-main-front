@@ -10,27 +10,21 @@ class AgreementService {
     }
 
     getAuthHeader() {
-         try {
-             const encryptedToken = localStorage.getItem('token');
-             if (!encryptedToken) {
-                 console.warn('No token found in local storage');
-                 return {};
-             }
-
-             const token = decryptData(encryptedToken);
-             if (!token) {
-                 console.warn('Failed to decrypt token');
-                 return {};
-             }
-
-             return {
-                 Authorization: `Bearer ${token}`,
-             };
-         } catch (error) {
-             console.error('Error getting authorization header:', error.message);
-             return {};
-         }
-     }
+        const encryptedToken = localStorage.getItem("token");
+        if (!encryptedToken) {
+            throw new Error("Authentication token is missing.");
+        }
+    
+        const token = decryptData(encryptedToken);
+        if (!token) {
+            throw new Error("Invalid authentication token.");
+        }
+    
+        return {
+            Authorization: `Bearer ${token}`,
+        };
+    }
+    
 
 
     async fetchAgreements(page = 1, limit = 10, searchTerm = "") {
@@ -64,30 +58,31 @@ class AgreementService {
     }
 
     async addAgreement(agreementData) {
-      try {
-        const formData = new FormData();
-  
-        // Append other fields from agreementData to formData
-          for (const key in agreementData) {
-           if (agreementData.hasOwnProperty(key) && key !== 'documents') {
-                formData.append(key, agreementData[key]);
-           }
-          }
-          // Append documents (files) to formData
-        if(agreementData.documents && Array.isArray(agreementData.documents)){
-             agreementData.documents.forEach((file, index) => {
-                  formData.append(`documents[${index}]`, file);
-              });
-           }
-           const response = await httpCommon.post(this.baseURL, formData, {
-                  headers: { ...this.getAuthHeader(), "Content-Type": "multipart/form-data" },
-              });
-              return response.data?.data;
-  
-      } catch (error) {
-           throw this.handleError(error, "Failed to add agreement");
-      }
-  }
+        try {
+            const formData = new FormData();
+
+            // Append other fields from agreementData to formData
+            for (const key in agreementData) {
+                if (agreementData.hasOwnProperty(key) && key !== 'documents') {
+                     formData.append(key, agreementData[key]);
+                }
+            }
+           // Append documents (files) to formData
+           if(agreementData.documents && Array.isArray(agreementData.documents)){
+                 agreementData.documents.forEach((file, index) => {
+                     formData.append(`documents[${index}]`, file);
+                 });
+            }
+
+            const response = await httpCommon.post(this.baseURL, formData, {
+                headers: { ...this.getAuthHeader(), "Content-Type": "multipart/form-data" },
+            });
+            return response.data?.data;
+
+        } catch (error) {
+            throw this.handleError(error, "Failed to add agreement");
+        }
+    }
 
     async updateAgreement(id, agreementData) {
         try {
@@ -112,18 +107,36 @@ class AgreementService {
     }
 
     async uploadAgreementFile(id, file) {
-         try {
+        try {
+            // Validate input
+            if (!id || !file) {
+                throw new Error("Both 'id' and 'file' are required for uploading the agreement file.");
+            }
+    
+            // Prepare the FormData object
             const formData = new FormData();
-            formData.append("file", file);
-
-             const response =  await httpCommon.post(`${this.baseURL}/${id}/file`, formData, {
-                headers: { ...this.getAuthHeader(), "Content-Type": "multipart/form-data" },
-            });
+            formData.append("documents", file); // Ensure 'documents' matches the backend expectation
+    
+            // Make the API call
+            const response = await httpCommon.post(
+                `${this.baseURL}/${id}/file`,
+                formData,
+                {
+                    headers: {
+                        ...this.getAuthHeader(),
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
+    
+            // Return the server response data
             return response.data?.data;
         } catch (error) {
+            // Handle errors using the centralized handleError method
             throw this.handleError(error, "Failed to upload agreement file");
         }
     }
+    
 
 
     async downloadAgreementFile(fileName) {
@@ -148,12 +161,12 @@ class AgreementService {
     }
 
     handleError(error, defaultMessage) {
-        console.error("API Error:", error.response?.data || error.message);
-        throw {
-            message: error.response?.data?.message || error.message || defaultMessage,
-            status: error.response?.status || 500,
-        };
+        const message = error.response?.data?.message || error.message || defaultMessage;
+        const status = error.response?.status || 500;
+        console.error("API Error:", { message, status });
+        throw { message, status };
     }
+    
 }
 
 export default new AgreementService();

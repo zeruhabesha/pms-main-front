@@ -45,6 +45,9 @@ const ViewMaintenance = () => {
     });
 
     const [userPermissions, setUserPermissions] = useState(null);
+    const [role, setRole] = useState(null);
+
+
 
     const ITEMS_PER_PAGE = 10;
 
@@ -59,14 +62,16 @@ const ViewMaintenance = () => {
     }, [dispatch, currentPage, searchState.debouncedTerm]);
 
     useEffect(() => {
-        const encryptedUser = localStorage.getItem('user');
-        if (encryptedUser) {
-            try {
+        try {
+            const encryptedUser = localStorage.getItem('user');
+            if (encryptedUser) {
                 const decryptedUser = decryptData(encryptedUser);
                 setUserPermissions(decryptedUser?.permissions || null);
-            } catch (error) {
-                console.error('Failed to decrypt user data', error);
+                setRole(decryptedUser?.role || null);
             }
+        } catch (err) {
+            setError('Failed to load user permissions');
+            console.error('Permission loading error:', err);
         }
     }, []);
 
@@ -174,7 +179,9 @@ const ViewMaintenance = () => {
     const handleEdit = (maintenance) => {
           navigate(`/maintenance/edit/${maintenance._id}`);
       };
-      
+      const handleEdit1 = (maintenance) => {
+
+    };
     const handleViewDetails = (maintenance) => {
            handleOpenModal('details', maintenance);
     };
@@ -210,8 +217,9 @@ const ViewMaintenance = () => {
                 <CCard className="mb-4">
                     <CCardHeader className="d-flex justify-content-between align-items-center">
                         <strong>Maintenance Records</strong>
-                        {userPermissions?.addMaintenanceRecord && (
-                            <div id="container">
+                        {/* {userPermissions?.addMaintenanceRecord && ( */}
+                        {role === 'Tenant' && (
+                              <div id="container">
                                 <button className="learn-more" onClick={handleAddRequest}>
                                     <span className="circle" aria-hidden="true">
                                         <span className="icon arrow"></span>
@@ -219,7 +227,7 @@ const ViewMaintenance = () => {
                                     <span className="button-text">Add Request</span>
                                 </button>
                             </div>
-                        )}
+                         )} 
                     </CCardHeader>
                     <CCardBody>
                         <div className="d-flex mb-3 gap-2">
@@ -271,6 +279,7 @@ const ViewMaintenance = () => {
                                 setSearchTerm={handleSearchChange}
                                 handleDelete={handleDelete}
                                 handleEdit={handleEdit}
+                                handleEdit1={handleEdit1}
                                 handleViewDetails={handleViewDetails}
                                 handleAssign={handleAssign}
                                 handlePageChange={handlePageChange}

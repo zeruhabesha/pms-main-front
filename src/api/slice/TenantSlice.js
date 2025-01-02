@@ -107,11 +107,16 @@ const tenantSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
+              // In tenantSlice.js
       .addCase(uploadTenantPhoto.fulfilled, (state, action) => {
         state.loading = false;
-           const updatedTenant = action.payload;
-          state.tenants = state.tenants.map(tenant => tenant._id === updatedTenant.id ? updatedTenant : tenant);
-            state.tenantDetails = updatedTenant
+        const updatedTenant = action.payload;
+        state.tenants = state.tenants.map(tenant => 
+            tenant._id === updatedTenant._id ? updatedTenant : tenant
+        );
+        if (state.tenantDetails?._id === updatedTenant._id) {
+            state.tenantDetails = updatedTenant;
+        }
       })
       .addCase(uploadTenantPhoto.rejected, (state, action) => {
         state.loading = false;
@@ -142,9 +147,18 @@ const tenantSlice = createSlice({
           state.reportLoading = false;
           state.error = action.payload?.message || "Failed to generate report";
         })
+
   },
 });
 
 export const { resetState, setSelectedTenant, clearError } = tenantSlice.actions;
-export { fetchTenants,  fetchTenantById,  updateTenant, deleteTenant, uploadTenantPhoto, generateTenantReport };
+export { 
+  fetchTenants, 
+  fetchTenantById, 
+  addTenant, // This was missing from exports
+  updateTenant, 
+  deleteTenant, 
+  uploadTenantPhoto, 
+  generateTenantReport 
+};
 export default tenantSlice.reducer;

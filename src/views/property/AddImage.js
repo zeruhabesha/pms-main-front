@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   CModal,
   CModalHeader,
@@ -11,7 +11,16 @@ import {
 } from '@coreui/react'
 import PropTypes from 'prop-types'
 
-const AddImage = ({ visible, onClose, propertyId, propertyTitle, confirmUpdatePhoto, photoId }) => {
+const AddImage = ({
+  visible,
+  onClose,
+  propertyId,
+  propertyTitle,
+  confirmAddPhoto,
+  confirmUpdatePhoto,
+  photoId,
+  isEdit,
+}) => {
   const [photo, setPhoto] = useState(null)
   const [error, setError] = useState('')
 
@@ -38,23 +47,26 @@ const AddImage = ({ visible, onClose, propertyId, propertyTitle, confirmUpdatePh
     }
 
     try {
-      if (confirmUpdatePhoto) {
-        await confirmUpdatePhoto(photo)
+      if (isEdit) {
+        if (confirmUpdatePhoto) {
+          await confirmUpdatePhoto(photo)
+        }
+      } else if (confirmAddPhoto) {
+        await confirmAddPhoto(photo)
       }
-      onClose() // Close AddImage modal
+      onClose()
     } catch (error) {
-      setError(error.message || 'Failed to update the photo.')
+      setError(error.message || 'Failed to add the photo.')
     }
   }
 
   const handleClose = () => {
-    onClose() // Close AddImage modal
+    onClose()
   }
-
   return (
     <CModal visible={visible} onClose={handleClose} alignment="center">
       <CModalHeader>
-        <CModalTitle>Add Photo</CModalTitle>
+        <CModalTitle>{isEdit ? 'Edit Photo' : 'Add Photo'}</CModalTitle>
       </CModalHeader>
       <CModalBody>
         <CForm onSubmit={handleSubmit}>
@@ -66,7 +78,7 @@ const AddImage = ({ visible, onClose, propertyId, propertyTitle, confirmUpdatePh
               Cancel
             </CButton>
             <CButton color="dark" type="submit" className="ms-2">
-              Add Photo
+              {isEdit ? 'Update Photo' : 'Add Photo'}
             </CButton>
           </div>
         </CForm>
@@ -80,8 +92,10 @@ AddImage.propTypes = {
   onClose: PropTypes.func,
   propertyId: PropTypes.string,
   propertyTitle: PropTypes.string,
+  confirmAddPhoto: PropTypes.func,
   confirmUpdatePhoto: PropTypes.func,
   photoId: PropTypes.string,
+  isEdit: PropTypes.bool,
 }
 
 export default AddImage

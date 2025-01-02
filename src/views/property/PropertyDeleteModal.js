@@ -1,10 +1,8 @@
-import React from 'react';
-import { CModal, CModalBody, CModalHeader, CModalTitle, CModalFooter, CButton } from '@coreui/react';
-import PropTypes from 'prop-types';
+import React from 'react'
+import { CModal, CModalBody, CModalHeader, CModalTitle, CModalFooter, CButton } from '@coreui/react'
+import PropTypes from 'prop-types'
 
 const PropertyDeleteModal = ({ visible, onClose, propertyToDelete, confirmDelete }) => {
-
-
   return (
     <CModal visible={visible} onClose={onClose} aria-labelledby="delete-modal-title">
       <CModalHeader onClose={onClose}>
@@ -13,13 +11,14 @@ const PropertyDeleteModal = ({ visible, onClose, propertyToDelete, confirmDelete
       <CModalBody>
         {propertyToDelete ? (
           <>
-            Are you sure you want to delete the property titled: <strong>{propertyToDelete.title || 'N/A'}</strong>
-              {propertyToDelete.id && (
+            Are you sure you want to delete the property titled:{' '}
+            <strong>{propertyToDelete.title || 'N/A'}</strong>
+            {propertyToDelete.id && (
               <>
-                {' '}with ID: <strong>{propertyToDelete.id}</strong>?
+                {' '}
+                with ID: <strong>{propertyToDelete.id}</strong>?
               </>
             )}
-           
           </>
         ) : (
           <p>No property selected for deletion.</p>
@@ -32,8 +31,8 @@ const PropertyDeleteModal = ({ visible, onClose, propertyToDelete, confirmDelete
         <CButton
           color="danger"
           onClick={() => {
-            confirmDelete(propertyToDelete.id);
-            onClose();
+            confirmDelete(propertyToDelete.id)
+            onClose()
           }}
           aria-label="Confirm deletion"
         >
@@ -41,16 +40,16 @@ const PropertyDeleteModal = ({ visible, onClose, propertyToDelete, confirmDelete
         </CButton>
       </CModalFooter>
     </CModal>
-  );
-};
+  )
+}
 
 PropertyDeleteModal.propTypes = {
-    visible: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    propertyToDelete: PropTypes.shape({
-        title: PropTypes.string,
-        id: PropTypes.string
-    }),
-    confirmDelete: PropTypes.func.isRequired
-};
-export default PropertyDeleteModal;
+  visible: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  propertyToDelete: PropTypes.shape({
+    title: PropTypes.string,
+    id: PropTypes.string,
+  }),
+  confirmDelete: PropTypes.func.isRequired,
+}
+export default PropertyDeleteModal

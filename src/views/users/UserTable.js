@@ -12,6 +12,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import UserDetailsModal from './UserDetailsModal';
 import UserTableView from './UserTableView';
+import "../paggination.scss";
 
 const UserTable = ({
   users,
@@ -128,18 +129,6 @@ const UserTable = ({
         user={selectedUser}
         onClose={handleUserDetailsClose}
       />
-
-      <PermissionsModal
-        visible={permissionsModalVisible}
-        user={selectedUser}
-        onClose={() => setPermissionsModalVisible(false)}
-        handleSavePermissions={(updatedUser) => {
-          setPermissionsModalVisible(false);
-          setSelectedUser(null);
-          toast.success('Permissions updated successfully!');
-        }}
-      />
-
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
   );

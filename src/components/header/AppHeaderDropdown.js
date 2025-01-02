@@ -124,6 +124,10 @@ const AppHeaderDropdown = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('tenants');
+    localStorage.removeItem('maintenances');
+    localStorage.removeItem('maintenance');
+    localStorage.removeItem('inspector');
     navigate('/login');
   };
 

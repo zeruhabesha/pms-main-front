@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { CRow, CCol, CCard, CCardHeader, CCardBody, CAlert } from '@coreui/react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchTenants, deleteTenant } from '../../api/actions/TenantActions';
+import { 
+  fetchTenants, 
+  deleteTenant, 
+  fetchTenantById  // Changed from getTenantById to fetchTenantById
+} from '../../api/actions/TenantActions';
 import TenantTable from './TenantTable';
 import TenantDeleteModal from './TenantDeleteModal';
 import { ToastContainer, toast } from 'react-toastify';
@@ -22,8 +26,8 @@ const selectTenantState = createSelector(
     tenants: tenant.tenants || [],
     loading: tenant.loading,
     error: tenant.error,
-    totalPages: tenant.pagination?.totalPages || 1,
-    currentPage: tenant.pagination?.currentPage || 1,
+    totalPages: tenant.totalPages || 1, // Remove pagination nesting
+    currentPage: tenant.currentPage || 1, // Remove pagination nesting
   })
 );
 
@@ -45,6 +49,23 @@ const ViewTenant = () => {
   const handleFetchTenants = ({ search }) => {
     dispatch(fetchTenants({ page: 1, limit: itemsPerPage, search }));
   };
+
+// In ViewTenant.js
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      await dispatch(fetchTenants({ 
+        page: currentPage, 
+        limit: itemsPerPage, 
+        search: searchTerm 
+      })).unwrap();
+    } catch (error) {
+      toast.error(error.message || 'Failed to fetch tenants');
+    }
+  };
+  
+  fetchData();
+}, [dispatch, currentPage, searchTerm, itemsPerPage]);
 
   useEffect(() => {
     const encryptedUser = localStorage.getItem('user');
@@ -125,7 +146,7 @@ const ViewTenant = () => {
 
   const handleViewDetails = async (id) => {
     try {
-      const response = await dispatch(getTenantById(id)).unwrap();
+      const response = await dispatch(fetchTenantById(id)).unwrap(); // Changed from getTenantById to fetchTenantById
   
       if (!response) {
         throw new Error('Tenant details not found');
@@ -137,7 +158,7 @@ const ViewTenant = () => {
       console.error('Error fetching tenant details:', error);
       toast.error(error.message || 'Failed to fetch tenant details');
     }
-  };
+};
   
   return (
     <CRow>

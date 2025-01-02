@@ -11,6 +11,7 @@ import {
     CButton,
     CBadge,
 } from '@coreui/react';
+import "../paggination.scss";
 import { CSVLink } from 'react-csv';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -283,7 +284,7 @@ const PropertyTable = ({
             </CTable>
 
             {totalPages > 1 && (
-                <div className="d-flex justify-content-between align-items-center mt-3">
+                <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
                     <span>Total Properties: {totalProperties}</span>
                     <CPagination className="d-inline-flex">
                         <CPaginationItem

@@ -15,10 +15,16 @@ import CIcon from '@coreui/icons-react'
 import { cilPencil, cilTrash, cilFullscreen, cilArrowLeft } from '@coreui/icons'
 import AddImage from './AddImage'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getProperty, deletePhoto, updatePhoto } from '../../api/actions/PropertyAction'
+import {
+  getProperty,
+  deletePhoto,
+  updatePhoto,
+  addPropertyImage,
+} from '../../api/actions/PropertyAction'
 import { useDispatch } from 'react-redux'
 import PropertyPhotoModal from './PropertyPhotoModal'
-
+import PhotoDeleteModal from './PhotoDeleteModal.js' // Import PhotoDeleteModal
+import { toast } from 'react-toastify'
 const PropertyDetails = () => {
   const [property, setProperty] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -26,7 +32,11 @@ const PropertyDetails = () => {
   const [isFullscreenModalVisible, setFullscreenModalVisible] = useState(false)
   const [addImageModalVisible, setAddImageModalVisible] = useState(false)
   const [expandedImage, setExpandedImage] = useState(null)
-  const [selectedPhotoToEdit, setSelectedPhotoToEdit] = useState(null) // Track the photo being edited
+  const [selectedPhotoToEdit, setSelectedPhotoToEdit] = useState(null)
+  const [photoDeleteModalVisible, setPhotoDeleteModalVisible] = useState(false) // Add state for photo deletion modal
+  const [photoToDelete, setPhotoToDelete] = useState(null) // Add state for photo to be deleted
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [propertyToDelete, setPropertyToDelete] = useState(null)
   const { id } = useParams()
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -72,31 +82,40 @@ const PropertyDetails = () => {
     setAddImageModalVisible(false)
     setSelectedPhotoToEdit(null)
   }, [])
+  const handleDeletePropertyClick = (property) => {
+    setPropertyToDelete(property)
+    setDeleteModalVisible(true)
+  }
 
-  const handlePhotoDelete = async (photo) => {
-    if (window.confirm('Are you sure you want to delete this photo?')) {
-      try {
-        setLoading(true)
-        await dispatch(deletePhoto({ propertyId: id, photoId: photo.id })).unwrap()
-        const response = await dispatch(getProperty(id)).unwrap()
-        setProperty(response)
-        setError(null)
-      } catch (err) {
-        setError(err.message || 'Failed to delete the photo.')
-      } finally {
-        setLoading(false)
-      }
+  const handlePhotoDeleteClick = (photo) => {
+    setPhotoToDelete(photo)
+    setPhotoDeleteModalVisible(true)
+  }
+  const handlePhotoDelete = async (photoToDelete) => {
+    try {
+      setLoading(true)
+      await dispatch(deletePhoto({ propertyId: id, photoId: photoToDelete.id })).unwrap()
+      const response = await dispatch(getProperty(id)).unwrap()
+      setProperty(response)
+      setError(null)
+      toast.success('Photo deleted successfully!')
+    } catch (err) {
+      setError(err.message || 'Failed to delete the photo.')
+      toast.error(err.message || 'Failed to delete the photo.')
+    } finally {
+      setLoading(false)
+      setPhotoDeleteModalVisible(false)
     }
   }
 
   const handlePhotoUpdate = (photo) => {
-    setSelectedPhotoToEdit(photo) // Set the photo to edit
-    setAddImageModalVisible(true) // Open the modal
+    setSelectedPhotoToEdit(photo)
+    setAddImageModalVisible(true)
   }
+
   const handleUpdatePhotoSuccess = async () => {
-    setAddImageModalVisible(false) // Close the modal
-    setSelectedPhotoToEdit(null) // Clear the selected photo
-    // Refetch the property data to reflect changes
+    setAddImageModalVisible(false)
+    setSelectedPhotoToEdit(null)
     try {
       setLoading(true)
       const response = await dispatch(getProperty(id)).unwrap()
@@ -104,10 +123,29 @@ const PropertyDetails = () => {
       setError(null)
     } catch (err) {
       setError(err.message || 'Failed to reload property data.')
+      toast.error(err.message || 'Failed to reload property data.')
     } finally {
       setLoading(false)
     }
   }
+
+  const handlePhotoAdd = async (photo) => {
+    try {
+      setLoading(true)
+      await dispatch(addPropertyImage({ id, photo })).unwrap()
+      const response = await dispatch(getProperty(id)).unwrap()
+      setProperty(response)
+      setError(null)
+      setAddImageModalVisible(false)
+      toast.success('Photo added successfully!')
+    } catch (err) {
+      setError(err.message || 'Failed to add photo.')
+      toast.error(err.message || 'Failed to add photo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handlePhotoEdit = async (newPhotoFile) => {
     try {
       setLoading(true)
@@ -204,8 +242,8 @@ const PropertyDetails = () => {
                       className="m-2"
                       style={{
                         position: 'relative',
-                        width: '200px', // Consistent width for images
-                        height: '200px', // Consistent height for images
+                        width: '200px',
+                        height: '200px',
                         cursor: 'pointer',
                       }}
                     >
@@ -247,7 +285,11 @@ const PropertyDetails = () => {
                         <CButton color="light" size="sm" onClick={() => handlePhotoUpdate(photo)}>
                           <CIcon icon={cilPencil} />
                         </CButton>
-                        <CButton color="danger" size="sm" onClick={() => handlePhotoDelete(photo)}>
+                        <CButton
+                          color="danger"
+                          size="sm"
+                          onClick={() => handlePhotoDeleteClick(photo)}
+                        >
                           <CIcon icon={cilTrash} />
                         </CButton>
                       </div>
@@ -271,14 +313,21 @@ const PropertyDetails = () => {
         photo={expandedImage}
         onClose={handleCloseFullscreen}
       />
+      <PhotoDeleteModal
+        visible={photoDeleteModalVisible}
+        onClose={() => setPhotoDeleteModalVisible(false)}
+        photoToDelete={photoToDelete}
+        confirmDelete={handlePhotoDelete}
+      />
       <AddImage
         visible={addImageModalVisible}
         onClose={handleCloseAddImageModal}
         propertyId={property.id}
         propertyTitle={property.title}
+        confirmAddPhoto={handlePhotoAdd}
         confirmUpdatePhoto={handlePhotoEdit}
         photoId={selectedPhotoToEdit?.id}
-        isEdit={!!selectedPhotoToEdit} // Pass if it's edit mode
+        isEdit={!!selectedPhotoToEdit}
       />
     </>
   )

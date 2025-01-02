@@ -16,7 +16,8 @@ import { decryptData } from '../../api/utils/crypto';
 import { useNavigate } from 'react-router-dom';
 import '../Super.scss';
 import "./MaintenanceForm.scss";
-import { filterProperties } from '../../api/actions/propertyAction';
+import { filterProperties } from '../../api/actions/PropertyAction';
+// import { filterProperties } from '../../api/actions/propertyAction';
 import Select from 'react-select'; // Import react-select
 
 
@@ -54,8 +55,9 @@ const TenantRequestForm = ({
 
     // Fetch properties with Redux
     const fetchProperties = useCallback(() => {
-       dispatch(filterProperties());
+        dispatch(filterProperties());
     }, [dispatch]);
+    
 
      useEffect(() => {
         if(properties.length === 0 && !isLoading && !error){
@@ -111,16 +113,17 @@ const TenantRequestForm = ({
     };
 
 
-     const handlePropertySelectChange = (selectedOption) => {
+    const handlePropertySelectChange = (selectedOption) => {
         handleNestedChange('propertyInformation', 'propertyId', selectedOption ? selectedOption.value : '');
     };
 
-      const getPropertyOptions = () => {
+    const getPropertyOptions = () => {
         return properties.map(property => ({
             value: property._id,
-            label: property.name || property.title,
+            label: property.name || property.title, // Ensure property.name or property.title exists
         }));
     };
+    
 
 
     const handleFileChange = (e) => {
@@ -133,7 +136,7 @@ const TenantRequestForm = ({
 const validateForm = () => {
     const requiredFields = {
         tenant: 'Tenant',
-        'propertyInformation.propertyId': 'Property', // Nested property field
+        'propertyInformation.propertyId': 'Property', // Ensure this field is populated
         'propertyInformation.unit': 'Unit',
         typeOfRequest: 'Type of Request',
         description: 'Description',
@@ -156,6 +159,7 @@ const validateForm = () => {
     }
     return null;
 };
+
 
     // Submit handler with comprehensive error management
     const handleSubmit = async () => {
@@ -236,15 +240,15 @@ const validateForm = () => {
                                 {isLoading ? (
                                     <CSpinner size="sm" />
                                 ) : (
-                                      <Select
-                                            id="propertyId"
-                                            value={getPropertyOptions().find(option => option.value === formData.propertyInformation.propertyId)}
-                                             onChange={handlePropertySelectChange}
-                                            options={getPropertyOptions()}
-                                             placeholder="Select Property"
-                                            isDisabled={isLoading}
-                                            isSearchable
-                                        />
+                                    <Select
+                                    id="propertyId"
+                                    value={getPropertyOptions().find(option => option.value === formData.propertyInformation.propertyId) || null}
+                                    onChange={handlePropertySelectChange}
+                                    options={getPropertyOptions()}
+                                    placeholder="Select Property"
+                                    isDisabled={isLoading}
+                                    isSearchable
+                                />
                                 )}
                              </CCol>
                             <CCol xs={12} md={6} className="form-group">

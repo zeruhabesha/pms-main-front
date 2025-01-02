@@ -12,6 +12,7 @@ import {
   CFormInput,
   CCollapse,
 } from '@coreui/react';
+import "../paggination.scss";
 import { CIcon } from '@coreui/icons-react';
 import { cilPencil, cilTrash, cilCheckCircle, cilXCircle, cilPlus, cilMinus, cilArrowTop, cilArrowBottom } from '@coreui/icons';
 import placeholder from '../image/placeholder.png';
@@ -279,7 +280,7 @@ const AdminTable = ({
         </CTable>
       </div>
   
-      <div className="d-flex justify-content-between align-items-center mt-3">
+      <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
         <span>Total Admins: {admins.length}</span>
   <CPagination className="d-inline-flex" >
     <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>

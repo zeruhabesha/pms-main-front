@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   CTable,
   CTableBody,
@@ -16,7 +16,7 @@ import 'jspdf-autotable';
 import UserTableRow from './UserTableRow';
 import UserTableHead from "./UserTableHead";
 import UserTablePagination from "./UserTablePagination";
-
+import PermissionsModal from "./PermissionsModal"; // Import PermissionsModal
 
 const UserTableView = ({
     users,
@@ -31,8 +31,20 @@ const UserTableView = ({
     activeTab,
     sortConfig,
     handleSort,
-    handleUserDetailsClick
+    handleUserDetailsClick,
 }) => {
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [permissionsModalVisible, setPermissionsModalVisible] = useState(false);
+
+    const handlePermissionsClick = (user) => {
+        setSelectedUser(user);
+        setPermissionsModalVisible(true);
+    };
+
+    const handlePermissionsModalClose = () => {
+        setPermissionsModalVisible(false);
+        setSelectedUser(null);
+      };
 
 
     const filteredUsers = useMemo(() => {
@@ -172,6 +184,7 @@ const UserTableView = ({
                                 handleDelete={handleDelete}
                                 handleEditPhoto={handleEditPhoto}
                                 handleUserDetailsClick={handleUserDetailsClick}
+                                handlePermissionsClick={handlePermissionsClick}
                             />
                         ))}
                     </CTableBody>
@@ -183,6 +196,11 @@ const UserTableView = ({
                 filteredUsers={filteredUsers}
                 handlePageChange={handlePageChange}
             />
+            <PermissionsModal
+                visible={permissionsModalVisible}
+                user={selectedUser}
+                onClose={handlePermissionsModalClose} // Pass the close handler here
+              />
         </div>
     );
 };

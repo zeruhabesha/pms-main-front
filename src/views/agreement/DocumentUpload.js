@@ -1,63 +1,59 @@
 import React from "react";
-import { CCol, CFormInput, CAlert, CButton } from "@coreui/react";
 import PropTypes from "prop-types";
+import { CCol, CFormInput, CButton } from "@coreui/react";
+import CIcon from "@coreui/icons-react";
+import { cilTrash } from "@coreui/icons";
 
-const DocumentUpload = ({
-  formData,
-  fileErrors = [],
-  handleFileChange,
-  handleRemoveDocument,
-}) => {
+const DocumentUpload = ({ formData, fileErrors, handleFileChange, handleRemoveDocument }) => {
+  const onFileChange = (e) => {
+    handleFileChange(Array.from(e.target.files));
+  };
+
   return (
-    <CCol xs={12} className="mb-3">
+    <CCol xs={12} className="form-group">
+      <label>Upload Documents</label>
       <CFormInput
         type="file"
-        label="Upload Documents"
         multiple
-        onChange={(e) => handleFileChange(Array.from(e.target.files))}
+        accept="application/pdf,image/jpeg,image/png"
+        onChange={onFileChange}
+        className="form-control-animation"
       />
       {fileErrors.length > 0 && (
-        <CAlert color="danger" className="mt-2">
-          {fileErrors.map((error, idx) => (
-            <div key={idx}>{error}</div>
+        <ul className="text-danger mt-2">
+          {fileErrors.map((error, index) => (
+            <li key={index}>{error}</li>
           ))}
-        </CAlert>
+        </ul>
       )}
-      <ul className="list-unstyled mt-3">
-        {formData.documents.map((doc, idx) => (
-          <li key={idx} className="d-flex align-items-center mb-2">
-            <span>{doc.name || doc}</span>
-            <CButton
-              color="danger"
-              size="sm"
-              onClick={() => handleRemoveDocument(idx)}
-              className="ms-3"
-            >
-              Remove
-            </CButton>
-          </li>
-        ))}
-      </ul>
+      {formData.documents.length > 0 && (
+        <ul className="mt-2">
+          {formData.documents.map((file, index) => (
+            <li key={index} className="d-flex align-items-center">
+              {file.name || "Existing Document"}
+              <CButton
+                color="light"
+                style={{ color: "red" }}
+                size="sm"
+                className="ms-2"
+                onClick={() => handleRemoveDocument(index)}
+                title="Remove Document"
+              >
+                <CIcon icon={cilTrash} />
+              </CButton>
+            </li>
+          ))}
+        </ul>
+      )}
     </CCol>
   );
 };
 
 DocumentUpload.propTypes = {
-  formData: PropTypes.shape({
-    documents: PropTypes.arrayOf(
-      PropTypes.oneOfType([
-        PropTypes.string,
-        PropTypes.shape({ name: PropTypes.string }),
-      ])
-    ).isRequired,
-  }).isRequired,
-  fileErrors: PropTypes.arrayOf(PropTypes.string),
+  formData: PropTypes.object.isRequired,
+  fileErrors: PropTypes.array.isRequired,
   handleFileChange: PropTypes.func.isRequired,
   handleRemoveDocument: PropTypes.func.isRequired,
-};
-
-DocumentUpload.defaultProps = {
-  fileErrors: [],
 };
 
 export default DocumentUpload;
