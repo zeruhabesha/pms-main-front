@@ -1,4 +1,3 @@
-// components/complaints/ComplaintsTable.js
 import React, { useState } from 'react';
 import {
   CTable,
@@ -78,8 +77,7 @@ const ComplaintsTable = ({
       handleFeedback(complaintId, feedbackText[complaintId] || '');
     };
 
-
-    const formatDate = (dateString) => {
+   const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         try {
             const date = new Date(dateString);
@@ -94,19 +92,18 @@ const ComplaintsTable = ({
   const sortedComplaints = React.useMemo(() => {
     if (!sortConfig.key) return complaints;
 
-    return [...complaints].sort((a, b) => {
-      const aKey = (a[sortConfig.key] && typeof a[sortConfig.key] === 'object') ? (a[sortConfig.key]?.name || '') : (a[sortConfig.key] || '')
-      const bKey = (b[sortConfig.key] && typeof b[sortConfig.key] === 'object') ? (b[sortConfig.key]?.name || '') : (b[sortConfig.key] || '');
+      return [...complaints].sort((a, b) => {
+          const aKey = (a[sortConfig.key] && typeof a[sortConfig.key] === 'object') ? (a[sortConfig.key]?.name || '') : (a[sortConfig.key] || '');
+          const bKey = (b[sortConfig.key] && typeof b[sortConfig.key] === 'object') ? (b[sortConfig.key]?.name || '') : (b[sortConfig.key] || '');
 
-
-      if (aKey < bKey) {
-        return sortConfig.direction === 'ascending' ? -1 : 1;
-      }
-      if (aKey > bKey) {
-        return sortConfig.direction === 'ascending' ? 1 : -1;
-      }
-      return 0;
-    });
+          if (aKey < bKey) {
+              return sortConfig.direction === 'ascending' ? -1 : 1;
+          }
+          if (aKey > bKey) {
+              return sortConfig.direction === 'ascending' ? 1 : -1;
+          }
+          return 0;
+      });
   }, [complaints, sortConfig]);
 
   const handleSort = (key) => {
@@ -120,7 +117,7 @@ const ComplaintsTable = ({
     const csvData = complaints.map((complaint, index) => ({
         index: (currentPage - 1) * 10 + index + 1,
         tenant: complaint?.tenant?.name || 'N/A',
-        property: complaint?.property?.name || 'N/A',
+        property: complaint?.property?.title || 'N/A',
         complaintType: complaint?.complaintType || 'N/A',
         status: complaint?.status || 'N/A',
     }));
@@ -129,7 +126,7 @@ const ComplaintsTable = ({
         .map(
             (complaint, index) =>
                 `${(currentPage - 1) * 10 + index + 1}. Tenant: ${complaint?.tenant?.name || 'N/A'}, Property: ${
-                complaint?.property?.name || 'N/A'
+                complaint?.property?.title || 'N/A'
             }, Type: ${complaint?.complaintType || 'N/A'}, Status: ${complaint?.status || 'N/A'}`
         )
         .join('\n');
@@ -141,7 +138,7 @@ const ComplaintsTable = ({
         const tableData = complaints.map((complaint, index) => [
             (currentPage - 1) * 10 + index + 1,
             complaint?.tenant?.name || 'N/A',
-            complaint?.property?.name || 'N/A',
+            complaint?.property?.title || 'N/A',
             complaint?.complaintType || 'N/A',
             complaint?.status || 'N/A',
         ]);
@@ -187,7 +184,7 @@ const ComplaintsTable = ({
           placeholder="Search by tenant, property or type"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-100%"
+            style={{width: '100%'}}
         />
       </div>
   
@@ -236,7 +233,7 @@ const ComplaintsTable = ({
                 <CTableRow>
                   <CTableDataCell>{(currentPage - 1) * 10 + index + 1}</CTableDataCell>
                     <CTableDataCell>{complaint?.tenant?.name || 'N/A'}</CTableDataCell>
-                   <CTableDataCell>{complaint?.property?.name || 'N/A'}</CTableDataCell>
+                    <CTableDataCell>{complaint?.property?.title || 'N/A'}</CTableDataCell>
                   <CTableDataCell>{complaint?.complaintType || 'N/A'}</CTableDataCell>
                   <CTableDataCell>
                       {complaint?.status === 'Pending' ? (

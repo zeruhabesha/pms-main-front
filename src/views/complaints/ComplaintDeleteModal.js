@@ -1,4 +1,3 @@
-// components/complaints/ComplaintDeleteModal.js
 import React from 'react';
 import { CButton, CModal, CModalBody, CModalFooter, CModalHeader, CModalTitle } from '@coreui/react';
 

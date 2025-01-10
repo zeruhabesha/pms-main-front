@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux'; // Ensure useDispatch is imported
+import React, { useEffect, useState, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
     CRow,
     CCol,
@@ -25,30 +25,28 @@ import 'react-toastify/dist/ReactToastify.css';
 import { createSelector } from 'reselect';
 
 
-const selectComplaintState = (state) => state.Complaint || { // Changed from state.complaint to state.Complaint
+const selectComplaintState = (state) => state.Complaint || {
   complaints: [],
   loading: false,
   error: null,
   totalPages: 0,
-  currentPage: 1
+  currentPage: 1,
 };
-
-const complaintSelector = createSelector(
-  selectComplaintState,
-  (complaint) => ({
-    complaints: complaint.complaints || [],
-    loading: complaint.loading || false,
-    error: complaint.error || null,
-    totalPages: complaint.totalPages || 0,
-    currentPage: complaint.currentPage || 1,
-  })
-);
 
 const ViewComplaints = () => {
   const dispatch = useDispatch();
-  const { complaints, loading, error, totalPages, currentPage } = useSelector(complaintSelector);
+    const complaintSelector = useMemo(() => createSelector(
+        selectComplaintState,
+      (complaint) => ({
+          complaints: complaint.complaints || [],
+          loading: complaint.loading || false,
+          error: complaint.error || null,
+          totalPages: complaint.totalPages || 0,
+          currentPage: complaint.currentPage || 1,
+        })
+    ), []);
+    const { complaints, loading, error, totalPages, currentPage } = useSelector(complaintSelector);
 
-  // Rest of your component code remains the same
   const [searchTerm, setSearchTerm] = useState('');
   const [complaintModalVisible, setComplaintModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -58,22 +56,22 @@ const ViewComplaints = () => {
   const itemsPerPage = 10;
 
     useEffect(() => {
-    console.log('Fetching complaints with dispatch');
-    dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
+        dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
   }, [dispatch, currentPage, searchTerm]);
 
+
   const handlePageChange = (page) => {
-    if (page !== currentPage) {
-      dispatch(fetchComplaints({ page, limit: itemsPerPage, search: searchTerm }));
-    }
-  };
+      if (page !== currentPage) {
+           dispatch(fetchComplaints({ page, limit: itemsPerPage, search: searchTerm }));
+      }
+    };
 
   const handleDelete = (complaint) => {
     setComplaintToDelete(complaint);
     setDeleteModalVisible(true);
   };
 
-  const confirmDelete = async () => {
+   const confirmDelete = async () => {
     if (!complaintToDelete?._id) {
       toast.error('No complaint selected for deletion');
       return;
@@ -85,33 +83,34 @@ const ViewComplaints = () => {
       setDeleteModalVisible(false);
       toast.success('Complaint deleted successfully');
     } catch (error) {
-      toast.error('Failed to delete complaint');
+      toast.error(error?.message || 'Failed to delete complaint');
     }
   };
-  
+
+
   const handleEdit = (complaint) => {
     setEditingComplaint(complaint);
     setComplaintModalVisible(true);
   };
 
-
-  const handleSave = async (updatedData) => {
+    const handleSave = async (updatedData) => {
     if (!editingComplaint?._id) {
       toast.error('No complaint selected for editing');
       return;
     }
   
     try {
-      await dispatch(updateComplaint({ id: editingComplaint._id, complaintData: updatedData })).unwrap();
-      dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
-      setComplaintModalVisible(false);
-      toast.success('Complaint updated successfully');
+        await dispatch(updateComplaint({ id: editingComplaint._id, complaintData: updatedData })).unwrap();
+          dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
+        setComplaintModalVisible(false);
+          setEditingComplaint(null)
+        toast.success('Complaint updated successfully');
     } catch (error) {
-      toast.error(error.message || 'Failed to update complaint');
+      toast.error(error?.message || 'Failed to update complaint');
     }
   };
-  
-    const handleAssign = async (complaintId, userId) => {
+
+   const handleAssign = async (complaintId, userId) => {
         try {
             await dispatch(assignComplaint({id: complaintId, userId})).unwrap();
              dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
@@ -127,7 +126,7 @@ const ViewComplaints = () => {
       await dispatch(addComplaint(complaintData)).unwrap();
       dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
         toast.success('Complaint added successfully');
-        setComplaintModalVisible(false);
+       setComplaintModalVisible(false);
     } catch (error) {
       toast.error(error?.message || 'Failed to add Complaint');
     }
@@ -141,7 +140,6 @@ const ViewComplaints = () => {
             toast.error(error?.message || 'Failed to submit feedback');
         }
     }
-
 
   return (
     <CRow>
@@ -186,7 +184,6 @@ const ViewComplaints = () => {
               handlePageChange={handlePageChange}
                 handleAssign={handleAssign}
                 handleFeedback={handleFeedback}
-
             />
           </CCardBody>
         </CCard>

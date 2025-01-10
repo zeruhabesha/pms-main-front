@@ -16,9 +16,16 @@ import {
 import { cilTrash, cilPlus } from '@coreui/icons';
 import { CIcon } from '@coreui/icons-react';
 import { useDispatch } from 'react-redux';
-import { addTenant, updateTenant, fetchTenantById } from '../../api/actions/TenantActions';
+import {
+    addTenant,
+    updateTenant,
+    fetchTenantById,
+    uploadTenantPhoto,
+    fetchTenants,
+} from '../../api/actions/TenantActions';
 import { toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
+
 
 
 const AddTenant = () => {
