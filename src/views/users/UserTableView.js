@@ -6,8 +6,7 @@ import {
     CButton
 } from '@coreui/react';
 import { CIcon } from '@coreui/icons-react';
-import {
-    cilFile, cilClipboard, cilCloudDownload, cilUser, cilSettings, cilSearch
+import {    cilFile, cilClipboard, cilCloudDownload, cilUser, cilSettings, cilSearch
 } from '@coreui/icons';
 import { CSVLink } from 'react-csv';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
@@ -83,7 +82,7 @@ const UserTableView = ({
             case 'user':
                 return <CIcon icon={cilUser} className="text-primary" title="User" />;
             case 'maintainer':
-                return <CIcon icon={cilSettings} className="text-warning" title="maintainer" />;
+                return <CIcon icon={cilSettings} className="text-warning" title="Maintainer" />;
             case 'inspector':
                 return <CIcon icon={cilSearch} className="text-success" title="Inspector" />;
             default:
@@ -129,6 +128,8 @@ const UserTableView = ({
 
         doc.save('user_data.pdf');
     };
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
 
     return (
         <div>
@@ -195,6 +196,7 @@ const UserTableView = ({
                 itemsPerPage={itemsPerPage}
                 filteredUsers={filteredUsers}
                 handlePageChange={handlePageChange}
+              totalPages={totalPages}
             />
             <PermissionsModal
                 visible={permissionsModalVisible}

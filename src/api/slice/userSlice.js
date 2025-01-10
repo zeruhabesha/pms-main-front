@@ -18,6 +18,9 @@ const initialState = {
     error: null,
     totalPages: 1,
     currentPage: 1,
+    totalUsers: 0,
+    totalInspectors: 0,
+    totalMaintainers:0,
     selectedUser: null,
     role: 'user',
 };
@@ -45,6 +48,7 @@ const userSlice = createSlice({
                  state.users = action.payload.users;
                 state.totalPages = action.payload.totalPages;
                 state.currentPage = action.payload.currentPage;
+                state.totalUsers = action.payload.totalUsers
                 state.role = 'user';
                 state.loading = false;
             })
@@ -62,6 +66,7 @@ const userSlice = createSlice({
                 state.inspectors = action.payload.inspectors;
                 state.totalPages = action.payload.totalPages;
                 state.currentPage = action.payload.currentPage;
+                state.totalInspectors = action.payload.totalInspectors
                  state.role = 'inspector';
                 state.loading = false;
             })
@@ -79,6 +84,7 @@ const userSlice = createSlice({
                 state.maintainers = action.payload.maintainers;
                 state.totalPages = action.payload.totalPages;
                 state.currentPage = action.payload.currentPage;
+                state.totalMaintainers = action.payload.totalMaintainers;
                 state.role = 'maintainer';
                 state.loading = false;
             })
@@ -159,10 +165,16 @@ const userSlice = createSlice({
             .addCase(updateUserPermissions.fulfilled, (state, action) => {
                 state.loading = false;
                 const updatedUser = action.payload;
-                const index = state.users.findIndex((user) => user._id === updatedUser._id);
-                if (index !== -1) {
-                    state.users[index] = updatedUser;
-                }
+                 // Update all user lists after permission update
+                let index = state.users.findIndex((user) => user._id === updatedUser._id);
+                if(index !== -1) state.users[index] = updatedUser;
+
+                index = state.inspectors.findIndex(user => user._id === updatedUser._id);
+                 if(index !== -1) state.inspectors[index] = updatedUser;
+
+
+                 index = state.maintainers.findIndex(user => user._id === updatedUser._id);
+                 if(index !== -1) state.maintainers[index] = updatedUser;
             })
             .addCase(updateUserPermissions.rejected, (state, action) => {
                 state.loading = false;

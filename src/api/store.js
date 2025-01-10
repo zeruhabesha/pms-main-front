@@ -11,6 +11,7 @@ import agreementReducer from './slice/AgreementSlice';
 import maintenanceReducer from './slice/MaintenanceSlice';
 import reportReducer from './slice/ReportSlices';
 import complaintReducer from './slice/ComplaintSlice';
+import guestReducer from './slice/guestSlice';
 
 
 export const store = configureStore({
@@ -26,6 +27,7 @@ export const store = configureStore({
     maintenance: maintenanceReducer,
     report: reportReducer,
     complaint: complaintReducer, // Add complaint reducer
+    guest: guestReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -34,7 +34,8 @@ const AddProperty = React.lazy(() => import('./views/property/AddProperty'));
 const Report = React.lazy(() => import('./views/report/ComingSoon'));
 const Profile = React.lazy(() => import('./views/Profile/ViewProfile'));
 const Complaints = React.lazy(() => import('./views/complaints/Complaints'));
-const Guest = React.lazy(() => import('./views/guest/GuestForm'));
+const Guest = React.lazy(() => import('./views/guest/GuestTable'));
+const AddGuest = React.lazy(() => import('./views/guest/AddGuest'));
 
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
@@ -102,6 +103,7 @@ const App = () => {
             <Route path="/profile" element={<ProtectedRoute element={Profile} />} />
             <Route path="/complaint" element={<ProtectedRoute element={Complaints} />} />
             <Route path="/guest" element={<ProtectedRoute element={Guest} />} />
+            <Route path="/add-guest" element={<ProtectedRoute element={AddGuest} />} />
           </Route>
           <Route path="*" element={<Navigate to="/404" />} />
         </Routes>

@@ -64,10 +64,11 @@ const PermissionsModal = ({ visible, user, onClose }) => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+       const token = localStorage.getItem('token');
       const payload = { userId: user._id, permissions };
       await axios.put(`http://localhost:4000/api/v1/users/${user._id}/permissions`, payload, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`, // Assuming token is stored here
+          Authorization: `Bearer ${token}`,
         },
       });
 

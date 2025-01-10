@@ -26,234 +26,160 @@ class UserService {
     };
   }
 
-  async fetchUsers(page = 1, limit = 10, searchTerm = '') {
-    try {
-      const response = await httpCommon.get('/users/user', {
-        headers: this.getAuthHeader(),
-        params: { page, limit, search: searchTerm },
-      });
-      const { data } = response.data;
-      
-      // Encrypt and store the fetched users data in localStorage if needed
-      if (data?.users) {
-        localStorage.setItem('user', encryptData({
-          timestamp: new Date().getTime(),
-          users: data.users,
-          totalPages: data.totalPages,
-          totalUsers: data.totalUsers,
-          currentPage: data.currentPage
-        }));
-      }
+  getRegisteredBy() {
+     const encryptedUser = localStorage.getItem('user');
+     if(!encryptedUser){
+        console.warn("No user found in local storage")
+        return null;
+     }
 
-      return {
-        users: data?.users || [],
-        totalPages: data?.totalPages || 1,
-        totalUsers: data?.totalUsers || 0,
-        currentPage: data?.currentPage || page,
-      };
-    } catch (error) {
-      // Try to get cached data if request fails
-      const encryptedCache = localStorage.getItem('user');
-      if (encryptedCache) {
-        const cachedData = decryptData(encryptedCache);
-        if (cachedData && (new Date().getTime() - cachedData.timestamp < 3600000)) { // 1 hour cache
-          return {
-            users: cachedData.users,
-            totalPages: cachedData.totalPages,
-            totalUsers: cachedData.totalUsers,
-            currentPage: cachedData.currentPage,
-            fromCache: true
-          };
-        }
+     const user = decryptData(encryptedUser)
+
+      if(!user || !user.registeredBy) {
+          console.warn("No registeredBy found in user data")
+          return null;
       }
-      throw this.handleError(error);
-    }
+      return user.registeredBy;
+
   }
 
   async fetchUsers(page = 1, limit = 10, searchTerm = '') {
-    try {
-      const response = await httpCommon.get('/users/user', {
-        headers: this.getAuthHeader(),
-        params: { page, limit, search: searchTerm },
-      });
-      const { data } = response.data;
-      
-      // Encrypt and store the fetched users data in localStorage if needed
-      if (data?.users) {
-        localStorage.setItem('user', encryptData({
-          timestamp: new Date().getTime(),
-          users: data.users,
-          totalPages: data.totalPages,
-          totalUsers: data.totalUsers,
-          currentPage: data.currentPage
-        }));
-      }
-
-      return {
-        users: data?.users || [],
-        totalPages: data?.totalPages || 1,
-        totalUsers: data?.totalUsers || 0,
-        currentPage: data?.currentPage || page,
-      };
-    } catch (error) {
-      // Try to get cached data if request fails
-      const encryptedCache = localStorage.getItem('user');
-      if (encryptedCache) {
-        const cachedData = decryptData(encryptedCache);
-        if (cachedData && (new Date().getTime() - cachedData.timestamp < 3600000)) { // 1 hour cache
-          return {
-            users: cachedData.users,
-            totalPages: cachedData.totalPages,
-            totalUsers: cachedData.totalUsers,
-            currentPage: cachedData.currentPage,
-            fromCache: true
-          };
-        }
-      }
-      throw this.handleError(error);
+    const encryptedUser = localStorage.getItem('user');
+    if (!encryptedUser) {
+        console.warn("No user found in local storage");
+        return {
+            users: [],
+            totalPages: 0,
+            totalUsers: 0,
+            currentPage: page
+        };
     }
-  }
 
-async fetchUsers(page = 1, limit = 10, searchTerm = '') {
-    try {
-      const response = await httpCommon.get('/users/user', {
-        headers: this.getAuthHeader(),
-        params: { page, limit, search: searchTerm },
-      });
-      const { data } = response.data;
-      
-      // Encrypt and store the fetched users data in localStorage if needed
-      if (data?.users) {
-        localStorage.setItem('user', encryptData({
-          timestamp: new Date().getTime(),
-          users: data.users,
-          totalPages: data.totalPages,
-          totalUsers: data.totalUsers,
-          currentPage: data.currentPage
-        }));
-      }
-
-      return {
-        users: data?.users || [],
-        totalPages: data?.totalPages || 1,
-        totalUsers: data?.totalUsers || 0,
-        currentPage: data?.currentPage || page,
-      };
-    } catch (error) {
-      // Try to get cached data if request fails
-      const encryptedCache = localStorage.getItem('user');
-      if (encryptedCache) {
-        const cachedData = decryptData(encryptedCache);
-        if (cachedData && (new Date().getTime() - cachedData.timestamp < 3600000)) { // 1 hour cache
-          return {
-            users: cachedData.users,
-            totalPages: cachedData.totalPages,
-            totalUsers: cachedData.totalUsers,
-            currentPage: cachedData.currentPage,
-            fromCache: true
-          };
-        }
-      }
-      throw this.handleError(error);
+    const user = decryptData(encryptedUser);
+    if (!user || !user.registeredBy) {
+        console.warn("No valid registeredBy found in local storage");
+        return {
+            users: [],
+            totalPages: 0,
+            totalUsers: 0,
+            currentPage: page
+        };
     }
-  }
-  async fetchMaintenance(page = 1, limit = 10, searchTerm = '') {
+
+    const registeredBy = user.registeredBy;
+
     try {
-      const response = await httpCommon.get('/users/maintainer', {
-        headers: this.getAuthHeader(),
-        params: { page, limit, search: searchTerm },
-      });
-      const { data } = response.data;
-       // Encrypt and store the fetched maintenance data in localStorage if needed
-      if (data?.users) {
-          localStorage.setItem('maintenance', encryptData({
-              timestamp: new Date().getTime(),
-              users: data.users,
-              totalPages: data.totalPages,
-              totalUsers: data.totalUsers,
-              currentPage: data.currentPage
-          }));
-      }
-      return {
-           maintainers: data?.users || [],
-        totalPages: data?.totalPages || 1,
-        totalMaintainers: data?.totalUsers || 0,
-        currentPage: data?.currentPage || page,
-      };
+        // const response = await httpCommon.get(`/users/registeredBy/${registeredBy}`, {
+          const response = await httpCommon.get(`/users/user`, {
+
+            headers: this.getAuthHeader(),
+            params: { page, limit, search: searchTerm },
+        });
+        const { data } = response.data;
+
+        return {
+            users: data?.users || [],
+            totalPages: data?.totalPages || 1,
+            totalUsers: data?.totalUsers || 0,
+            currentPage: data?.currentPage || page,
+        };
     } catch (error) {
-      // Try to get cached data if request fails
-        const encryptedCache = localStorage.getItem('maintenance');
-      if (encryptedCache) {
-          const cachedData = decryptData(encryptedCache);
-          if (cachedData && (new Date().getTime() - cachedData.timestamp < 3600000)) { // 1 hour cache
-            return {
-                 maintainers: cachedData.users,
-                totalPages: cachedData.totalPages,
-                totalMaintainers: cachedData.totalUsers,
-                currentPage: cachedData.currentPage,
-                fromCache: true
-            };
+        throw this.handleError(error);
+    }
+}
+
+async fetchMaintenance(page = 1, limit = 10, searchTerm = '') {
+    const encryptedUser = localStorage.getItem('user');
+    if (!encryptedUser) {
+        console.warn("No user found in local storage");
+        return {
+          maintainers: [],
+            totalPages: 0,
+            totalMaintainers: 0,
+            currentPage: page
+        };
+    }
+
+    const user = decryptData(encryptedUser);
+      if (!user || !user.registeredBy) {
+          console.warn("No valid registeredBy found in local storage");
+          return {
+              maintainers: [],
+                totalPages: 0,
+                totalMaintainers: 0,
+                currentPage: page
           }
       }
-      throw this.handleError(error);
-    }
-  }
-  
+    const registeredBy = user.registeredBy;
 
-  async fetchInspector(page = 1, limit = 10, searchTerm = '') {
-     try {
-      const response = await httpCommon.get('/users/inspector', {
-        headers: this.getAuthHeader(),
-        params: { page, limit, search: searchTerm },
-      });
-      const { data } = response.data;
-       // Encrypt and store the fetched inspector data in localStorage if needed
-      if (data?.users) {
-        localStorage.setItem('inspector', encryptData({
-          timestamp: new Date().getTime(),
-          users: data.users,
-            totalPages: data.totalPages,
-            totalUsers: data.totalUsers,
-          currentPage: data.currentPage
-        }));
-      }
-      return {
-        inspectors: data?.users || [],
-        totalPages: data?.totalPages || 1,
-        totalInspectors: data?.totalUsers || 0,
-        currentPage: data?.currentPage || page,
-      };
+
+    try {
+        const response = await httpCommon.get(`/users/registeredBy/${registeredBy}/maintainers`, {
+            headers: this.getAuthHeader(),
+            params: { page, limit, search: searchTerm },
+        });
+        const { data } = response.data;
+        return {
+            maintainers: data?.users || [],
+            totalPages: data?.totalPages || 1,
+            totalMaintainers: data?.totalUsers || 0,
+            currentPage: data?.currentPage || page,
+        };
     } catch (error) {
-      // Try to get cached data if request fails
-        const encryptedCache = localStorage.getItem('inspector');
-      if (encryptedCache) {
-          const cachedData = decryptData(encryptedCache);
-          if (cachedData && (new Date().getTime() - cachedData.timestamp < 3600000)) { // 1 hour cache
-            return {
-                inspectors: cachedData.users,
-                totalPages: cachedData.totalPages,
-                totalInspectors: cachedData.totalUsers,
-                currentPage: cachedData.currentPage,
-                fromCache: true
-            };
-        }
-      }
-      throw this.handleError(error);
+        throw this.handleError(error);
     }
-  }
+}
+
+
+async fetchInspector(page = 1, limit = 10, searchTerm = '') {
+    const encryptedUser = localStorage.getItem('user');
+    if (!encryptedUser) {
+        console.warn("No user found in local storage");
+        return {
+            inspectors: [],
+            totalPages: 0,
+            totalInspectors: 0,
+            currentPage: page
+        };
+    }
+
+     const user = decryptData(encryptedUser);
+      if(!user || !user.registeredBy){
+          console.warn("No valid registeredBy found in local storage");
+          return {
+              inspectors: [],
+            totalPages: 0,
+            totalInspectors: 0,
+            currentPage: page
+          }
+      }
+    const registeredBy = user.registeredBy;
+
+    try {
+        const response = await httpCommon.get(`/users/registeredBy/${registeredBy}/inspectors`, {
+            headers: this.getAuthHeader(),
+            params: { page, limit, search: searchTerm },
+        });
+        const { data } = response.data;
+        return {
+            inspectors: data?.users || [],
+            totalPages: data?.totalPages || 1,
+            totalInspectors: data?.totalUsers || 0,
+            currentPage: data?.currentPage || page,
+        };
+    } catch (error) {
+        throw this.handleError(error);
+    }
+}
 
   
   async addUser(userData) {
     try {
       console.log('Adding user:', userData);
       console.log('Request URL:', `${this.baseURL}/user`);
+
+      // Make sure that your front end sets the `role` property to a valid value.
       
-      // const response = await httpCommon.post('/users/user', userData, {
-      //   headers: {
-      //     ...this.getAuthHeader(),
-      //     'Content-Type': 'application/json',
-      //   },
-      // });
       const response = await httpCommon.post('/users', userData, {
         headers: { ...this.getAuthHeader(), 'Content-Type': 'application/json' },
       });
@@ -287,18 +213,6 @@ async fetchUsers(page = 1, limit = 10, searchTerm = '') {
         },
       });
 
-      // Update cached user data if exists
-      const encryptedCache = localStorage.getItem('user');
-      if (encryptedCache) {
-        const cachedData = decryptData(encryptedCache);
-        if (cachedData) {
-          cachedData.users = cachedData.users.map(user => 
-            user.id === id ? { ...user, ...response.data?.data } : user
-          );
-          cachedData.timestamp = new Date().getTime();
-          localStorage.setItem('user', encryptData(cachedData));
-        }
-      }
 
       if (!response.data) {
         throw new Error('No data received from server');
@@ -322,18 +236,6 @@ async fetchUsers(page = 1, limit = 10, searchTerm = '') {
         },
       });
 
-      // Update cached user photo if exists
-      const encryptedCache = localStorage.getItem('user');
-      if (encryptedCache) {
-        const cachedData = decryptData(encryptedCache);
-        if (cachedData) {
-          cachedData.users = cachedData.users.map(user => 
-            user.id === id ? { ...user, photoUrl: response.data?.photoUrl } : user
-          );
-          cachedData.timestamp = new Date().getTime();
-          localStorage.setItem('user', encryptData(cachedData));
-        }
-      }
 
       return response.data?.photoUrl;
     } catch (error) {
@@ -362,18 +264,6 @@ async fetchUsers(page = 1, limit = 10, searchTerm = '') {
       await httpCommon.delete(`/users/${id}`, {
         headers: this.getAuthHeader(),
       });
-
-      // Update cached users if exists
-      const encryptedCache = localStorage.getItem('user');
-      if (encryptedCache) {
-        const cachedData = decryptData(encryptedCache);
-        if (cachedData) {
-          cachedData.users = cachedData.users.filter(user => user.id !== id);
-          cachedData.timestamp = new Date().getTime();
-          localStorage.setItem('user', encryptData(cachedData));
-        }
-      }
-
       return id;
     } catch (error) {
       throw this.handleError(error);
@@ -382,7 +272,7 @@ async fetchUsers(page = 1, limit = 10, searchTerm = '') {
   
 
   clearCache() {
-    localStorage.removeItem('user');
+    //No cache to clear
   }
 
   handleError(error) {

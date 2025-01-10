@@ -1,132 +1,104 @@
-// components/GuestForm.js
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAllGuests } from '../../api/actions/guestActions';
 import {
-  CForm,
-  CFormInput,
-  CButton,
-  CCard,
-  CCardBody,
-  CCardHeader,
-  CRow,
-  CCol,
-  CAlert,
+    CRow,
+    CCol,
+    CCard,
+    CCardHeader,
+    CCardBody,
+    CAlert,
+    CSpinner
 } from '@coreui/react';
-import QRCode from 'qrcode.react';
+import '../Super.scss';  // Assuming you have Super.scss for styling
+import 'react-toastify/dist/ReactToastify.css'; // If you want to use toasts
 
-const GuestForm = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    purpose: '',
-    date: '',
-  });
+const ViewGuest = () => {
+  const { id } = useParams();
+  const dispatch = useDispatch();
+  const { guest, isLoading, isError, message } = useSelector(
+    (state) => state.guest
+  );
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const [qrCode, setQrCode] = useState('');
-  const [formError, setFormError] = useState('');
+  useEffect(() => {
+      const fetchGuest = async () => {
+          try {
+              await dispatch(fetchAllGuests(id));
+          } catch (err) {
+              setErrorMessage(err.message || 'Failed to fetch guest details');
+          }
+      };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    // Validate form data
-    if (!formData.name || !formData.email || !formData.phone || !formData.purpose || !formData.date) {
-      setFormError('Please fill in all fields.');
-      return;
-    } else {
-      setFormError('');
-    }
-
-    const qrData = JSON.stringify(formData);
-      setQrCode(qrData);
-  };
-
+      fetchGuest();
+  }, [dispatch, id]);
 
   return (
     <CRow>
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader>
-            <strong>Guest Registration Form</strong>
+            <strong>Guest Details</strong>
           </CCardHeader>
           <CCardBody>
-          {formError && (
-                <CAlert color="danger" className="mb-4">
-                {formError}
-                </CAlert>
+              {isLoading && (
+              <div className="text-center">
+                  <CSpinner color="primary" />
+                  <p>Loading guest details...</p>
+              </div>
+          )}
+              {errorMessage && (
+              <CAlert color="danger" className="mb-4">
+                {errorMessage}
+              </CAlert>
+          )}
+            {isError && (
+              <CAlert color="danger" className="mb-4">
+                {message}
+              </CAlert>
             )}
-            <CForm onSubmit={handleSubmit}>
-              <CRow className="mb-3">
-                <CCol md={6}>
-                  <CFormInput
-                    type="text"
-                    label="Name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </CCol>
-                <CCol md={6}>
-                  <CFormInput
-                    type="email"
-                    label="Email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </CCol>
-              </CRow>
-              <CRow className="mb-3">
-              <CCol md={6}>
-                  <CFormInput
-                      type="tel"
-                      label="Phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      required
-                    />
-                 </CCol>
-                  <CCol md={6}>
-                      <CFormInput
-                          type="text"
-                          label="Purpose of visit"
-                          name="purpose"
-                          value={formData.purpose}
-                          onChange={handleChange}
-                          required
-                       />
-                   </CCol>
-              </CRow>
-                <CRow className="mb-3">
-                      <CCol md={6}>
-                         <CFormInput
-                            type="date"
-                            label="Date"
-                            name="date"
-                            value={formData.date}
-                            onChange={handleChange}
-                            required
-                          />
-                     </CCol>
-                </CRow>
-              <CButton type="submit" color="primary">
-                Generate QR Code
-              </CButton>
-            </CForm>
 
-            {qrCode && (
-              <div className="mt-4 text-center">
-                  <QRCode value={qrCode} size={256} level="H" />
-                  <p className="mt-2">Scan this QR code for guest details</p>
-               </div>
+            {!isLoading && !isError && guest && (
+              <div>
+                <p>
+                  <strong>Name:</strong> {guest.name}
+                </p>
+                <p>
+                  <strong>Email:</strong> {guest.email}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {guest.phoneNumber}
+                </p>
+                <p>
+                  <strong>Arrival Date:</strong>{" "}
+                  {new Date(guest.arrivalDate).toLocaleDateString()}
+                </p>
+                <p>
+                  <strong>Departure Date:</strong>{" "}
+                  {new Date(guest.departureDate).toLocaleDateString()}
+                </p>
+                <p>
+                  <strong>Reason:</strong> {guest.reason}
+                </p>
+                <p>
+                  <strong>QR Code:</strong> {guest.qrCode}
+                </p>
+                <p>
+                  <strong>Access Code:</strong> {guest.accessCode}
+                </p>
+                  <p>
+                      <strong>Notes:</strong> {guest.notes}
+                  </p>
+                  <p>
+                      <strong>Status:</strong> {guest.status}
+                  </p>
+              </div>
             )}
+
+              {!isLoading && !isError && !guest && (
+                  <p>Guest not found.</p>
+              )}
           </CCardBody>
         </CCard>
       </CCol>
@@ -134,4 +106,4 @@ const GuestForm = () => {
   );
 };
 
-export default GuestForm;
+export default ViewGuest;

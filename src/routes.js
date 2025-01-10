@@ -24,7 +24,8 @@ const AddAgreement = React.lazy(() => import('./views/agreement/AddAgreement'));
 const Widgets = React.lazy(() => import('./views/widgets/Widgets'));
 const Profile = React.lazy(() => import('./views/Profile/ViewProfile'));
 const Complaints = React.lazy(() => import('./views/complaints/Complaints'));
-const Guest = React.lazy(() => import('./views/guest/GuestForm'));
+const Guest = React.lazy(() => import('./views/guest/GuestTable'));
+const AddGuest = React.lazy(() => import('./views/guest/AddGuest'));
 
 const routes = [
   // Public routes (no authentication required)
@@ -56,6 +57,7 @@ const routes = [
   { path: '/profile', name: 'Profile', element: () => <ProtectedRoute element={Profile} /> },
   { path: '/complaint', name: 'Complaints', element: () => <ProtectedRoute element={Complaints} /> },
   { path: '/guest', name: 'Guest', element: () => <ProtectedRoute element={Guest} /> },
+  { path: '/add-guest', name: 'Add Guest', element: () => <ProtectedRoute element={AddGuest} /> },
   
 ];
 

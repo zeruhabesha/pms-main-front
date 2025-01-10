@@ -1,205 +1,186 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from "react";
+import Select from "react-select";
 import {
-    CFormInput,
-    CFormLabel,
-    CRow,
-    CCol,
-    CCard,
-    CCardBody,
-    CSpinner,
-    CAlert,
-    CButton,
-     CFormSelect // keep the import for the other selects
-} from '@coreui/react';
-import { useDispatch, useSelector } from 'react-redux';
-import { decryptData } from '../../api/utils/crypto';
-import { useNavigate } from 'react-router-dom';
-import '../Super.scss';
-import "./MaintenanceForm.scss";
-import { filterProperties } from '../../api/actions/PropertyAction';
-// import { filterProperties } from '../../api/actions/propertyAction';
-import Select from 'react-select'; // Import react-select
+  CFormInput,
+  CFormLabel,
+  CRow,
+  CCol,
+  CCard,
+  CCardBody,
+  CSpinner,
+  CAlert,
+  CButton,
+  CFormSelect,
+} from "@coreui/react";
+import { useDispatch, useSelector } from "react-redux";
+import { decryptData } from "../../api/utils/crypto";
+import { useNavigate } from "react-router-dom";
+import { filterProperties } from "../../api/actions/PropertyAction";
+import { addMaintenance } from "../../api/actions/MaintenanceActions";
 
-
-const TenantRequestForm = ({
-    onSubmit,
-    editingRequest = null
-}) => {
+const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
     // Redux state for properties and loading
     const properties = useSelector((state) => state.property.properties);
-    const isLoading = useSelector((state) => state.property.loading);
-    const error = useSelector((state) => state.property.error)
+    const loading = useSelector((state) => state.property.loading);
+    const error = useSelector((state) => state.property.error);
+    const [isLoading, setIsLoading] = useState(false); // Add isLoading state
     const [noPropertiesMessage, setNoPropertiesMessage] = useState(null);
 
-
     // Initial form state with default values
-    const initialFormState = {
-        tenant: '',
-        propertyInformation: {
-            propertyId: '',
-            unit: ''
-        },
-        typeOfRequest: '',
-        description: '',
-        urgencyLevel: '',
-        preferredAccessTimes: '',
-        photosOrVideos: [],
-        notes: '',
-    };
-
-    const [formData, setFormData] = useState(initialFormState);
+    // const initialFormState = {
+    //     tenant: "",
+    //     property: "",
+    //     typeOfRequest: "",
+    //     description: "",
+    //     urgencyLevel: "",
+    //     preferredAccessTimes: "",
+    //     status: "Pending",
+    //     approvalStatus: "Pending",
+    //     notes: "",
+    //     requestedFiles: [],
+    //     requestDate: new Date(),
+    // };
+    const [formData, setFormData] = useState({
+        tenant: "",
+        property: "",
+        typeOfRequest: "",
+        description: "",
+        urgencyLevel: "",
+        preferredAccessTimes: "",
+        status: "Pending",
+        approvalStatus: "Pending",
+        notes: "",
+        requestedFiles: [],
+        requestDate: new Date(),
+    });
+    // const [formData, setFormData] = useState(initialFormState);
     const [localError, setError] = useState(null); // Separate local error state
-
+    useEffect(() => {
+        const fetchProperties = async () => {
+          dispatch(filterProperties());
+        };
+    
+        fetchProperties();
+      }, [dispatch]);
     // Fetch properties with Redux
     const fetchProperties = useCallback(() => {
         dispatch(filterProperties());
     }, [dispatch]);
-    
 
-     useEffect(() => {
-        if(properties.length === 0 && !isLoading && !error){
-             setNoPropertiesMessage('No properties available for this tenant.');
+    useEffect(() => {
+        if (properties.length === 0 && !loading && !error) {
+            setNoPropertiesMessage('No properties available for this tenant.');
         } else {
             setNoPropertiesMessage(null);
         }
-    }, [properties, isLoading, error]);
-
+    }, [properties, loading, error]);
 
     // Initialize form data on component mount or when editing
-     useEffect(() => {
+    useEffect(() => {
         const initializeForm = () => {
-            const encryptedUser = localStorage.getItem('user');
-            const decryptedUser = decryptData(encryptedUser);
-            const tenantId = decryptedUser?._id || '';
-
-            if (editingRequest) {
-                setFormData({
-                    ...initialFormState,
-                    ...editingRequest,
-                    tenant: tenantId,
-                });
-            } else {
-                setFormData({
-                    ...initialFormState,
-                    tenant: tenantId,
-                });
-            }
-            fetchProperties();
+          const encryptedUser = localStorage.getItem("user");
+          const decryptedUser = decryptData(encryptedUser);
+          const tenantId = decryptedUser?._id || "";
+    
+          if (editingRequest) {
+            setFormData({
+              ...formData,
+              ...editingRequest,
+              tenant: tenantId,
+            });
+          } else {
+            setFormData((prev) => ({
+              ...prev,
+              tenant: tenantId,
+            }));
+          }
         };
+    
         initializeForm();
-
-    }, [editingRequest, fetchProperties]);
-
+      }, [editingRequest]);
 
     // Form change handlers
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        setError(null);
-    };
+        setLocalError(null);
+      };
 
     const handleNestedChange = (parent, field, value) => {
         setFormData((prev) => ({
             ...prev,
             [parent]: {
                 ...prev[parent],
-                [field]: value
-            }
+                [field]: value,
+            },
         }));
-       setError(null);
+        setError(null);
     };
-
 
     const handlePropertySelectChange = (selectedOption) => {
-        handleNestedChange('propertyInformation', 'propertyId', selectedOption ? selectedOption.value : '');
-    };
-
-    const getPropertyOptions = () => {
-        return properties.map(property => ({
-            value: property._id,
-            label: property.name || property.title, // Ensure property.name or property.title exists
+        setFormData((prev) => ({
+          ...prev,
+          property: selectedOption ? selectedOption.value : "",
         }));
-    };
+      };
+    
+    
     
 
+    const getPropertyOptions = () =>
+        properties.map((property) => ({
+          value: property._id,
+          label: property.title || "Unnamed Property",
+        }));
 
-    const handleFileChange = (e) => {
-        const files = Array.from(e.target.files);
-        setFormData((prev) => ({ ...prev, photosOrVideos: files }));
-    };
+        const handleFileChange = (e) => {
+            const files = Array.from(e.target.files);
+            setFormData((prev) => ({ ...prev, requestedFiles: files }));
+          };
+
 
     // Form validation
-// Form validation
-const validateForm = () => {
-    const requiredFields = {
-        tenant: 'Tenant',
-        'propertyInformation.propertyId': 'Property', // Ensure this field is populated
-        'propertyInformation.unit': 'Unit',
-        typeOfRequest: 'Type of Request',
-        description: 'Description',
-        urgencyLevel: 'Urgency Level',
-    };
-
-    for (const [field, label] of Object.entries(requiredFields)) {
-        let value;
-        if (field.includes('.')) {
-            // Handle nested fields
-            const [parent, child] = field.split('.');
-            value = formData[parent]?.[child];
-        } else {
-            value = formData[field];
-        }
-
-        if (!value || value === '') {
-            return `${label} is required.`;
-        }
-    }
-    return null;
-};
+    const validateForm = () => {
+        if (!formData.property) return "Please select a property.";
+        if (!formData.typeOfRequest) return "Please select a type of request.";
+        if (!formData.description) return "Please provide a description.";
+        return null;
+      };
+    
 
 
     // Submit handler with comprehensive error management
     const handleSubmit = async () => {
-        setError(null);
+        setError(null); // Reset error before validation
         const validationError = validateForm();
-    
         if (validationError) {
-            setError(validationError); // Display validation error
+            setError(validationError); // Use setError instead of setLocalError
             return;
         }
     
-        setIsLoading(true);
         try {
-            const formDataToSubmit = new FormData();
-    
-            // Flatten the nested structure for FormData
-            const flattenedData = {
-                ...formData,
-                propertyId: formData.propertyInformation.propertyId,
-                unit: formData.propertyInformation.unit,
-            };
-    
-            Object.entries(flattenedData).forEach(([key, value]) => {
-                if (key === 'photosOrVideos' && value.length) {
-                    value.forEach((file) => formDataToSubmit.append('photosOrVideos', file));
-                } else if (key !== 'propertyInformation' && value != null && value !== '') {
-                    formDataToSubmit.append(key, value);
+            const submissionData = new FormData();
+            Object.keys(formData).forEach((key) => {
+                if (key === "requestedFiles") {
+                    formData.requestedFiles.forEach((file) => {
+                        submissionData.append(key, file);
+                    });
+                } else {
+                    submissionData.append(key, formData[key]);
                 }
             });
     
-            await onSubmit(formDataToSubmit);
-            navigate('/maintenance');
-        } catch (submitError) {
-            console.error('Submission failed:', submitError);
-            setError(submitError.message || 'Submission failed. Please try again.');
-        } finally {
-            setIsLoading(false);
+            await dispatch(addMaintenance(submissionData));
+            navigate("/maintenance");
+        } catch (error) {
+            setError("Failed to submit maintenance request."); // Use setError instead of setLocalError
         }
     };
     
+
     const handleClose = () => {
         navigate('/maintenance');
     };
@@ -209,9 +190,9 @@ const validateForm = () => {
             <div className="d-flex justify-content-center">
                 <CCard className="border-0 shadow-sm">
                     <CCardBody>
-                         <div className="text-center mb-4">
-                           <h2>{editingRequest ? 'Edit Tenant Request' : 'Add Tenant Request'}</h2>
-                       </div>
+                        <div className="text-center mb-4">
+                        {editingRequest ? "Edit Request" : "New Request"}
+                        </div>
                         {localError && (
                             <CAlert color="danger" className="mb-3">
                                 {localError}
@@ -235,54 +216,51 @@ const validateForm = () => {
                                     className="form-control-animation"
                                 />
                             </CCol>
-                            <CCol xs={12} md={6} className="form-group">
-                              <CFormLabel htmlFor="propertyId">Property</CFormLabel>
-                                {isLoading ? (
-                                    <CSpinner size="sm" />
-                                ) : (
-                                    <Select
-                                    id="propertyId"
-                                    value={getPropertyOptions().find(option => option.value === formData.propertyInformation.propertyId) || null}
-                                    onChange={handlePropertySelectChange}
-                                    options={getPropertyOptions()}
-                                    placeholder="Select Property"
-                                    isDisabled={isLoading}
-                                    isSearchable
-                                />
-                                )}
-                             </CCol>
-                            <CCol xs={12} md={6} className="form-group">
+                            <CCol xs={12}>
+                <CFormLabel htmlFor="property">Property</CFormLabel>
+                <Select
+                  id="property"
+                  value={getPropertyOptions().find(
+                    (option) => option.value === formData.property
+                  )}
+                  onChange={handlePropertySelectChange}
+                  options={getPropertyOptions()}
+                  isDisabled={loading}
+                  isLoading={loading}
+                  placeholder="Select a property"
+                />
+              </CCol>
+                            {/* <CCol xs={12} md={6} className="form-group">
                                 <CFormLabel htmlFor="unit">Unit Number</CFormLabel>
                                 <CFormInput
                                     id="unit"
                                     type="text"
                                     placeholder="Enter unit number"
                                     value={formData.propertyInformation.unit}
-                                    onChange={(e) => handleNestedChange('propertyInformation', 'unit', e.target.value)}
+                                    onChange={(e) =>
+                                        handleNestedChange('propertyInformation', 'unit', e.target.value)
+                                    }
                                     className="form-control-animation"
                                 />
-                            </CCol>
-                            <CCol xs={12} className="form-group">
-                                <CFormLabel htmlFor="typeOfRequest">Type of Request</CFormLabel>
-                                <CFormSelect // this is the correct CFormSelect
-                                    id="typeOfRequest"
-                                    name="typeOfRequest"
-                                    value={formData.typeOfRequest}
-                                    onChange={handleChange}
-                                    required
-                                    className="form-control-animation"
-                                >
-                                    <option value="">Select Request Type</option>
-                                    <option value="Plumbing">Plumbing</option>
-                                    <option value="Electrical">Electrical</option>
-                                    <option value="HVAC">HVAC</option>
-                                    <option value="Appliance Repair">Appliance Repair</option>
-                                    <option value="Other">Other</option>
-                                </CFormSelect>
-                            </CCol>
+                            </CCol> */}
+                             <CCol xs={12}>
+                <CFormLabel htmlFor="typeOfRequest">Type of Request</CFormLabel>
+                <CFormSelect
+                  id="typeOfRequest"
+                  name="typeOfRequest"
+                  value={formData.typeOfRequest}
+                  onChange={handleChange}
+                >
+                  <option value="">Select a request type</option>
+                  <option value="Plumbing">Plumbing</option>
+                  <option value="Electrical">Electrical</option>
+                  <option value="HVAC">HVAC</option>
+                  <option value="Other">Other</option>
+                </CFormSelect>
+              </CCol>
                             <CCol xs={12} className="form-group">
                                 <CFormLabel htmlFor="urgencyLevel">Urgency Level</CFormLabel>
-                                <CFormSelect // this is the correct CFormSelect
+                                <CFormSelect
                                     id="urgencyLevel"
                                     name="urgencyLevel"
                                     value={formData.urgencyLevel}
@@ -296,19 +274,16 @@ const validateForm = () => {
                                     <option value="Non-Urgent">Non-Urgent</option>
                                 </CFormSelect>
                             </CCol>
-                            <CCol xs={12} className="form-group">
-                                <CFormLabel htmlFor="description">Description</CFormLabel>
-                                <CFormInput
-                                    id="description"
-                                    name="description"
-                                    type="text"
-                                    placeholder="Enter description"
-                                    value={formData.description}
-                                    onChange={handleChange}
-                                    required
-                                    className="form-control-animation"
-                                />
-                            </CCol>
+                            <CCol xs={12}>
+                <CFormLabel htmlFor="description">Description</CFormLabel>
+                <CFormInput
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Enter description"
+                />
+              </CCol>
                             <CCol xs={12} className="form-group">
                                 <CFormLabel htmlFor="preferredAccessTimes">Preferred Access Times</CFormLabel>
                                 <CFormInput
@@ -333,39 +308,25 @@ const validateForm = () => {
                                     className="form-control-animation"
                                 />
                             </CCol>
-                            <CCol xs={12} className="form-group">
-                                <CFormLabel htmlFor="photosOrVideos">Upload Photos/Videos</CFormLabel>
-                                <CFormInput
-                                    id="photosOrVideos"
-                                    type="file"
-                                    multiple
-                                    onChange={handleFileChange}
-                                    accept="image/*,video/*"
-                                    className="form-control-animation"
-                                />
-                            </CCol>
+                            <CCol xs={12}>
+                <CFormLabel htmlFor="requestedFiles">Upload Files</CFormLabel>
+                <CFormInput
+                  id="requestedFiles"
+                  name="requestedFiles"
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                />
+              </CCol>
                         </CRow>
-                        <div className="d-flex justify-content-end mt-4 gap-2">
-                            <CButton
-                                color="secondary"
-                                onClick={handleClose}
-                                disabled={isLoading}
-                            >
-                                Cancel
-                            </CButton>
-                            <CButton
-                                color="dark"
-                                onClick={handleSubmit}
-                                disabled={isLoading}
-                                className="form-button"
-                            >
-                                {isLoading ? (
-                                    <CSpinner size="sm" />
-                                ) : (
-                                    editingRequest ? 'Update Request' : 'Add Request'
-                                )}
-                            </CButton>
-                        </div>
+                        <div className="mt-4 d-flex justify-content-end gap-2">
+              <CButton color="secondary" onClick={() => navigate("/maintenance")}>
+                Cancel
+              </CButton>
+              <CButton color="primary" onClick={handleSubmit}>
+                Submit
+              </CButton>
+            </div>
                     </CCardBody>
                 </CCard>
             </div>

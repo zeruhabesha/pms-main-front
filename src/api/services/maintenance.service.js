@@ -63,21 +63,28 @@ class MaintenanceService {
 
   async addMaintenance(maintenanceData) {
     try {
-      const formData = this.createFormData(maintenanceData);
+        const formData = this.createFormData(maintenanceData);
 
-      const response = await httpCommon.post('/maintenances', formData, {
-        headers: {
-          ...this.getAuthHeader(),
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+        const response = await httpCommon.post('/maintenances', formData, {
+            headers: {
+                ...this.getAuthHeader(),
+                'Content-Type': 'multipart/form-data',
+            },
+        });
 
-      return response.data?.data;
+        if (!response.data?.data) {
+            throw new Error('No data received from server');
+        }
+
+        return response.data.data;
     } catch (error) {
-      console.error('Error adding maintenance:', error.response?.data || error.message);
-      throw this.handleError(error);
+        console.error('Error adding maintenance:', error.response?.data || error.message);
+        if (error.response?.data?.error === 'Property not found') {
+            throw new Error('The selected property could not be found. Please verify your selection.');
+        }
+        throw this.handleError(error);
     }
-  }
+}
 
   async updateMaintenance(id, maintenanceData) {
     if (!maintenanceData) {
@@ -145,17 +152,29 @@ class MaintenanceService {
 
   createFormData(data) {
     const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      if (value != null) {
-        if (Array.isArray(value)) {
-          value.forEach((item) => formData.append(`${key}[]`, item));
-        } else {
-          formData.append(key, value);
+    
+    // Handle basic fields
+    const basicFields = [
+        'tenant', 'property', 'typeOfRequest', 'description',
+        'urgencyLevel', 'preferredAccessTimes', 'status',
+        'approvalStatus', 'notes', 'requestDate'
+    ];
+
+    basicFields.forEach(field => {
+        if (data[field] != null) {
+            formData.append(field, data[field]);
         }
-      }
     });
+
+    // Handle files
+    if (data.requestedFiles) {
+        data.requestedFiles.forEach((file) => {
+            formData.append('requestedFiles', file);
+        });
+    }
+
     return formData;
-  }
+}
 
   handleError(error) {
     console.error('API Error:', error.response?.data || error.message);

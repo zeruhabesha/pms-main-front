@@ -30,7 +30,7 @@ const ViewUser = () => {
     const [localCurrentPage, setLocalCurrentPage] = useState(1);
 
     const dispatch = useDispatch();
-    const { users, inspectors, maintainers, loading, totalPages, error } = useSelector((state) => state.user);
+    const { users, inspectors, maintainers, loading, error } = useSelector((state) => state.user);
     const [role, setRole] = useState('user');
 
     useEffect(() => {
@@ -168,7 +168,7 @@ const ViewUser = () => {
     };
 
     const handlePageChange = (page) => {
-        if (page < 1 || page > totalPages) return;
+      if (page < 1) return;
         setLocalCurrentPage(page);
     };
 
@@ -205,7 +205,6 @@ const ViewUser = () => {
                         <UserTable
                             users={role === 'maintainer' ? maintainers : role === 'inspector' ? inspectors : users || []}
                             currentPage={localCurrentPage}
-                            totalPages={totalPages}
                             searchTerm={searchTerm}
                             setSearchTerm={handleSearch}
                             handleEdit={handleEdit}
