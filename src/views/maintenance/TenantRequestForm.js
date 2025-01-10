@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+/* eslint-disable react/prop-types */
+import React, { useEffect, useState } from 'react'
 import {
   CFormInput,
   CFormLabel,
@@ -9,117 +10,121 @@ import {
   CAlert,
   CButton,
   CFormSelect,
-} from "@coreui/react";
-import { useDispatch } from "react-redux";
-import { decryptData } from "../../api/utils/crypto";
-import { useNavigate } from "react-router-dom";
-import { addMaintenance } from "../../api/actions/MaintenanceActions";
-import PropertySelect from "./PropertySelect"; // Import PropertySelect
+} from '@coreui/react'
+import { useDispatch } from 'react-redux'
+import { decryptData } from '../../api/utils/crypto'
+import { useNavigate } from 'react-router-dom'
+import { addMaintenance } from '../../api/actions/MaintenanceActions'
+import PropertySelect from './PropertySelect' // Import PropertySelect
 
 const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
 
-  const [isLoading, setIsLoading] = useState(false); // Add isLoading state
-  const [noPropertiesMessage, setNoPropertiesMessage] = useState(null);
+  const [isLoading, setIsLoading] = useState(false) // Add isLoading state
+  const [noPropertiesMessage, setNoPropertiesMessage] = useState(null)
 
   const [formData, setFormData] = useState({
-    tenant: "",
-    property: "",
-    typeOfRequest: "",
-    description: "",
-    urgencyLevel: "",
-    preferredAccessTimes: "",
-    status: "Pending",
-    approvalStatus: "Pending",
-    notes: "",
+    tenant: '',
+    property: '',
+    typeOfRequest: '',
+    description: '',
+    urgencyLevel: '',
+    preferredAccessTimes: '',
+    status: 'Pending',
+    approvalStatus: 'Pending',
+    notes: '',
     requestedFiles: [],
     requestDate: new Date(),
-  });
-  const [localError, setError] = useState(null); // Separate local error state
+  })
+  const [localError, setError] = useState(null) // Separate local error state
 
   // Initialize form data on component mount or when editing
   useEffect(() => {
     const initializeForm = () => {
-      const encryptedUser = localStorage.getItem("user");
-      const decryptedUser = decryptData(encryptedUser);
-      const tenantId = decryptedUser?._id || "";
+      const encryptedUser = localStorage.getItem('user')
+      const decryptedUser = decryptData(encryptedUser)
+      const tenantId = decryptedUser?._id || ''
 
       if (editingRequest) {
         setFormData({
           ...formData,
           ...editingRequest,
           tenant: tenantId,
-        });
+        })
       } else {
         setFormData((prev) => ({
           ...prev,
           tenant: tenantId,
-        }));
+        }))
       }
-    };
+    }
 
-    initializeForm();
-  }, [editingRequest]);
+    initializeForm()
+  }, [editingRequest])
 
   // Form change handlers
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setError(null); // Corrected this line
-  };
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    setError(null) // Corrected this line
+  }
 
   const handlePropertyChange = (e) => {
-    console.log("Selected Property ID:", e.target.value); // ADD THIS LINE
-    setFormData((prev) => ({ ...prev, property: e.target.value }));
-};
+    console.log('Selected Property ID:', e.target.value)
+    setFormData((prev) => ({ ...prev, property: e.target.value }))
+  }
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setFormData((prev) => ({ ...prev, requestedFiles: files }));
-  };
+    const files = Array.from(e.target.files)
+    setFormData((prev) => ({ ...prev, requestedFiles: files }))
+  }
 
   // Form validation
   const validateForm = () => {
-    if (!formData.property) return "Please select a property.";
-    if (!formData.typeOfRequest) return "Please select a type of request.";
-    if (!formData.description) return "Please provide a description.";
-    return null;
-  };
+    if (!formData.property) return 'Please select a property.'
+    if (!formData.typeOfRequest) return 'Please select a type of request.'
+    if (!formData.description) return 'Please provide a description.'
+    return null
+  }
 
   // Submit handler with comprehensive error management
   const handleSubmit = async () => {
-    setError(null); // Reset error before validation
-    const validationError = validateForm();
+    setError(null) // Reset error before validation
+    const validationError = validateForm()
     if (validationError) {
-      setError(validationError); // Use setError instead of setLocalError
-      return;
+      setError(validationError) // Use setError instead of setLocalError
+      return
     }
 
     try {
-        const submissionData = new FormData();
-        Object.keys(formData).forEach((key) => {
-          if (key === "requestedFiles") {
-              formData.requestedFiles.forEach((file) => {
-                  submissionData.append(key, file);
-              });
-          } else {
-              submissionData.append(key, formData[key]);
-          }
-      });
+      const submissionData = new FormData()
+      Object.keys(formData).forEach((key) => {
+        if (key === 'requestedFiles') {
+          formData.requestedFiles.forEach((file) => {
+            submissionData.append(key, file)
+          })
+        } else if (key === 'requestDate') {
+          submissionData.append(key, formData[key].toISOString())
+        } else {
+          submissionData.append(key, formData[key])
+        }
+      })
+      console.log('formData being sent: ')
       for (const pair of submissionData.entries()) {
-        console.log(pair[0], pair[1]);
-     } //ADD THIS LOOP
-      await dispatch(addMaintenance(submissionData));
-      navigate("/maintenance");
+        console.log(pair[0], pair[1])
+      }
+
+      await dispatch(addMaintenance(submissionData))
+      navigate('/maintenance')
     } catch (error) {
-      setError("Failed to submit maintenance request."); // Use setError instead of setLocalError
+      setError('Failed to submit maintenance request.') // Use setError instead of setLocalError
     }
-  };
+  }
 
   const handleClose = () => {
-    navigate("/maintenance");
-  };
+    navigate('/maintenance')
+  }
 
   return (
     <div className="maintenance-form">
@@ -127,7 +132,7 @@ const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
         <CCard className="border-0 shadow-sm">
           <CCardBody>
             <div className="text-center mb-4">
-              {editingRequest ? "Edit Request" : "New Request"}
+              {editingRequest ? 'Edit Request' : 'New Request'}
             </div>
             {localError && (
               <CAlert color="danger" className="mb-3">
@@ -202,9 +207,7 @@ const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
                 />
               </CCol>
               <CCol xs={12} className="form-group">
-                <CFormLabel htmlFor="preferredAccessTimes">
-                  Preferred Access Times
-                </CFormLabel>
+                <CFormLabel htmlFor="preferredAccessTimes">Preferred Access Times</CFormLabel>
                 <CFormInput
                   id="preferredAccessTimes"
                   name="preferredAccessTimes"
@@ -239,10 +242,7 @@ const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
               </CCol>
             </CRow>
             <div className="mt-4 d-flex justify-content-end gap-2">
-              <CButton
-                color="secondary"
-                onClick={() => navigate("/maintenance")}
-              >
+              <CButton color="secondary" onClick={() => navigate('/maintenance')}>
                 Cancel
               </CButton>
               <CButton color="primary" onClick={handleSubmit}>
@@ -253,7 +253,7 @@ const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
         </CCard>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default TenantRequestForm;
+export default TenantRequestForm

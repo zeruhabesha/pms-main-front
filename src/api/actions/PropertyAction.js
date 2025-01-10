@@ -6,41 +6,41 @@ export const fetchProperties = createAsyncThunk(
   PropertyTypes.FETCH_PROPERTIES,
   async (_, { rejectWithValue }) => {
     try {
-      const response = await propertyService.filterProperties();
-      return response;
+      const response = await propertyService.filterProperties()
+      return response
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message)
     }
-  }
-);
+  },
+)
 
 export const filterProperties = createAsyncThunk(
   PropertyTypes.FILTER_PROPERTIES,
   async (filterCriteria = {}, { rejectWithValue }) => {
     try {
-      const response = await propertyService.filterProperties(filterCriteria);
-      return response;
+      const response = await propertyService.filterProperties(filterCriteria)
+      return response
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message)
     }
-  }
-);
+  },
+)
 
 export const uploadTenantPhoto = createAsyncThunk(
   'tenant/uploadTenantPhoto',
   async ({ id, photo }, { rejectWithValue }) => {
-      try {
-          const response = await TenantService.uploadPhoto(id, photo);
-          // Ensure we're returning the correct shape of data
-          return {
-              _id: id, // Changed id to _id to match the state structure
-              ...response
-          };
-      } catch (error) {
-          return rejectWithValue(error);
+    try {
+      const response = await TenantService.uploadPhoto(id, photo)
+      // Ensure we're returning the correct shape of data
+      return {
+        _id: id, // Changed id to _id to match the state structure
+        ...response,
       }
-  }
-);
+    } catch (error) {
+      return rejectWithValue(error)
+    }
+  },
+)
 
 export const addProperty = createAsyncThunk(
   PropertyTypes.ADD_PROPERTY,
@@ -84,7 +84,7 @@ export const updatePropertyPhotos = createAsyncThunk(
   async ({ id, photos }, { rejectWithValue }) => {
     try {
       const response = await propertyService.updatePropertyPhotos(id, photos)
-       return { id, photos:response };
+      return { id, photos: response }
     } catch (error) {
       return rejectWithValue(error.message)
     }
@@ -107,7 +107,7 @@ export const deleteProperty = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       await propertyService.deleteProperty(id)
-        return id
+      return id
     } catch (error) {
       return rejectWithValue(error.message)
     }
@@ -119,7 +119,7 @@ export const updatePhotos = createAsyncThunk(
   async ({ propertyId, photos }, { rejectWithValue }) => {
     try {
       const response = await propertyService.updatePhotos(propertyId, photos)
-      return { propertyId, photos:response }
+      return { propertyId, photos: response }
     } catch (error) {
       return rejectWithValue(error.message)
     }
@@ -138,13 +138,12 @@ export const getProperty = createAsyncThunk(
   },
 )
 
-
 export const deletePhoto = createAsyncThunk(
   PropertyTypes.DELETE_PHOTO,
   async ({ propertyId, photoId }, { rejectWithValue }) => {
     try {
       await propertyService.deletePhoto(propertyId, photoId)
-       return { success: true, photoId, propertyId }
+      return { success: true, photoId, propertyId }
     } catch (error) {
       return rejectWithValue(error.message)
     }
@@ -155,8 +154,8 @@ export const batchDelete = createAsyncThunk(
   PropertyTypes.BATCH_DELETE,
   async (propertyIds, { rejectWithValue }) => {
     try {
-       await propertyService.batchDelete(propertyIds)
-       return propertyIds
+      await propertyService.batchDelete(propertyIds)
+      return propertyIds
     } catch (error) {
       return rejectWithValue(error.message)
     }
@@ -191,8 +190,8 @@ export const downloadPhoto = createAsyncThunk(
   PropertyTypes.DOWNLOAD_PHOTO,
   async ({ propertyId, photoId }, { rejectWithValue }) => {
     try {
-        await propertyService.downloadPhoto(propertyId, photoId)
-         return {propertyId, photoId};
+      await propertyService.downloadPhoto(propertyId, photoId)
+      return { propertyId, photoId }
     } catch (error) {
       return rejectWithValue(error.message)
     }
@@ -200,15 +199,15 @@ export const downloadPhoto = createAsyncThunk(
 )
 
 export const updatePhoto = createAsyncThunk(
-    PropertyTypes.UPDATE_PHOTO, // Changed the name here as well
-    async ({ id, photo, photoId }, { rejectWithValue }) => {
-        try {
-            const response = await propertyService.updatePhoto(id, { photo, photoId });
-             return response; // Return the entire response object
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
+  PropertyTypes.UPDATE_PHOTO, // Changed the name here as well
+  async ({ id, photo, photoId }, { rejectWithValue }) => {
+    try {
+      const response = await propertyService.updatePhoto(id, { photo, photoId })
+      return response // Return the entire response object
+    } catch (error) {
+      return rejectWithValue(error.message)
     }
-);
+  },
+)
 
 // export { fetchTenantById as getTenantById };

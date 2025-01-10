@@ -1,25 +1,35 @@
-import React, { useState } from 'react';
-import { CTableRow, CTableDataCell, CButton, CBadge, CModal, CModalHeader, CModalBody, CModalFooter } from '@coreui/react';
-import CIcon from '@coreui/icons-react';
-import { cilZoom, cilPencil, cilTrash, cilInfo } from '@coreui/icons';
+/* eslint-disable react/prop-types */
+import React, { useState } from 'react'
+import {
+  CTableRow,
+  CTableDataCell,
+  CButton,
+  CBadge,
+  CModal,
+  CModalHeader,
+  CModalBody,
+  CModalFooter,
+} from '@coreui/react'
+import CIcon from '@coreui/icons-react'
+import { cilZoom, cilPencil, cilTrash, cilInfo } from '@coreui/icons'
 
 const MaintenanceTableRow = ({ maintenance, index, onEdit, onDelete, onViewDetails }) => {
-  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false)
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'pending':
-        return 'warning';
+        return 'warning'
       case 'in progress':
-        return 'info';
+        return 'info'
       case 'completed':
-        return 'success';
+        return 'success'
       default:
-        return 'secondary';
+        return 'secondary'
     }
-  };
+  }
 
-  const toggleModal = () => setDetailsModalVisible(!detailsModalVisible);
+  const toggleModal = () => setDetailsModalVisible(!detailsModalVisible)
 
   return (
     <>
@@ -27,11 +37,11 @@ const MaintenanceTableRow = ({ maintenance, index, onEdit, onDelete, onViewDetai
         <CTableDataCell>{index + 1}</CTableDataCell>
         <CTableDataCell>{maintenance.tenant?.tenantName || 'N/A'}</CTableDataCell>
         <CTableDataCell>{maintenance.tenant?.contactInformation?.email || 'N/A'}</CTableDataCell>
-        <CTableDataCell>{maintenance.tenant?.contactInformation?.phoneNumber || 'N/A'}</CTableDataCell>
         <CTableDataCell>
-          <CBadge color={getStatusColor(maintenance.status)}>
-            {maintenance.status || 'N/A'}
-          </CBadge>
+          {maintenance.tenant?.contactInformation?.phoneNumber || 'N/A'}
+        </CTableDataCell>
+        <CTableDataCell>
+          <CBadge color={getStatusColor(maintenance.status)}>{maintenance.status || 'N/A'}</CBadge>
         </CTableDataCell>
         <CTableDataCell>
           <CButton
@@ -61,13 +71,10 @@ const MaintenanceTableRow = ({ maintenance, index, onEdit, onDelete, onViewDetai
           >
             <CIcon icon={cilTrash} />
           </CButton>
-
         </CTableDataCell>
       </CTableRow>
-
- 
     </>
-  );
-};
+  )
+}
 
-export default MaintenanceTableRow;
+export default MaintenanceTableRow
