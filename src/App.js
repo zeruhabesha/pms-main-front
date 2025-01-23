@@ -35,7 +35,7 @@ const AddProperty = React.lazy(() => import('./views/property/AddProperty'));
 const Report = React.lazy(() => import('./views/report/ComingSoon'));
 const Profile = React.lazy(() => import('./views/Profile/ViewProfile'));
 const Complaints = React.lazy(() => import('./views/complaints/Complaints'));
-const Guest = React.lazy(() => import('./views/guest/GuestTable'));
+const Guest = React.lazy(() => import('./views/guest/ViewGuest'));
 const AddGuest = React.lazy(() => import('./views/guest/AddGuest'));
 
 // Protected Route Component

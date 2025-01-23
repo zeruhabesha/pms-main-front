@@ -28,6 +28,7 @@ const authSlice = createSlice({
       state.token = null;
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('maintenances_data');
     },
     clearError(state) {
       state.error = null;
@@ -111,6 +112,7 @@ const authSlice = createSlice({
         state.token = null;
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('maintenances_data');
       });
   },
 });

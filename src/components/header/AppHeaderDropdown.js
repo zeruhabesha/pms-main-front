@@ -128,6 +128,7 @@ const AppHeaderDropdown = () => {
     localStorage.removeItem('maintenances');
     localStorage.removeItem('maintenance');
     localStorage.removeItem('inspector');
+    localStorage.removeItem('maintenances_data');
     navigate('/login');
   };
 

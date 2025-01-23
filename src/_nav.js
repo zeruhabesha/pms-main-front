@@ -12,7 +12,11 @@ import {
 import { CNavGroup, CNavItem } from '@coreui/react';
 import { decryptData } from './api/utils/crypto';
 
-const userRole = decryptData(localStorage.getItem('user'))?.role || '';
+// const userRoles = decryptData(localStorage.getItem('user'));
+// const userRole = userRoles.role;
+    const encryptedUser = localStorage.getItem('user');
+    const user = decryptData(encryptedUser);
+    const userRole = user.role;
 
 const _nav = [
   ...(userRole === 'SuperAdmin' ? [

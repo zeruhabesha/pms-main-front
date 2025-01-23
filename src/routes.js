@@ -25,7 +25,7 @@ const AddAgreement = React.lazy(() => import('./views/agreement/AddAgreement'));
 const Widgets = React.lazy(() => import('./views/widgets/Widgets'));
 const Profile = React.lazy(() => import('./views/Profile/ViewProfile'));
 const Complaints = React.lazy(() => import('./views/complaints/Complaints'));
-const Guest = React.lazy(() => import('./views/guest/GuestTable'));
+const Guest = React.lazy(() => import('./views/guest/ViewGuest'));
 const AddGuest = React.lazy(() => import('./views/guest/AddGuest'));
 
 const routes = [

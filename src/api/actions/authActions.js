@@ -77,5 +77,6 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   await authServices.logout();
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  localStorage.removeItem('maintenances_data');
   return true;
 });
