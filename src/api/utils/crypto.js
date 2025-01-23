@@ -1,4 +1,3 @@
-// utils/crypto.js
 import CryptoJS from 'crypto-js';
 
 const SECRET_KEY = import.meta.env.REACT_APP_CRYPTO_SECRET_KEY || 'e0b4d1f4c1b26e8d6b03b08c8b8a97e1f7f2a9d5e6a5d89f9a5b6f8b7f3d2e8c';

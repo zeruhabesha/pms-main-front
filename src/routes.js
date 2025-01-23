@@ -1,5 +1,6 @@
 import React from 'react';
 import ProtectedRoute from './components/ProtectedRoute';
+import ComplaintAssign from './views/complaints/ComplaintAssign';
 
 // Lazy-loaded components
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'));
@@ -56,6 +57,7 @@ const routes = [
   { path: '/widgets', name: 'Widgets', element: () => <ProtectedRoute element={Widgets} /> },
   { path: '/profile', name: 'Profile', element: () => <ProtectedRoute element={Profile} /> },
   { path: '/complaint', name: 'Complaints', element: () => <ProtectedRoute element={Complaints} /> },
+  { path: '/complaint/assign/:id', name: 'Complaints Add', element: () => <ProtectedRoute element={ComplaintAssign} /> },
   { path: '/guest', name: 'Guest', element: () => <ProtectedRoute element={Guest} /> },
   { path: '/add-guest', name: 'Add Guest', element: () => <ProtectedRoute element={AddGuest} /> },
   

@@ -101,6 +101,7 @@ const userSlice = createSlice({
             .addCase(addUser.fulfilled, (state, action) => {
                 state.loading = false;
                 if (action.payload) {
+                  // Directly add new user to the list of users.
                     state.users = [action.payload, ...state.users];
                 } else {
                     state.error = 'Failed to add user: No data returned';

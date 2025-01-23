@@ -17,77 +17,78 @@ import DocumentUpload from "./DocumentUpload";
 import { cilTrash, cilPlus } from "@coreui/icons";
 
 const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, tenants, properties }) => {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
+    const isEditing = !!initialData?.id;
+    // Options for tenants and properties
+    const tenantOptions = useMemo(
+        () =>
+            tenants?.map((t) => ({
+                label: t.tenantName || t.name || "Unnamed Tenant",
+                value: t._id || t.id,
+            })) || [],
+        [tenants]
+    );
 
-  // Options for tenants and properties
-  const tenantOptions = useMemo(
-    () =>
-      tenants?.map((t) => ({
-        label: t.tenantName || t.name || "Unnamed Tenant",
-        value: t._id || t.id,
-      })) || [],
-    [tenants]
-  );
+    const propertyOptions = useMemo(
+        () =>
+            properties?.map((p) => ({
+                label: p.title || p.address || "Unnamed Property",
+                value: p._id || p.id,
+            })) || [],
+        [properties]
+    );
 
-  const propertyOptions = useMemo(
-    () =>
-      properties?.map((p) => ({
-        label: p.title || p.address || "Unnamed Property",
-        value: p._id || p.id,
-      })) || [],
-    [properties]
-  );
-
-  // Form data and state initialization
-  const [formData, setFormData] = useState(() => ({
-    tenant: initialData?.tenant?._id || initialData?.tenant || "",
-    property: initialData?.property?._id || initialData?.property || "",
-    leaseStart: initialData?.leaseStart || "",
-    leaseEnd: initialData?.leaseEnd || "",
-    rentAmount: initialData?.rentAmount || "",
-    securityDeposit: initialData?.securityDeposit || "",
-    paymentTerms: {
-      dueDate: initialData?.paymentTerms?.dueDate || "",
-      paymentMethod: initialData?.paymentTerms?.paymentMethod || "",
-    },
-    rulesAndConditions: initialData?.rulesAndConditions || "",
-    additionalOccupants: initialData?.additionalOccupants || [],
-    utilitiesAndServices: initialData?.utilitiesAndServices || "",
-    documents: initialData?.documents || [],
-    fileErrors: [],
-    formErrors: []
-  }));
+    // Form data and state initialization
+    const [formData, setFormData] = useState(() => ({
+        tenant: initialData?.tenant?._id || initialData?.tenant || "",
+        property: initialData?.property?._id || initialData?.property || "",
+        leaseStart: initialData?.leaseStart || "",
+        leaseEnd: initialData?.leaseEnd || "",
+        rentAmount: initialData?.rentAmount || "",
+        securityDeposit: initialData?.securityDeposit || "",
+        paymentTerms: {
+          dueDate: initialData?.paymentTerms?.dueDate || "",
+          paymentMethod: initialData?.paymentTerms?.paymentMethod || "",
+        },
+        rulesAndConditions: initialData?.rulesAndConditions || "",
+        additionalOccupants: initialData?.additionalOccupants || [],
+        utilitiesAndServices: initialData?.utilitiesAndServices || "",
+        documents: initialData?.documents || [],
+        fileErrors: [],
+        formErrors: []
+      }));
 
   // Sync form data with initialData
   useEffect(() => {
     if (initialData) {
-      setFormData({
-        tenant: initialData.tenant?._id || initialData.tenant || "",
-        property: initialData.property?._id || initialData.property || "",
-        leaseStart: initialData.leaseStart || "",
-        leaseEnd: initialData.leaseEnd || "",
-        rentAmount: initialData.rentAmount || "",
-        securityDeposit: initialData.securityDeposit || "",
-        paymentTerms: {
-          dueDate: initialData.paymentTerms?.dueDate || "",
-          paymentMethod: initialData.paymentTerms?.paymentMethod || "",
-        },
-        rulesAndConditions: initialData.rulesAndConditions || "",
-        additionalOccupants: initialData.additionalOccupants || [],
-        utilitiesAndServices: initialData.utilitiesAndServices || "",
-        documents: initialData.documents || [],
-        fileErrors: [],
-        formErrors: []
-      });
+        setFormData(prev => ({
+            ...prev,
+          tenant: initialData.tenant?._id || initialData.tenant || "",
+          property: initialData.property?._id || initialData.property || "",
+            leaseStart: initialData.leaseStart || "",
+            leaseEnd: initialData.leaseEnd || "",
+            rentAmount: initialData.rentAmount || "",
+            securityDeposit: initialData.securityDeposit || "",
+            paymentTerms: {
+                dueDate: initialData.paymentTerms?.dueDate || "",
+                paymentMethod: initialData.paymentTerms?.paymentMethod || "",
+            },
+            rulesAndConditions: initialData.rulesAndConditions || "",
+            additionalOccupants: initialData.additionalOccupants || [],
+            utilitiesAndServices: initialData.utilitiesAndServices || "",
+             documents: initialData.documents || [],
+          fileErrors: [],
+           formErrors: []
+          }))
     }
-  }, [initialData]);
+}, [initialData]);
 
   // File validation
   const validateFiles = (files) => {
     const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
     const maxFileSize = 5 * 1024 * 1024; // 5MB
     const errors = [];
-  
+
     for (const file of files) {
       if (!allowedTypes.includes(file.type)) {
         errors.push(`File type '${file.type}' is not allowed for '${file.name}'.`);
@@ -95,32 +96,25 @@ const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, ten
         errors.push(`File '${file.name}' exceeds the maximum size of 5MB.`);
       }
     }
-  
+
     return errors;
   };
-  const convertToFormData = (formData) => {
-    const formDataToSend = new FormData();
-  
-    Object.keys(formData).forEach((key) => {
-      if (key === "documents" && formData.documents.length > 0) {
-        formData.documents.forEach((file, index) => {
-          formDataToSend.append(`documents[${index}]`, file);
-        });
-      } else if (key === "additionalOccupants") {
-        formData[key].forEach((occupant, index) => {
-          formDataToSend.append(`additionalOccupants[${index}]`, occupant);
-        });
-      } else if (key === "paymentTerms") {
-        Object.entries(formData.paymentTerms).forEach(([paymentKey, value]) => {
-          formDataToSend.append(`paymentTerms[${paymentKey}]`, value);
-        });
-      } else {
-        formDataToSend.append(key, formData[key]);
-      }
-    });
-  
-    return formDataToSend;
+
+  const handleFileChange = (files) => {
+    const errors = validateFiles(files);
+    setFormData((prev) => ({
+      ...prev,
+      documents: files,
+      fileErrors: errors,
+    }));
   };
+
+
+    const handleRemoveDocument = (index) => {
+        const updatedDocuments = [...formData.documents];
+        updatedDocuments.splice(index, 1);
+         setFormData((prev) => ({ ...prev, documents: updatedDocuments }));
+    };
   // Handlers for dynamic arrays
   const handleArrayChange = (index, value, field) => {
     const updatedArray = [...formData[field]];
@@ -138,46 +132,30 @@ const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, ten
     setFormData((prev) => ({ ...prev, [field]: updatedArray }));
   };
 
-  // File handlers
-  const handleFileChange = (files) => {
-    const errors = validateFiles(files);
-    setFormData((prev) => ({
-      ...prev,
-      documents: files,
-      fileErrors: errors,
-    }));
-  };
-
-  const handleRemoveDocument = (index) => {
-    const updatedDocuments = [...formData.documents];
-    updatedDocuments.splice(index, 1);
-    setFormData((prev) => ({ ...prev, documents: updatedDocuments }));
-  };
 
   // Form submission
-  const handleSubmit = (e) => {
-     e.preventDefault();
+    const handleSubmit = (e) => {
+    e.preventDefault();
 
-    const errors = [];
-     if (!formData.tenant) {
-       errors.push("Tenant is required.");
-     }
-    if (!formData.property) {
-        errors.push("Property is required.");
-    }
+        const errors = [];
+        if (!formData.tenant) {
+            errors.push("Tenant is required.");
+        }
+        if (!formData.property) {
+            errors.push("Property is required.");
+        }
     if (formData.fileErrors.length > 0) {
-          return;
-        }
+            setFormData(prev => ({...prev, formErrors: errors}))
+            return;
+          }
 
-      setFormData(prev => ({...prev, formErrors: errors}));
-
+        setFormData(prev => ({...prev, formErrors: errors}));
         if (errors.length > 0) {
-            return; // Prevent submission if there are errors
+            return;
         }
 
-    const formDataToSend = convertToFormData(formData);
 
-    onSubmit(formDataToSend);
+    onSubmit(formData);
   };
 
   // Input change handler
@@ -339,8 +317,9 @@ const AgreementForm = ({ onSubmit, isSubmitting = false, initialData = null, ten
           fileErrors={formData.fileErrors}
           handleFileChange={handleFileChange}
           handleRemoveDocument={handleRemoveDocument}
+          isEditing={isEditing}
         />
-        {formData.formErrors.length > 0 && (
+         {formData.formErrors.length > 0 && (
              <ul className="text-danger mt-2">
               {formData.formErrors.map((error, index) => (
                 <li key={index}>{error}</li>

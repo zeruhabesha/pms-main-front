@@ -14,6 +14,18 @@ import {
     CTableDataCell,
 } from "@coreui/react";
 import PropTypes from "prop-types";
+import {
+    cilInfo,
+    cilMoney,
+    cilCalendar,
+    cilUser,
+    cilHome,
+    cilDescription,
+    cilPeople,
+    cilSettings,
+    cilFile,
+} from '@coreui/icons';
+import { CIcon } from '@coreui/icons-react';
 
 const AgreementDetails = ({ visible, onClose, agreement }) => {
     if (!agreement) return null;
@@ -33,20 +45,25 @@ const AgreementDetails = ({ visible, onClose, agreement }) => {
                 <CTable bordered hover responsive>
                       <CTableHead>
                             <CTableRow>
-                                <CTableHeaderCell colSpan={2}><h6>Basic Information</h6></CTableHeaderCell>
+                                <CTableHeaderCell colSpan={2}>
+                                    <h6>
+                                        <CIcon icon={cilInfo} className="me-2" />
+                                          Basic Information
+                                    </h6>
+                                </CTableHeaderCell>
                              </CTableRow>
                         </CTableHead>
                      <CTableBody>
                           <CTableRow>
-                               <CTableDataCell><strong>Tenant:</strong></CTableDataCell>
+                               <CTableDataCell><strong> <CIcon icon={cilUser} className="me-1" />Tenant:</strong></CTableDataCell>
                                <CTableDataCell>{agreement.tenant || "N/A"}</CTableDataCell>
                           </CTableRow>
                             <CTableRow>
-                                <CTableDataCell><strong>Property:</strong></CTableDataCell>
+                                <CTableDataCell><strong> <CIcon icon={cilHome} className="me-1" />Property:</strong></CTableDataCell>
                                 <CTableDataCell>{agreement.property || "N/A"}</CTableDataCell>
                            </CTableRow>
                            <CTableRow>
-                               <CTableDataCell><strong>Lease Period:</strong></CTableDataCell>
+                               <CTableDataCell><strong> <CIcon icon={cilCalendar} className="me-1" />Lease Period:</strong></CTableDataCell>
                                 <CTableDataCell>
                                      {formatDate(agreement.leaseStart)} - {formatDate(agreement.leaseEnd)}
                                 </CTableDataCell>
@@ -55,43 +72,58 @@ const AgreementDetails = ({ visible, onClose, agreement }) => {
 
                     <CTableHead>
                         <CTableRow>
-                             <CTableHeaderCell colSpan={2}><h6>Financial Details</h6></CTableHeaderCell>
+                             <CTableHeaderCell colSpan={2}>
+                                 <h6>
+                                      <CIcon icon={cilMoney} className="me-2" />
+                                    Financial Details
+                                </h6>
+                             </CTableHeaderCell>
                         </CTableRow>
                     </CTableHead>
                    <CTableBody>
                      <CTableRow>
-                           <CTableDataCell><strong>Rent Amount:</strong></CTableDataCell>
+                           <CTableDataCell><strong> <CIcon icon={cilMoney} className="me-1" />Rent Amount:</strong></CTableDataCell>
                                <CTableDataCell>{formatCurrency(agreement.rentAmount)}</CTableDataCell>
                          </CTableRow>
                            <CTableRow>
-                           <CTableDataCell> <strong>Security Deposit:</strong> </CTableDataCell>
+                           <CTableDataCell> <strong> <CIcon icon={cilMoney} className="me-1" />Security Deposit:</strong> </CTableDataCell>
                                  <CTableDataCell>{formatCurrency(agreement.securityDeposit)}</CTableDataCell>
                           </CTableRow>
                     </CTableBody>
                  <CTableHead>
                         <CTableRow>
-                             <CTableHeaderCell colSpan={2}><h6>Payment Terms</h6></CTableHeaderCell>
+                             <CTableHeaderCell colSpan={2}>
+                                <h6>
+                                    <CIcon icon={cilSettings} className="me-2" />
+                                   Payment Terms
+                                </h6>
+                             </CTableHeaderCell>
                        </CTableRow>
                     </CTableHead>
                    <CTableBody>
                        <CTableRow>
-                            <CTableDataCell><strong>Due Date:</strong></CTableDataCell>
+                            <CTableDataCell><strong><CIcon icon={cilCalendar} className="me-1" />Due Date:</strong></CTableDataCell>
                                 <CTableDataCell>{agreement.paymentTerms?.dueDate || "N/A"}</CTableDataCell>
                        </CTableRow>
                         <CTableRow>
-                           <CTableDataCell><strong>Method:</strong></CTableDataCell>
+                           <CTableDataCell><strong> <CIcon icon={cilMoney} className="me-1" />Method:</strong></CTableDataCell>
                               <CTableDataCell>{agreement.paymentTerms?.paymentMethod || "N/A"}</CTableDataCell>
                         </CTableRow>
                    </CTableBody>
 
                    <CTableHead>
                         <CTableRow>
-                          <CTableHeaderCell colSpan={2}> <h6>Additional Details</h6></CTableHeaderCell>
+                          <CTableHeaderCell colSpan={2}>
+                               <h6>
+                                    <CIcon icon={cilDescription} className="me-2" />
+                                   Additional Details
+                               </h6>
+                            </CTableHeaderCell>
                        </CTableRow>
                    </CTableHead>
                     <CTableBody>
                            <CTableRow>
-                                <CTableDataCell><strong>Occupants:</strong></CTableDataCell>
+                                <CTableDataCell><strong> <CIcon icon={cilPeople} className="me-1" />Occupants:</strong></CTableDataCell>
                                  <CTableDataCell>
                                      {agreement.additionalOccupants?.length
                                          ? agreement.additionalOccupants.join(", ")
@@ -99,14 +131,19 @@ const AgreementDetails = ({ visible, onClose, agreement }) => {
                                  </CTableDataCell>
                              </CTableRow>
                              <CTableRow>
-                              <CTableDataCell> <strong>Utilities:</strong> </CTableDataCell>
+                              <CTableDataCell> <strong> <CIcon icon={cilSettings} className="me-1" />Utilities:</strong> </CTableDataCell>
                                   <CTableDataCell>{agreement.utilitiesAndServices || "None"}</CTableDataCell>
                             </CTableRow>
                    </CTableBody>
 
                      <CTableHead>
                           <CTableRow>
-                            <CTableHeaderCell colSpan={2}><h6>Rules and Conditions</h6></CTableHeaderCell>
+                            <CTableHeaderCell colSpan={2}>
+                               <h6>
+                                   <CIcon icon={cilDescription} className="me-2" />
+                                     Rules and Conditions
+                               </h6>
+                            </CTableHeaderCell>
                          </CTableRow>
                     </CTableHead>
                     <CTableBody>
@@ -119,7 +156,7 @@ const AgreementDetails = ({ visible, onClose, agreement }) => {
                     {/* Documents Section */}
                     {agreement.documents?.length > 0 && (
                       <div className="mt-3">
-                        <h6>Documents</h6>
+                        <h6> <CIcon icon={cilFile} className="me-2" /> Documents</h6>
                         <div className="list-group">
                           {agreement.documents.map((doc, idx) => (
                              <a

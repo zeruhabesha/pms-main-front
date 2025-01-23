@@ -1,4 +1,4 @@
-// store/slice/ComplaintSlice.js
+// src/api/slice/ComplaintSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 import { fetchComplaints, addComplaint, updateComplaint, deleteComplaint, assignComplaint, submitComplaintFeedback, fetchAssignedComplaints, fetchUnassignedComplaints } from '../actions/ComplaintAction';
 
@@ -8,6 +8,7 @@ const initialState = {
     error: null,
     totalPages: 1,
     currentPage: 1,
+    totalComplaints: 0,
 };
 
 const ComplaintSlice = createSlice({
@@ -20,6 +21,7 @@ const ComplaintSlice = createSlice({
             state.complaints = action.payload.complaints;
             state.totalPages = action.payload.totalPages;
             state.currentPage = action.payload.currentPage;
+            state.totalComplaints = action.payload.totalComplaints;
         };
         const handleAddUpdateSuccess = (state, action) => {
             state.loading = false;

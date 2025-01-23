@@ -17,7 +17,7 @@ import {
     fetchAgreement,
     addAgreement,
     updateAgreement,
-  } from "../../api/actions/AgreementActions";
+} from "../../api/actions/AgreementActions";
 import { clearSelectedAgreement } from "../../api/slice/AgreementSlice";
 
 const AddAgreement = () => {
@@ -44,8 +44,8 @@ const AddAgreement = () => {
                     dispatch(filterProperties()).unwrap(),
                 ]);
                 if (isEditing) {
-                    await dispatch(fetchAgreement(id)).unwrap();
-                }
+                   await dispatch(fetchAgreement(id)).unwrap();
+                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
                 setFormError(error.message || "Failed to load initial data.");
@@ -59,7 +59,8 @@ const AddAgreement = () => {
         };
     }, [dispatch, id, isEditing]);
 
-   const handleFormSubmit = async (formData) => {
+
+     const handleFormSubmit = async (formData) => {
         if (!formData.tenant || !formData.property) {
             setFormError("Tenant and Property are required fields.");
             toast.error("Tenant and Property are required fields.");
@@ -115,8 +116,8 @@ const AddAgreement = () => {
                 {renderErrorState(formError)}
                 {renderErrorState(tenantsError)}
                 {renderErrorState(propertiesError)}
-                {renderErrorState(agreementError)}
-                {tenantsLoading || propertiesLoading || (isEditing && agreementLoading) ? (
+                 {renderErrorState(agreementError)}
+                {tenantsLoading || propertiesLoading || (isEditing && agreementLoading)  ? (
                     renderLoadingState()
                 ) : (
                     <AgreementForm
@@ -124,7 +125,7 @@ const AddAgreement = () => {
                         properties={properties}
                         initialData={isEditing ? selectedAgreement : null}
                         onSubmit={handleFormSubmit}
-                        isSubmitting={isSubmitting}
+
                     />
                 )}
             </CCardBody>

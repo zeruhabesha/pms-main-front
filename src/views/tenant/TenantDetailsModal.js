@@ -11,6 +11,16 @@ import {
     CTableDataCell,
 } from '@coreui/react';
 import PropTypes from 'prop-types';
+import {
+    cilUser,
+    cilEnvelopeOpen,
+    cilPhone,
+    cilHome,
+    cilCalendar,
+    cilMoney,
+    cilCreditCard,
+} from '@coreui/icons';
+import { CIcon } from '@coreui/icons-react';
 
 const TenantDetailsModal = ({ visible, setVisible, tenantDetails }) => {
     const handleClose = () => {
@@ -28,39 +38,39 @@ const TenantDetailsModal = ({ visible, setVisible, tenantDetails }) => {
                <CTable bordered hover responsive>
                     <CTableBody>
                             <CTableRow>
-                                <CTableDataCell><strong>Tenant Name:</strong></CTableDataCell>
+                                <CTableDataCell><strong><CIcon icon={cilUser} className="me-1" />Tenant Name:</strong></CTableDataCell>
                                 <CTableDataCell>{tenantDetails?.tenantName || "N/A"}</CTableDataCell>
                             </CTableRow>
                             <CTableRow>
-                                <CTableDataCell><strong>Email:</strong></CTableDataCell>
+                                <CTableDataCell><strong><CIcon icon={cilEnvelopeOpen} className="me-1" />Email:</strong></CTableDataCell>
                                 <CTableDataCell>{tenantDetails.contactInformation?.email || "N/A"}</CTableDataCell>
                             </CTableRow>
                            <CTableRow>
-                                <CTableDataCell><strong>Phone Number:</strong></CTableDataCell>
+                                <CTableDataCell><strong><CIcon icon={cilPhone} className="me-1" />Phone Number:</strong></CTableDataCell>
                                 <CTableDataCell>{tenantDetails.contactInformation?.phoneNumber || "N/A"}</CTableDataCell>
                             </CTableRow>
                              <CTableRow>
-                                <CTableDataCell><strong>Address:</strong></CTableDataCell>
+                                <CTableDataCell><strong><CIcon icon={cilHome} className="me-1" />Address:</strong></CTableDataCell>
                                 <CTableDataCell>{tenantDetails.contactInformation?.address || "N/A"}</CTableDataCell>
                             </CTableRow>
                             <CTableRow>
-                                <CTableDataCell><strong>Start Date:</strong></CTableDataCell>
+                                <CTableDataCell><strong><CIcon icon={cilCalendar} className="me-1" />Start Date:</strong></CTableDataCell>
                                 <CTableDataCell>{tenantDetails.leaseAgreement?.startDate || "N/A"}</CTableDataCell>
                            </CTableRow>
                            <CTableRow>
-                              <CTableDataCell><strong>End Date:</strong></CTableDataCell>
+                              <CTableDataCell><strong><CIcon icon={cilCalendar} className="me-1" />End Date:</strong></CTableDataCell>
                                  <CTableDataCell>{tenantDetails.leaseAgreement?.endDate || "N/A"}</CTableDataCell>
                           </CTableRow>
                            <CTableRow>
-                               <CTableDataCell><strong>Security Deposit:</strong></CTableDataCell>
+                               <CTableDataCell><strong><CIcon icon={cilMoney} className="me-1" />Security Deposit:</strong></CTableDataCell>
                                 <CTableDataCell>${tenantDetails.leaseAgreement?.securityDeposit || "N/A"}</CTableDataCell>
                             </CTableRow>
                              <CTableRow>
-                                <CTableDataCell><strong>Rent Amount:</strong></CTableDataCell>
+                                <CTableDataCell><strong><CIcon icon={cilMoney} className="me-1" />Rent Amount:</strong></CTableDataCell>
                                <CTableDataCell>${tenantDetails.leaseAgreement?.rentAmount || "N/A"}</CTableDataCell>
                            </CTableRow>
                             <CTableRow>
-                                <CTableDataCell><strong>Payment Frequency:</strong></CTableDataCell>
+                                <CTableDataCell><strong><CIcon icon={cilCreditCard} className="me-1" />Payment Frequency:</strong></CTableDataCell>
                                 <CTableDataCell>{tenantDetails.leaseAgreement?.paymentFrequency || "N/A"}</CTableDataCell>
                             </CTableRow>
                     </CTableBody>

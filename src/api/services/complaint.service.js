@@ -1,4 +1,4 @@
-// store/services/complaint.service.js
+// src/api/services/complaint.service.js
 import httpCommon from '../http-common';
 
 class ComplaintService {
@@ -6,21 +6,14 @@ class ComplaintService {
         this.baseURL = `${httpCommon.defaults.baseURL}/complaints`;
     }
 
-    getAuthHeader() {
-        const token = localStorage.getItem('token');
-        return {
-            Authorization: `Bearer ${token}`,
-        };
-    }
-
-    async fetchComplaints(page = 1, limit = 10, searchTerm = '') {
+    async fetchComplaints(page = 1, limit = 10, searchTerm = '', status = '') {
         try {
-            const response = await httpCommon.get('/complaints', {
-                headers: this.getAuthHeader(),
+            const response = await httpCommon.get(this.baseURL, {
                 params: {
                     page,
                     limit,
-                    search: searchTerm
+                    search: searchTerm,
+                    status,
                 }
             });
            
@@ -33,13 +26,12 @@ class ComplaintService {
 
     async addComplaint(complaintData) {
         try {
-            const response = await httpCommon.post('/complaints', complaintData, {
+            const response = await httpCommon.post(this.baseURL, complaintData, {
                 headers: {
-                    ...this.getAuthHeader(),
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            return response.data.data;
+            return response.data;
         } catch (error) {
             throw this.handleError(error);
         }
@@ -47,9 +39,7 @@ class ComplaintService {
 
     async updateComplaint(id, complaintData) {
         try {
-            const response = await httpCommon.put(`/complaints/${id}`, complaintData, {
-                headers: this.getAuthHeader(),
-            });
+            const response = await httpCommon.put(`${this.baseURL}/${id}`, complaintData);
           
             return response.data.data;
         } catch (error) {
@@ -59,9 +49,7 @@ class ComplaintService {
 
     async assignComplaint(id, userId) {
         try {
-            const response = await httpCommon.put(`/complaints/assign/${id}`, { assignedTo: userId }, {
-                headers: this.getAuthHeader(),
-            });
+            const response = await httpCommon.put(`${this.baseURL}/assign/${id}`, { assignedTo: userId });
              return response.data.data;
         } catch (error) {
             throw this.handleError(error);
@@ -70,9 +58,7 @@ class ComplaintService {
 
     async submitComplaintFeedback(id, feedback) {
         try {
-            const response = await httpCommon.put(`/complaints/feedback/${id}`, { feedback }, {
-                headers: this.getAuthHeader(),
-            });
+            const response = await httpCommon.put(`${this.baseURL}/feedback/${id}`, { feedback });
              return response.data.data;
         } catch (error) {
             throw this.handleError(error);
@@ -82,9 +68,7 @@ class ComplaintService {
 
     async deleteComplaint(id) {
         try {
-            await httpCommon.delete(`/complaints/${id}`, {
-                headers: this.getAuthHeader(),
-            });
+            await httpCommon.delete(`${this.baseURL}/${id}`);
             return id;
         } catch (error) {
             throw this.handleError(error);
@@ -93,8 +77,7 @@ class ComplaintService {
 
     async fetchAssignedComplaints(userId, page = 1, limit = 10) {
         try {
-            const response = await httpCommon.get(`/complaints/assigned/${userId}`, {
-                headers: this.getAuthHeader(),
+            const response = await httpCommon.get(`${this.baseURL}/assigned/${userId}`, {
                 params: {
                     page,
                     limit
@@ -110,8 +93,7 @@ class ComplaintService {
 
     async fetchUnassignedComplaints(page = 1, limit = 10) {
         try {
-            const response = await httpCommon.get('/complaints/unassigned/complaints', {
-                headers: this.getAuthHeader(),
+            const response = await httpCommon.get(`${this.baseURL}/unassigned/complaints`, {
                 params: {
                     page,
                     limit
@@ -129,8 +111,11 @@ class ComplaintService {
         return {
             message: error.response?.data?.message || error.message,
             status: error.response?.status,
+            errorDetails: error.response?.data?.error || null,
         };
     }
+    
+    
 }
 
 export default new ComplaintService();

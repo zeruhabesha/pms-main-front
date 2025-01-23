@@ -14,6 +14,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import './User.scss';
 import '../Super.scss';
 import 'react-toastify/dist/ReactToastify.css';
+import { clearError } from "../../api/slice/userSlice";
 
 const ViewUser = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -23,15 +24,13 @@ const ViewUser = () => {
     const [userToDelete, setUserToDelete] = useState(null);
     const [editingUser, setEditingUser] = useState(null);
     const [userToEdit, setUserToEdit] = useState(null);
-    const [errorMessage, setErrorMessage] = useState('');
     const [activeTab, setActiveTab] = useState(0);
 
     const itemsPerPage = 10;
     const [localCurrentPage, setLocalCurrentPage] = useState(1);
-
     const dispatch = useDispatch();
     const { users, inspectors, maintainers, loading, error } = useSelector((state) => state.user);
-    const [role, setRole] = useState('user');
+     const [role, setRole] = useState('user');
 
     useEffect(() => {
         //Set role based on active tab
@@ -78,8 +77,7 @@ const ViewUser = () => {
             }
         } catch (err) {
             const detailedError = err?.response?.data?.message || err?.message || 'Failed to fetch data';
-            setErrorMessage(detailedError);
-            toast.error(detailedError);
+             toast.error(detailedError); // Keep the toast error
         }
     };
 
@@ -88,7 +86,6 @@ const ViewUser = () => {
         const timeoutId = setTimeout(() => {
             fetchData();
         }, 300); // Add debounce for search
-
         return () => clearTimeout(timeoutId);
     }, [dispatch, localCurrentPage, searchTerm, itemsPerPage, role]);
 
@@ -110,12 +107,12 @@ const ViewUser = () => {
     const confirmDelete = async () => {
         try {
             await dispatch(deleteUser(userToDelete._id)).unwrap();
-            toast.success(`${role.charAt(0).toUpperCase() + role.slice(1)} deleted successfully`);
+             toast.success(`${role.charAt(0).toUpperCase() + role.slice(1)} deleted successfully`);
             fetchData();
             setDeleteModalVisible(false);
         } catch (error) {
             const detailedError = error.response?.data?.message || error.message || `Failed to delete ${role}`;
-            toast.error(detailedError);
+              toast.error(detailedError);
         }
     };
 
@@ -127,13 +124,13 @@ const ViewUser = () => {
     const handleSavePhoto = async (photoFile) => {
         if (userToEdit) {
             try {
-                await dispatch(uploadUserPhoto({ id: userToEdit._id, photo: photoFile }));
+                await dispatch(uploadUserPhoto({ id: userToEdit._id, photo: photoFile })).unwrap();
                 fetchData(); // Refresh data after photo update
                 setEditPhotoVisible(false);
                 toast.success('Photo updated successfully');
             } catch (error) {
                 const detailedError = error.response?.data?.message || error.message || "Failed to update Photo";
-                toast.error(detailedError);
+                  toast.error(detailedError);
             }
 
         }
@@ -148,8 +145,7 @@ const ViewUser = () => {
             setUserModalVisible(false);
         } catch (error) {
             const detailedError = error.response?.data?.message || error.message || 'Failed to update user';
-            setErrorMessage(detailedError);
-            toast.error(detailedError);
+             toast.error(detailedError);
         }
     };
 
@@ -162,15 +158,21 @@ const ViewUser = () => {
             setUserModalVisible(false);
         } catch (error) {
             const detailedError = error.response?.data?.message || error.message || 'An unexpected error occurred';
-            setErrorMessage(detailedError);
-            toast.error(detailedError);
+           toast.error(detailedError);
         }
     };
 
-    const handlePageChange = (page) => {
-      if (page < 1) return;
-        setLocalCurrentPage(page);
-    };
+  const handlePageChange = (page) => {
+    if (page < 1) return;
+    setLocalCurrentPage(page);
+  };
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
 
     return (
         <CRow>
@@ -192,31 +194,20 @@ const ViewUser = () => {
                         </button>
                     </CCardHeader>
                     <CCardBody>
-                        {error && (
-                            <CAlert color="danger" className="mb-4">
-                                {error?.message || 'An error occurred'}
-                            </CAlert>
-                        )}
-                        {errorMessage && (
-                            <CAlert color="danger" className="mb-4">
-                                {errorMessage}
-                            </CAlert>
-                        )}
-                        <UserTable
-                            users={role === 'maintainer' ? maintainers : role === 'inspector' ? inspectors : users || []}
-                            currentPage={localCurrentPage}
-                            searchTerm={searchTerm}
-                            setSearchTerm={handleSearch}
-                            handleEdit={handleEdit}
-                            handleDelete={handleDelete}
-                            handleEditPhoto={handleEditPhoto}
-                            handlePageChange={handlePageChange}
-                            loading={loading}
-                            itemsPerPage={itemsPerPage}
-                            activeTab={activeTab}
-                            setActiveTab={setActiveTab}
+                      <UserTable
+                          users={role === 'maintainer' ? maintainers : role === 'inspector' ? inspectors : users || []}
+                          currentPage={localCurrentPage}
+                          searchTerm={searchTerm}
+                          setSearchTerm={handleSearch}
+                          handleEdit={handleEdit}
+                          handleDelete={handleDelete}
+                          handleEditPhoto={handleEditPhoto}
+                          handlePageChange={handlePageChange}
+                          loading={loading}
+                          itemsPerPage={itemsPerPage}
+                          activeTab={activeTab}
+                          setActiveTab={setActiveTab}
                         />
-
                     </CCardBody>
                 </CCard>
             </CCol>

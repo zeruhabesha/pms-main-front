@@ -1,3 +1,4 @@
+// src/components/complaints/ViewComplaints.js
 import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -7,6 +8,8 @@ import {
     CCardHeader,
     CCardBody,
     CAlert,
+    CFormSelect, // Import CFormSelect here
+    CFormInput,
 } from '@coreui/react';
 import {
     fetchComplaints,
@@ -16,6 +19,7 @@ import {
     assignComplaint,
     submitComplaintFeedback,
 } from '../../api/actions/ComplaintAction';
+  
 import ComplaintsTable from './ComplaintsTable';
 import ComplaintModal from './ComplaintModal';
 import ComplaintDeleteModal from './ComplaintDeleteModal';
@@ -25,12 +29,13 @@ import 'react-toastify/dist/ReactToastify.css';
 import { createSelector } from 'reselect';
 
 
-const selectComplaintState = (state) => state.Complaint || {
+const selectComplaintState = (state) => state.complaint || {
   complaints: [],
   loading: false,
   error: null,
   totalPages: 0,
   currentPage: 1,
+    totalComplaints: 0,
 };
 
 const ViewComplaints = () => {
@@ -43,11 +48,13 @@ const ViewComplaints = () => {
           error: complaint.error || null,
           totalPages: complaint.totalPages || 0,
           currentPage: complaint.currentPage || 1,
+        totalComplaints: complaint.totalComplaints || 0,
         })
     ), []);
-    const { complaints, loading, error, totalPages, currentPage } = useSelector(complaintSelector);
+    const { complaints, loading, error, totalPages, currentPage, totalComplaints } = useSelector(complaintSelector);
 
   const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
   const [complaintModalVisible, setComplaintModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [complaintToDelete, setComplaintToDelete] = useState(null);
@@ -56,16 +63,19 @@ const ViewComplaints = () => {
   const itemsPerPage = 10;
 
     useEffect(() => {
-        dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
-  }, [dispatch, currentPage, searchTerm]);
+        dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
+    }, [dispatch, currentPage, searchTerm, statusFilter]);
 
 
   const handlePageChange = (page) => {
       if (page !== currentPage) {
-           dispatch(fetchComplaints({ page, limit: itemsPerPage, search: searchTerm }));
+           dispatch(fetchComplaints({ page, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
       }
     };
 
+    const handleStatusFilterChange = (e) => {
+        setStatusFilter(e.target.value);
+    };
   const handleDelete = (complaint) => {
     setComplaintToDelete(complaint);
     setDeleteModalVisible(true);
@@ -79,7 +89,7 @@ const ViewComplaints = () => {
   
     try {
       await dispatch(deleteComplaint(complaintToDelete._id)).unwrap();
-      dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
+      dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
       setDeleteModalVisible(false);
       toast.success('Complaint deleted successfully');
     } catch (error) {
@@ -101,7 +111,7 @@ const ViewComplaints = () => {
   
     try {
         await dispatch(updateComplaint({ id: editingComplaint._id, complaintData: updatedData })).unwrap();
-          dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
+          dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
         setComplaintModalVisible(false);
           setEditingComplaint(null)
         toast.success('Complaint updated successfully');
@@ -113,7 +123,7 @@ const ViewComplaints = () => {
    const handleAssign = async (complaintId, userId) => {
         try {
             await dispatch(assignComplaint({id: complaintId, userId})).unwrap();
-             dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
+             dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
             toast.success('Complaint assigned successfully');
         } catch (error) {
             toast.error(error?.message || 'Failed to assign complaint');
@@ -124,7 +134,7 @@ const ViewComplaints = () => {
   const handleAddComplaint = async (complaintData) => {
     try {
       await dispatch(addComplaint(complaintData)).unwrap();
-      dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
+      dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
         toast.success('Complaint added successfully');
        setComplaintModalVisible(false);
     } catch (error) {
@@ -134,7 +144,7 @@ const ViewComplaints = () => {
    const handleFeedback = async (complaintId, feedback) => {
         try {
            await dispatch(submitComplaintFeedback({ id: complaintId, feedback })).unwrap();
-           dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
+           dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
             toast.success('Complaint feedback submitted successfully');
         } catch (error) {
             toast.error(error?.message || 'Failed to submit feedback');
@@ -173,8 +183,31 @@ const ViewComplaints = () => {
                 {errorMessage}
               </CAlert>
             )}
+                 <div className="d-flex justify-content-between mb-3">
+                    <CFormSelect
+                        style={{ width: '200px' }}
+                        value={statusFilter}
+                        onChange={handleStatusFilterChange}
+                    >
+                        <option value="">All Statuses</option>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Resolved">Resolved</option>
+                        <option value="Closed">Closed</option>
+                    </CFormSelect>
+            
+             <div  style={{ width: '100%',  marginLeft: '20px'}} >
+                   {/* <CFormInput
+          type="text"
+          placeholder="Search by tenant, property or type"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+             /> */}
+                </div>
+                 </div>
             <ComplaintsTable
               complaints={complaints}
+                totalComplaints={totalComplaints}
               currentPage={currentPage}
               totalPages={totalPages}
               searchTerm={searchTerm}

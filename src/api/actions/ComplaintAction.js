@@ -1,12 +1,12 @@
-// store/actions/ComplaintActions.js
+// src/api/actions/ComplaintActions.js
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import ComplaintService from '../services/complaint.service';
 
 export const fetchComplaints = createAsyncThunk(
     'complaint/fetchComplaints',
-    async ({ page, limit, search }, { rejectWithValue }) => {
+    async ({ page, limit, search, status }, { rejectWithValue }) => {
         try {
-            const response = await ComplaintService.fetchComplaints(page, limit, search);
+            const response = await ComplaintService.fetchComplaints(page, limit, search, status);
             return response;
         } catch (error) {
             return rejectWithValue(error.message);
@@ -19,7 +19,7 @@ export const addComplaint = createAsyncThunk(
     async (complaintData, { rejectWithValue }) => {
         try {
             const response = await ComplaintService.addComplaint(complaintData);
-            return response;
+            return response.data;
         } catch (error) {
             return rejectWithValue(
                 error.response?.data || { message: 'Failed to add complaint' }

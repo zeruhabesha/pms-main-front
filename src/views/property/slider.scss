@@ -1,0 +1,126 @@
+/* Basic slider track styles */
+.rc-slider {
+    position: relative;
+    height: 24px; /* Increased height to accommodate labels */
+    padding: 10px 0;
+    width: 100%;
+    border-radius: 6px;
+     touch-action: none;
+    -ms-touch-action: none;
+}
+
+.rc-slider-rail {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background-color: #e9e9e9; /* Light gray background for the track */
+    border-radius: 2px;
+    transition: all .2s;
+     user-select:none;
+    -webkit-user-select:none;
+}
+
+/* Slider track active (selected portion) styles */
+.rc-slider-track {
+    position: absolute;
+    left: 0;
+    height: 4px;
+    background-color: #4e73df; /* Blue color for the selected track */
+    border-radius: 2px;
+    transition: all .2s;
+     user-select:none;
+    -webkit-user-select:none;
+}
+
+/* Handle (slider dot) styles */
+.rc-slider-handle {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    margin-top: -5px; /* Adjust position relative to track */
+    background-color: #fff;
+    border: 2px solid #4e73df;
+    border-radius: 50%; /* Make it a circle */
+     cursor: grab; /* Change cursor on hover */
+    transition: all .2s;
+      -webkit-user-select: none;
+    user-select: none;
+    -ms-touch-action: pan-x;
+     touch-action: pan-x;
+}
+.rc-slider-handle:active{
+    cursor: grabbing;
+    border: 2px solid #4e73df;
+    box-shadow: 0 0 2px 1px #4e73df;
+}
+
+.rc-slider-mark-text {
+    position: absolute;
+    top: 22px; /* Position labels below slider track */
+    color: #999;
+    font-size: 12px;
+     user-select:none;
+    -webkit-user-select:none;
+}
+
+.rc-slider-mark-text-active {
+  color: #666;
+}
+.rc-slider-step {
+  position: absolute;
+    width: 100%;
+    height: 4px;
+    background-color: transparent;
+    border-radius: 2px; /* Match track border radius */
+}
+.rc-slider-dot{
+    position: absolute;
+    bottom: -2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #e9e9e9;
+    border: 1px solid #9e9e9e;
+    transition: all .2s;
+     user-select:none;
+    -webkit-user-select:none;
+}
+.rc-slider-dot-active {
+  background-color: #4e73df;
+  border: 1px solid #4e73df;
+}
+
+
+/* Custom styles for display values above the handle */
+.custom-handle {
+    position: absolute;
+    left: -50px;
+    top: -25px;
+    padding: 3px 5px;
+    background-color: #4e73df; /* Blue background for the handle */
+    color: white;
+    font-size: 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.custom-handle-active {
+    background-color: #4e73df;
+    box-shadow: 0 0 2px 1px #4e73df;
+}
+
+/* Styles for value labels above dots */
+.rc-slider-mark {
+  position: relative;
+}
+.rc-slider-mark-text-with-value {
+     position: absolute;
+      left: -15px;
+        top: -25px; /* Position above the dots */
+        color: black; /* Color for the values */
+        font-size: 12px; /* Font size of the values */
+          white-space: nowrap;
+        padding: 3px;
+         user-select:none;
+    -webkit-user-select:none;
+}

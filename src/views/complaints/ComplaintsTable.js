@@ -1,28 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  CTable,
-  CTableBody,
-  CTableHead,
-  CTableHeaderCell,
-  CTableRow,
-  CTableDataCell,
-  CButton,
-  CPagination,
-  CPaginationItem,
-  CFormInput,
-  CCollapse,
+    CTable,
+    CTableBody,
+    CTableHead,
+    CTableHeaderCell,
+    CTableRow,
+    CTableDataCell,
+    CButton,
+    CPagination,
+    CPaginationItem,
+    CFormInput,
     CFormSelect,
+    CDropdown,
+    CDropdownToggle,
+    CDropdownMenu,
+    CDropdownItem,
+    CModal,
+    CModalHeader,
+    CModalTitle,
+    CModalBody,
+    CModalFooter,
 } from '@coreui/react';
 import "../paggination.scss";
 import { CIcon } from '@coreui/icons-react';
-import { cilPencil, cilTrash, cilCheckCircle, cilXCircle, cilPlus, cilMinus, cilArrowTop, cilArrowBottom, cilUser } from '@coreui/icons';
-import { CSVLink } from 'react-csv'; // For CSV Export
-import { CopyToClipboard } from 'react-copy-to-clipboard'; // For Clipboard Copy
-import jsPDF from 'jspdf'; // For PDF Export
-import 'jspdf-autotable'; // For table styling in jsPDF
-import { cilFile, cilClipboard, cilCloudDownload } from '@coreui/icons';
-import { useSelector } from 'react-redux';
+import { cilPencil, cilTrash, cilUser, cilFile, cilClipboard, cilCloudDownload, cilOptions, cilDescription, cilCalendar, cilInfo, cilHome, cilList } from '@coreui/icons';
+import { CSVLink } from 'react-csv';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
+import { fetchInspectors } from '../../api/actions/userActions';
+import ComplaintsTableActions from "./ComplaintsTableActions";
+import ComplaintsTableData from "./ComplaintsTableData";
+import { decryptData } from '../../api/utils/crypto';
+import ComplaintAssign from "./ComplaintAssign";
+import Feedback from "./Feedback";
+
+
 
 const ComplaintsTable = ({
   complaints = [],
@@ -30,42 +45,98 @@ const ComplaintsTable = ({
   totalPages,
   searchTerm,
   setSearchTerm,
+    totalComplaints,
   handleDelete,
   handleEdit,
   handlePageChange,
-    handleAssign,
-    handleFeedback,
-
 }) => {
-  const [expandedRows, setExpandedRows] = useState({});
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-    const { users } = useSelector(state => state.user);
+     const dispatch = useDispatch();
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedComplaint, setSelectedComplaint] = useState(null);
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
     const [feedbackText, setFeedbackText] = useState({});
     const [assignee, setAssignee] = useState({});
+     const [inspectors, setInspectors] = useState([]);
+      const { users } = useSelector(state => state.user);
+      const [role, setRole] = useState(null);
+      const [assignModalVisible, setAssignModalVisible] = useState(false);
+      const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
+       const [error, setError] = useState(null);
+
+     useEffect(() => {
+         try {
+            const encryptedUser = localStorage.getItem('user');
+            if (encryptedUser) {
+              const decryptedUser = decryptData(encryptedUser);
+              setRole(decryptedUser?.role || null);
+            }
+        } catch (err) {
+            setError('Failed to load user role');
+            console.error('Role loading error:', err);
+        }
+    }, []);
+
+ useEffect(() => {
+    const fetchAllInspectors = async () => {
+        try {
+            const response = await dispatch(fetchInspectors()).unwrap();
+            setInspectors(response.inspectors || []); // Safely handle undefined
+        } catch (error) {
+            console.error('Failed to load inspectors:', error);
+        }
+    };
+
+    fetchAllInspectors();
+}, [dispatch]);
 
 
-  const toggleRow = (id) => {
-      if (!id) return;
-    setExpandedRows((prevState) => ({
-      ...prevState,
-      [id]: !prevState[id],
-    }));
-  };
+    const handleModalOpen = (complaint) => {
+        setSelectedComplaint(complaint);
+        setModalVisible(true);
+    };
 
+    const handleModalClose = () => {
+        setModalVisible(false);
+        setSelectedComplaint(null);
+    };
+  
+       const handleAssignModalOpen = (complaint) => {
+           setSelectedComplaint(complaint);
+            setAssignModalVisible(true);
+       }
+   const handleAssignModalClose = () => {
+       setAssignModalVisible(false);
+       setSelectedComplaint(null)
+   }
+
+   const handleFeedbackModalOpen = (complaint) => {
+         setSelectedComplaint(complaint);
+        setFeedbackModalVisible(true)
+   };
+   const handleFeedbackModalClose = () => {
+       setFeedbackModalVisible(false);
+        setSelectedComplaint(null)
+   }
     const handleAssigneeChange = (e, complaintId) => {
     setAssignee((prevAssignee) => ({
       ...prevAssignee,
       [complaintId]: e.target.value,
     }));
   };
-    const handleAssignClick = (complaintId) => {
+
+   const handleAssignClick = (complaintId) => {
         const userId = assignee[complaintId];
-        if (userId) {
-           handleAssign(complaintId, userId)
-        } else {
-             toast.error('Please select an assignee');
-        }
+          if (userId) {
+             // handleAssign(complaintId, userId)
+               console.log(complaintId,userId)
+            setAssignModalVisible(false);
+            setSelectedComplaint(null);
+            } else {
+            toast.error('Please select an assignee');
+            }
     };
+
+
   const handleFeedbackChange = (e, complaintId) => {
     setFeedbackText((prevFeedbackText) => ({
       ...prevFeedbackText,
@@ -74,7 +145,10 @@ const ComplaintsTable = ({
   };
 
     const handleFeedbackSubmit = (complaintId) => {
-      handleFeedback(complaintId, feedbackText[complaintId] || '');
+      //handleFeedback(complaintId, feedbackText[complaintId] || '');
+        console.log(complaintId, feedbackText[complaintId] )
+        setFeedbackModalVisible(false);
+        setSelectedComplaint(null)
     };
 
    const formatDate = (dateString) => {
@@ -89,7 +163,7 @@ const ComplaintsTable = ({
     };
 
 
-  const sortedComplaints = React.useMemo(() => {
+  const sortedComplaints = useMemo(() => {
     if (!sortConfig.key) return complaints;
 
       return [...complaints].sort((a, b) => {
@@ -154,204 +228,136 @@ const ComplaintsTable = ({
 
   return (
       <div>
-          <div className="d-flex mb-3 gap-2">
-              <div className="d-flex gap-2">
-                  <CSVLink
-                      data={csvData}
-                      headers={[
-                          { label: '#', key: 'index' },
-                          { label: 'Tenant', key: 'tenant' },
-                          { label: 'Property', key: 'property' },
-                          { label: 'Type', key: 'complaintType' },
-                          { label: 'Status', key: 'status' },
-                      ]}
-                      filename="complaint_data.csv"
-                      className="btn btn-dark"
-                  >
-                      <CIcon icon={cilFile} title="Export CSV" />
-                  </CSVLink>
-                  <CopyToClipboard text={clipboardData}>
-                      <CButton color="dark" title="Copy to Clipboard">
-                          <CIcon icon={cilClipboard} />
-                      </CButton>
-                  </CopyToClipboard>
-                  <CButton color="dark" onClick={exportToPDF} title="Export PDF">
-                      <CIcon icon={cilCloudDownload} />
-                  </CButton>
-              </div>
-        <CFormInput
-          type="text"
-          placeholder="Search by tenant, property or type"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-            style={{width: '100%'}}
-        />
-      </div>
-  
-      <div className="table-responsive">
-        <CTable>
-          <CTableHead>
-            <CTableRow>
-                <CTableHeaderCell onClick={() => handleSort('index')} style={{ cursor: 'pointer' }}>
-                    #
-                    {sortConfig.key === 'index' && (
-                        <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
+           <ComplaintsTableActions
+                csvData={csvData}
+                clipboardData={clipboardData}
+                exportToPDF={exportToPDF}
+                 searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+               
+             />
+           <ComplaintsTableData
+               complaints={complaints}
+                currentPage={currentPage}
+              searchTerm={searchTerm}
+               sortConfig={sortConfig}
+                handleSort={handleSort}
+               handleEdit={handleEdit}
+              handleDelete={handleDelete}
+                handleModalOpen={handleModalOpen}
+              users={users}
+               handleAssignModalOpen={handleAssignModalOpen}
+              handleFeedbackModalOpen={handleFeedbackModalOpen}
+                 role={role}
+           />
+                <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
+                        <span>Total Complaints: {totalComplaints}</span>
+                         <CPagination className="d-inline-flex" >
+                            <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
+                              «
+                            </CPaginationItem>
+                            <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>
+                              ‹
+                            </CPaginationItem>
+                            {[...Array(totalPages)].map((_, index) => (
+                              <CPaginationItem
+                                style={{background:`black`}}
+                                key={index + 1}
+                                active={index + 1 === currentPage}
+                                onClick={() => handlePageChange(index + 1)}
+                               >
+                                {index + 1}
+                              </CPaginationItem>
+                            ))}
+                            <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)}>
+                              ›
+                            </CPaginationItem>
+                            <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)}>
+                              »
+                            </CPaginationItem>
+                         </CPagination>
+                    </div>
+        {/* Complaint Details Modal */}
+          <CModal
+              size="lg"
+        visible={modalVisible}
+        onClose={handleModalClose}
+      >
+        <CModalHeader onClose={handleModalClose}>
+          <CModalTitle>Complaint Details</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+            {selectedComplaint && (
+                <div>
+                 
+                                <p><strong><CIcon icon={cilDescription} className="me-1" />Description:</strong> {selectedComplaint?.description || 'N/A'}</p>
+                                <p><strong> <CIcon icon={cilCalendar} className="me-1" />Submitted Date:</strong> {formatDate(selectedComplaint?.submittedDate)}</p>
+                                <p><strong><CIcon icon={cilCalendar} className="me-1" />Resolved Date:</strong> {formatDate(selectedComplaint?.resolvedDate)}</p>
+                                <p><strong> <CIcon icon={cilInfo} className="me-1"/>Priority:</strong> {selectedComplaint?.priority || 'N/A'}</p>
+                                <p><strong> <CIcon icon={cilDescription} className="me-1"/>Notes:</strong> {selectedComplaint?.notes || 'N/A'}</p>
+                                <p><strong><CIcon icon={cilDescription} className="me-1" />Feedback:</strong> {selectedComplaint?.feedback || 'N/A'}</p>
+
+                </div>
+            )}
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={handleModalClose}>
+            Close
+          </CButton>
+        </CModalFooter>
+      </CModal>
+      
+             {/* Assign Modal */}
+                <CModal
+                visible={assignModalVisible}
+                onClose={handleAssignModalClose}
+            >
+                <CModalHeader>
+                    <CModalTitle>Assign Complaint</CModalTitle>
+                </CModalHeader>
+                <CModalBody>
+                    {selectedComplaint && (
+                        <ComplaintAssign
+                            inspectors={inspectors}
+                            assignee={assignee[selectedComplaint._id] || ''}
+                            handleAssigneeChange={handleAssigneeChange}
+                            complaintId={selectedComplaint._id}
+                            handleAssignClick={handleAssignClick}
+                             />
                     )}
-                </CTableHeaderCell>
-              <CTableHeaderCell onClick={() => handleSort('tenant')} style={{ cursor: 'pointer' }}>
-                Tenant
-                  {sortConfig.key === 'tenant' && (
-                      <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
-                  )}
-                </CTableHeaderCell>
-              <CTableHeaderCell onClick={() => handleSort('property')} style={{ cursor: 'pointer' }}>
-                Property
-                  {sortConfig.key === 'property' && (
-                      <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
-                  )}
-                </CTableHeaderCell>
-              <CTableHeaderCell onClick={() => handleSort('complaintType')} style={{ cursor: 'pointer' }}>
-                Type
-                {sortConfig.key === 'complaintType' && (
-                  <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
-                )}
-              </CTableHeaderCell>
-              <CTableHeaderCell onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
-                Status
-                {sortConfig.key === 'status' && (
-                  <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
-                )}
-              </CTableHeaderCell>
-                <CTableHeaderCell>Assigned To</CTableHeaderCell>
-                <CTableHeaderCell>Actions</CTableHeaderCell>
+                </CModalBody>
+                <CModalFooter>
+                    <CButton color="secondary" onClick={handleAssignModalClose}>
+                        Cancel
+                    </CButton>
 
-            </CTableRow>
-          </CTableHead>
-          <CTableBody>
-            {sortedComplaints.map((complaint, index) => (
-              <React.Fragment key={complaint._id || `row-${index}`}>
-                <CTableRow>
-                  <CTableDataCell>{(currentPage - 1) * 10 + index + 1}</CTableDataCell>
-                    <CTableDataCell>{complaint?.tenant?.name || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{complaint?.property?.title || 'N/A'}</CTableDataCell>
-                  <CTableDataCell>{complaint?.complaintType || 'N/A'}</CTableDataCell>
-                  <CTableDataCell>
-                      {complaint?.status === 'Pending' ? (
-                          <span className="text-warning">Pending</span>
-                      ) : complaint?.status === 'In Progress' ? (
-                          <span className="text-primary">In Progress</span>
-                      ) : complaint?.status === 'Resolved' ? (
-                          <span className="text-success">Resolved</span>
-                      ) : (
-                           <span className="text-danger">Closed</span>
-                      )}
-                  </CTableDataCell>
-                  <CTableDataCell>
-                        {complaint.assignedTo?.name || 'Unassigned'}
-                   </CTableDataCell>
-                  <CTableDataCell>
-                    <CButton color="light" size="sm" className="me-2" onClick={() => handleEdit(complaint)} title="Edit">
-                      <CIcon icon={cilPencil} />
-                    </CButton>
-                    <CButton
-                      color="light"
-                      style={{ color: `red` }}
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleDelete(complaint)}
-                      title="Delete"
-                    >
-                      <CIcon icon={cilTrash} />
-                    </CButton>
-                      <CButton color="light" size="sm" onClick={() => toggleRow(complaint._id)} title="Expand">
-                           <CIcon icon={expandedRows[complaint._id] ? cilMinus : cilPlus} />
+                </CModalFooter>
+            </CModal>
+                {/* Feedback Modal */}
+                <CModal
+                    visible={feedbackModalVisible}
+                     onClose={handleFeedbackModalClose}
+                >
+                    <CModalHeader>
+                        <CModalTitle>Feedback</CModalTitle>
+                    </CModalHeader>
+                    <CModalBody>
+                        {selectedComplaint && (
+                           <Feedback
+                           feedbackText={feedbackText[selectedComplaint._id] || ''}
+                                handleFeedbackChange={handleFeedbackChange}
+                                complaintId={selectedComplaint._id}
+                                handleFeedbackSubmit={handleFeedbackSubmit}
+                           />
+                        )}
+                    </CModalBody>
+                    <CModalFooter>
+                        <CButton color="secondary" onClick={handleFeedbackModalClose}>
+                            Cancel
                         </CButton>
-                  </CTableDataCell>
-                </CTableRow>
-                 <CTableRow>
-                    <CTableDataCell colSpan="8" className="p-0 border-0">
-                        <CCollapse visible={expandedRows[complaint?._id]}>
-                            <div className="p-3">
-                                <strong>Description:</strong> {complaint?.description || 'N/A'}
-                                <br />
-                                <strong>Submitted Date:</strong> {formatDate(complaint?.submittedDate)}
-                                <br />
-                                <strong>Resolved Date:</strong> {formatDate(complaint?.resolvedDate)}
-                                <br />
-                                <strong>Priority:</strong> {complaint?.priority || 'N/A'}
-                                <br/>
-                                  <strong>Notes:</strong> {complaint?.notes || 'N/A'}
-                                <br/>
-                                <strong>Feedback:</strong> {complaint?.feedback || 'N/A'}
-                                <br/>
-                                <div className="d-flex align-items-center">
-                                    <CFormSelect
-                                        name="assignedTo"
-                                        value={assignee[complaint._id] || ''}
-                                         onChange={(e) => handleAssigneeChange(e, complaint._id)}
-                                        className="me-2"
-                                       style={{width: '200px'}}
-                                     >
-                                           <option value="" disabled>
-                                                 Select Assignee
-                                             </option>
-                                        {users.map((user) => (
-                                             <option key={user._id} value={user._id}>
-                                                {user.name}
-                                             </option>
-                                            ))}
-                                    </CFormSelect>
-                                  <CButton color="primary" size="sm" onClick={() => handleAssignClick(complaint._id)} title="Assign Complaint">
-                                            <CIcon icon={cilUser} /> Assign
-                                        </CButton>
-                                </div>
-                                <div className="mt-2 d-flex align-items-center">
-                                      <CFormInput
-                                        type="text"
-                                        placeholder="Enter feedback"
-                                        value={feedbackText[complaint._id] || ''}
-                                         onChange={(e) => handleFeedbackChange(e, complaint._id)}
-                                        className="me-2"
-                                     />
-                                    <CButton color="primary" size="sm" onClick={() => handleFeedbackSubmit(complaint._id)} title="Submit Feedback">Submit Feedback</CButton>
-                                </div>
-                            </div>
-                        </CCollapse>
-                    </CTableDataCell>
-                </CTableRow>
-              </React.Fragment>
-            ))}
-          </CTableBody>
-        </CTable>
-      </div>
-        <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
-            <span>Total Complaints: {complaints.length}</span>
-      <CPagination className="d-inline-flex" >
-        <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
-          «
-        </CPaginationItem>
-        <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>
-          ‹
-        </CPaginationItem>
-        {[...Array(totalPages)].map((_, index) => (
-          <CPaginationItem
-          style={{background:`black`}}
-            key={index + 1}
-            active={index + 1 === currentPage}
-            onClick={() => handlePageChange(index + 1)}
-           >
-            {index + 1}
-          </CPaginationItem>
-        ))}
-        <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)}>
-          ›
-        </CPaginationItem>
-        <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)}>
-          »
-        </CPaginationItem>
-      </CPagination>
 
-    </div>
+                    </CModalFooter>
+                </CModal>
     </div>
   );
 };

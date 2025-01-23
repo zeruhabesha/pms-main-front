@@ -2,9 +2,9 @@ import React from 'react';
 import { CPagination, CPaginationItem } from '@coreui/react';
 
 const UserTablePagination = ({
-  currentPage,
-  itemsPerPage,
-  filteredUsers,
+    currentPage,
+    itemsPerPage,
+    filteredUsers,
     handlePageChange,
     totalPages
 }) => {

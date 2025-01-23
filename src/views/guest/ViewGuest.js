@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAllGuests } from '../../api/actions/guestActions';
 import {
     CRow,
     CCol,
@@ -9,101 +8,139 @@ import {
     CCardHeader,
     CCardBody,
     CAlert,
-    CSpinner
+    CSpinner,
 } from '@coreui/react';
-import '../Super.scss';  // Assuming you have Super.scss for styling
-import 'react-toastify/dist/ReactToastify.css'; // If you want to use toasts
+import '../Super.scss';
+import 'react-toastify/dist/ReactToastify.css';
+import { fetchGuestById } from '../../api/actions/guestActions';
+import { decryptData } from '../../api/utils/crypto';
 
 const ViewGuest = () => {
-  const { id } = useParams();
-  const dispatch = useDispatch();
-  const { guest, isLoading, isError, message } = useSelector(
-    (state) => state.guest
-  );
-  const [errorMessage, setErrorMessage] = useState('');
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
 
-  useEffect(() => {
-      const fetchGuest = async () => {
-          try {
-              await dispatch(fetchAllGuests(id));
-          } catch (err) {
-              setErrorMessage(err.message || 'Failed to fetch guest details');
-          }
-      };
+    const { guestDetails, loading, error } = useSelector((state) => ({
+        guestDetails: state.guest.guestDetails,
+        loading: state.guest.loading,
+        error: state.guest.error,
+    }));
 
-      fetchGuest();
-  }, [dispatch, id]);
+    const [errorMessage, setErrorMessage] = useState('');
+     const [userPermissions, setUserPermissions] = useState(null);
 
-  return (
-    <CRow>
-      <CCol xs={12}>
-        <CCard className="mb-4">
-          <CCardHeader>
-            <strong>Guest Details</strong>
-          </CCardHeader>
-          <CCardBody>
-              {isLoading && (
-              <div className="text-center">
-                  <CSpinner color="primary" />
-                  <p>Loading guest details...</p>
-              </div>
-          )}
-              {errorMessage && (
-              <CAlert color="danger" className="mb-4">
-                {errorMessage}
-              </CAlert>
-          )}
-            {isError && (
-              <CAlert color="danger" className="mb-4">
-                {message}
-              </CAlert>
-            )}
+    useEffect(() => {
+         const encryptedUser = localStorage.getItem('user');
+        if (encryptedUser) {
+            const decryptedUser = decryptData(encryptedUser);
+            if (decryptedUser && decryptedUser.permissions) {
+                setUserPermissions(decryptedUser.permissions);
+            }
+        }
 
-            {!isLoading && !isError && guest && (
-              <div>
-                <p>
-                  <strong>Name:</strong> {guest.name}
-                </p>
-                <p>
-                  <strong>Email:</strong> {guest.email}
-                </p>
-                <p>
-                  <strong>Phone:</strong> {guest.phoneNumber}
-                </p>
-                <p>
-                  <strong>Arrival Date:</strong>{" "}
-                  {new Date(guest.arrivalDate).toLocaleDateString()}
-                </p>
-                <p>
-                  <strong>Departure Date:</strong>{" "}
-                  {new Date(guest.departureDate).toLocaleDateString()}
-                </p>
-                <p>
-                  <strong>Reason:</strong> {guest.reason}
-                </p>
-                <p>
-                  <strong>QR Code:</strong> {guest.qrCode}
-                </p>
-                <p>
-                  <strong>Access Code:</strong> {guest.accessCode}
-                </p>
-                  <p>
-                      <strong>Notes:</strong> {guest.notes}
-                  </p>
-                  <p>
-                      <strong>Status:</strong> {guest.status}
-                  </p>
-              </div>
-            )}
+        const fetchGuest = async () => {
+            try {
+                const response = await dispatch(fetchGuestById(id)).unwrap();
+                if (!response) {
+                    setErrorMessage('Guest details not found');
+                    navigate('/guests');
+                }
+            } catch (err) {
+                setErrorMessage(err.message || 'Failed to fetch guest details');
+                navigate('/guests');
+            }
+        };
+        fetchGuest();
+    }, [dispatch, id, navigate]);
 
-              {!isLoading && !isError && !guest && (
-                  <p>Guest not found.</p>
-              )}
-          </CCardBody>
-        </CCard>
-      </CCol>
-    </CRow>
-  );
+
+    return (
+        <CRow>
+            <CCol xs={12}>
+                <CCard className="mb-4">
+                    <CCardHeader className="d-flex justify-content-between align-items-center">
+                        <strong>Guest Details</strong>
+                        <div className="d-flex gap-2">
+                        {userPermissions?.addGuest && (
+                            <Link to="/guests/add" className="learn-more" style={{ textDecoration: 'none' }}>
+                                <span className="circle" aria-hidden="true">
+                                    <span className="icon arrow"></span>
+                                </span>
+                                <span className="button-text">Add Guest</span>
+                            </Link>
+                         )}
+
+                         <Link to="/guests" className="learn-more" style={{textDecoration: 'none'}}>
+                            <span className="circle" aria-hidden="true">
+                                <span className="icon arrow"></span>
+                            </span>
+                            <span className="button-text">Go Back</span>
+                         </Link>
+                     </div>
+                    </CCardHeader>
+                    <CCardBody>
+                        {errorMessage && (
+                            <CAlert color="danger" className="mb-4">
+                                {errorMessage}
+                            </CAlert>
+                        )}
+                        {loading && (
+                            <div className="text-center">
+                                <CSpinner color="primary" />
+                                <p>Loading guest details...</p>
+                            </div>
+                        )}
+                        {error && (
+                            <CAlert color="danger" className="mb-4">
+                                {error}
+                            </CAlert>
+                        )}
+
+                        {!loading && !error && guestDetails && (
+                            <div>
+                                <p>
+                                    <strong>Name:</strong> {guestDetails?.name}
+                                </p>
+                                <p>
+                                    <strong>Email:</strong> {guestDetails?.email}
+                                </p>
+                                <p>
+                                    <strong>Phone:</strong> {guestDetails?.phoneNumber}
+                                </p>
+                                <p>
+                                    <strong>Arrival Date:</strong>{" "}
+                                    {new Date(guestDetails?.arrivalDate).toLocaleDateString()}
+                                </p>
+                                <p>
+                                    <strong>Departure Date:</strong>{" "}
+                                    {new Date(guestDetails?.departureDate).toLocaleDateString()}
+                                </p>
+                                <p>
+                                    <strong>Reason:</strong> {guestDetails?.reason}
+                                </p>
+                                <p>
+                                    <strong>QR Code:</strong> {guestDetails?.qrCode}
+                                </p>
+                                <p>
+                                    <strong>Access Code:</strong> {guestDetails?.accessCode}
+                                </p>
+                                <p>
+                                    <strong>Notes:</strong> {guestDetails?.notes}
+                                </p>
+                                <p>
+                                    <strong>Status:</strong> {guestDetails?.status}
+                                </p>
+                            </div>
+                        )}
+
+                        {!loading && !error && !guestDetails && (
+                            <p>Guest not found.</p>
+                        )}
+                    </CCardBody>
+                </CCard>
+            </CCol>
+        </CRow>
+    );
 };
 
 export default ViewGuest;

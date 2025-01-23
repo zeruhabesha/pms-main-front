@@ -29,11 +29,13 @@ const PropertySelect = ({ value, onChange, required }) => {
             <option value="" disabled>
                 Select Property
             </option>
-            {properties?.map((property) => (
-                <option key={property._id} value={property._id}>
-                    {property.title}
-                </option>
-            ))}
+ {properties?.map((property) => (
+    <option key={property._id} value={property._id}>
+        {property.title}
+    </option>
+))}
+
+
         </CFormSelect>
     );
 };

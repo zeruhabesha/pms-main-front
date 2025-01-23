@@ -1,4 +1,3 @@
-// components/complaints/ComplaintModal.js
 import React, { useEffect, useState, useCallback } from "react";
 import {
     CFormInput,
@@ -23,6 +22,15 @@ import { useNavigate } from "react-router-dom";
 import { filterProperties } from "../../api/actions/PropertyAction";
 import { addComplaint, updateComplaint } from "../../api/actions/ComplaintAction";
 import PropertySelect from "./PropertySelect";
+import {
+    cilUser,
+    cilHome,
+    cilList,
+    cilInfo,
+    cilDescription,
+    cilPaperclip
+} from '@coreui/icons';
+import { CIcon } from '@coreui/icons-react';
 
 const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
     const dispatch = useDispatch();
@@ -89,22 +97,22 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
     }, [editingComplaint]);
 
 
-    const handleChange = (e) => {
-        const { name, value, type, files } = e.target;
+     const handleChange = (e) => {
+         const { name, value, type, files } = e.target;
 
-        if (type === 'file') {
-            if (files.length > 5) {
-                setError('You can only upload a maximum of 5 files.');
-                return;
-            }
-            setFormData((prev) => ({
-                ...prev,
-                supportingFiles: Array.from(files),
-            }));
-        } else {
-            setFormData((prev) => ({ ...prev, [name]: value }));
-        }
-    };
+          if (type === 'file') {
+              if (files.length > 5) {
+                  setError('You can only upload a maximum of 5 files.');
+                  return;
+              }
+              setFormData((prev) => ({
+                  ...prev,
+                  supportingFiles: Array.from(files),
+              }));
+          } else {
+              setFormData((prev) => ({ ...prev, [name]: value }));
+          }
+      };
 
     const handleNestedChange = (parent, field, value) => {
         setFormData((prev) => ({
@@ -120,9 +128,11 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
     const handlePropertyChange = (e) => {
         setFormData((prev) => ({
             ...prev,
-            property: e.target.value
+            property: e.target.value, // This must be the _id of the property
         }));
     };
+      
+    
 
     const validateForm = () => {
         if (!formData.property) return "Please select a property.";
@@ -131,39 +141,35 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
         return null;
     };
 
-    const handleSubmit = async () => {
-        setError(null);
-        const validationError = validateForm();
-        if (validationError) {
-            setError(validationError);
-            return;
-        }
 
+    const handleSubmit = async () => {
+        console.log('Form Data Before Submit:', formData);
+    
         try {
-            setIsLoading(true);
             const submissionData = new FormData();
-            Object.keys(formData).forEach((key) => {
-                if (key === "supportingFiles") {
-                    formData.supportingFiles.forEach((file) => {
-                        submissionData.append(key, file);
-                    });
-                } else {
-                    submissionData.append(key, formData[key]);
-                }
-            });
-            if (editingComplaint && editingComplaint._id) {
-                await dispatch(updateComplaint({ id: editingComplaint._id, complaintData: submissionData })).unwrap();
-            } else {
-                await dispatch(addComplaint(submissionData)).unwrap();
+            submissionData.append('tenant', formData.tenant);
+            submissionData.append('property', formData.property); // This must be an ObjectId
+            submissionData.append('complaintType', formData.complaintType);
+            submissionData.append('description', formData.description);
+            submissionData.append('priority', formData.priority);
+            submissionData.append('feedback', formData.feedback);
+    
+            if (formData.supportingFiles?.length > 0) {
+                formData.supportingFiles.forEach((file) =>
+                    submissionData.append('supportingFiles', file)
+                );
             }
+    
+            console.log([...submissionData]); // Inspect the submitted data
+            await dispatch(addComplaint(submissionData)).unwrap();
             handleClose();
         } catch (error) {
-            setError("Failed to submit complaint.");
+            console.error('Submit Error:', error);
+            setError('Failed to submit complaint.');
         }
-         finally {
-             setIsLoading(false);
-         }
     };
+    
+    
 
     const handleClose = () => {
         setFormData({
@@ -202,7 +208,7 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
 
                             <CRow className="g-4">
                                 <CCol xs={12} className="form-group">
-                                    <CFormLabel htmlFor="tenant">Tenant ID</CFormLabel>
+                                    <CFormLabel htmlFor="tenant"><CIcon icon={cilUser} className="me-1" />Tenant ID</CFormLabel>
                                     <CFormInput
                                         id="tenant"
                                         name="tenant"
@@ -212,17 +218,19 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                                         className="form-control-animation"
                                     />
                                 </CCol>
-                                <CCol xs={12}>
-                                  <CFormLabel htmlFor="property">Property</CFormLabel>
-                                 <PropertySelect
-                                    value={formData.property}
-                                    onChange={handlePropertyChange}
-                                    required
-                                  />
-                                </CCol>
+
+ <CCol xs={12}>
+     <CFormLabel htmlFor="property"><CIcon icon={cilHome} className="me-1"/>Property</CFormLabel>
+     <PropertySelect
+    value={formData.property}
+    onChange={handlePropertyChange}
+    required
+/>
+
+</CCol>
 
                                 <CCol xs={12}>
-                                    <CFormLabel htmlFor="complaintType">Type of Complaint</CFormLabel>
+                                    <CFormLabel htmlFor="complaintType"><CIcon icon={cilList} className="me-1" />Type of Complaint</CFormLabel>
                                     <CFormSelect
                                         id="complaintType"
                                         name="complaintType"
@@ -238,7 +246,7 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                                     </CFormSelect>
                                 </CCol>
                                 <CCol xs={12} className="form-group">
-                                    <CFormLabel htmlFor="priority">Priority Level</CFormLabel>
+                                    <CFormLabel htmlFor="priority"><CIcon icon={cilInfo} className="me-1" />Priority Level</CFormLabel>
                                     <CFormSelect
                                         id="priority"
                                         name="priority"
@@ -254,7 +262,7 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                                     </CFormSelect>
                                 </CCol>
                                 <CCol xs={12}>
-                                    <CFormLabel htmlFor="description">Description</CFormLabel>
+                                    <CFormLabel htmlFor="description"><CIcon icon={cilDescription} className="me-1" />Description</CFormLabel>
                                     <CFormInput
                                         id="description"
                                         name="description"
@@ -263,7 +271,7 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                                         placeholder="Enter description"
                                     />
                                 </CCol>
-                                <CCol xs={12} className="form-group">
+                                {/* <CCol xs={12} className="form-group">
                                     <CFormLabel htmlFor="feedback">Feedback</CFormLabel>
                                     <CFormInput
                                         id="feedback"
@@ -274,9 +282,9 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                                         onChange={handleChange}
                                         className="form-control-animation"
                                     />
-                                </CCol>
+                                </CCol> */}
                                 <CCol xs={12}>
-                                    <CFormLabel htmlFor="supportingFiles">Upload Files</CFormLabel>
+                                    <CFormLabel htmlFor="supportingFiles"><CIcon icon={cilPaperclip} className="me-1" />Upload Files</CFormLabel>
                                     <CFormInput
                                         id="supportingFiles"
                                         name="supportingFiles"

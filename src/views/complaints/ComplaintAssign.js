@@ -19,51 +19,46 @@ import {
     CInputGroup,
     CInputGroupText,
 } from '@coreui/react';
-import { fetchMaintainers } from '../../api/actions/userActions';
+import { fetchInspectors } from '../../api/actions/userActions';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import './MaintenanceAssign.scss';
+import './ComplaintAssign.scss';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { cilCalendar } from '@coreui/icons';
 import { CIcon } from '@coreui/icons-react';
 
-const MaintenanceAssign = ({ maintenance, onAssign }) => {
+const ComplaintAssign = ({ complaintId, onAssign, onClose }) => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
-    const [selectedUsers, setSelectedUsers] = useState([]);
+    const [selectedUser, setSelectedUser] = useState(null);
     const [schedule, setSchedule] = useState({ date: '', time: '' });
     const [estimatedCompletion, setEstimatedCompletion] = useState({ date: '', time: '' });
-    const [searchTerm, setSearchTerm] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
+      const [searchTerm, setSearchTerm] = useState('');
+      const [currentPage, setCurrentPage] = useState(1);
     const [error, setError] = useState(null);
-    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-    const searchInputRef = useRef(null);
-    const { maintainers = [], loading, error: fetchError } = useSelector(
-        (state) => state.user
-    );
+     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+      const searchInputRef = useRef(null);
 
+    const { inspectors = [], loading, error: fetchError } = useSelector((state) => state.user);
     const itemsPerPage = 5;
 
-    useEffect(() => {
+
+      useEffect(() => {
         const fetchData = async () => {
-            try {
-                await dispatch(fetchMaintainers({ page: 1, limit: 50 }));
-            } catch (err) {
-                console.error('Error fetching maintainers:', err);
-                setError('Failed to fetch maintainers');
-            }
+          try {
+            await dispatch(fetchInspectors({ page: 1, limit: 50 }));
+          } catch (err) {
+            console.error('Error fetching inspectors:', err);
+            setError('Failed to fetch inspectors');
+          }
         };
         fetchData();
-    }, [dispatch]);
+      }, [dispatch]);
 
     const handleCheckboxChange = (userId) => {
-        setSelectedUsers((prevSelected) =>
-            prevSelected.includes(userId) ? [] : [userId]
-        );
+        setSelectedUser(userId);
     };
 
-    const handleScheduleChange = (field, value, type) => {
+   const handleScheduleChange = (field, value, type) => {
         if (type === 'preferredAccessTimes') {
             setSchedule((prevSchedule) => ({ ...prevSchedule, [field]: value }));
         } else if (type === 'estimatedCompletionTime') {
@@ -71,78 +66,70 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
         }
     };
 
-    const handleAssignUsers = useCallback(async (e) => {
-        e.preventDefault(); // Prevent default form submission
-
-        if (selectedUsers.length !== 1) {
-            setError('Please select exactly one user to assign.');
-            return;
-        }
-
-        if (!schedule.date || !schedule.time) {
-            setError('Please provide both a date and time for the schedule.');
-            return;
-        }
-        if (!estimatedCompletion.date || !estimatedCompletion.time) {
+    const handleAssignUser = useCallback(async (e) => {
+      e.preventDefault();
+      if (!selectedUser) {
+        setError('Please select a user to assign.');
+        return;
+      }
+      if (!schedule.date || !schedule.time) {
+        setError('Please provide both a date and time for the schedule.');
+        return;
+      }
+       if (!estimatedCompletion.date || !estimatedCompletion.time) {
             setError('Please provide both a date and time for the estimated completion.');
             return;
         }
-        try {
-            const assignedMaintainer = maintainers.find((user) => user._id === selectedUsers[0]);
-            const preferredAccessTimes = new Date(`${schedule.date}T${schedule.time}`);
+
+      try {
+        const assignedInspector = inspectors.find((user) => user._id === selectedUser);
+          const preferredAccessTimes = new Date(`${schedule.date}T${schedule.time}`);
             const estimatedCompletionTime = new Date(`${estimatedCompletion.date}T${estimatedCompletion.time}`);
 
-            if (!assignedMaintainer) {
-                setError('Error, the selected user was not found in the database, please try again.');
-                return;
-            }
+
+          if (!assignedInspector) {
+            setError('Error, the selected user was not found in the database, please try again.');
+            return;
+          }
             const updatedData = {
-                assignedTo: assignedMaintainer._id,
+                assignedTo: assignedInspector._id,
                 preferredAccessTimes: preferredAccessTimes.toISOString(),
                 estimatedCompletionTime: estimatedCompletionTime.toISOString(),
-                status: 'In Progress',
             };
-            await onAssign(maintenance._id, updatedData);
-             navigate('/maintenance');
-            setSelectedUsers([]);
-            setSchedule({ date: '', time: '' });
-            setEstimatedCompletion({ date: '', time: '' });
-            setError(null);
-        } catch (error) {
-            setError('Failed to assign users with a schedule.');
-            console.error('Assign error:', error);
-        }
-    }, [maintenance, selectedUsers, schedule, navigate, onAssign, maintainers, estimatedCompletion]);
+        await onAssign(complaintId, updatedData);
+            onClose()
+          setError(null);
+        setSelectedUser(null);
+          setSchedule({ date: '', time: '' });
+          setEstimatedCompletion({date: '', time: ''});
+      } catch (error) {
+        setError('Failed to assign user.');
+        console.error('Assign error:', error);
+      }
+    }, [complaintId, selectedUser, schedule, inspectors, onAssign,onClose, estimatedCompletion]);
+    
 
-    const handleClose = useCallback(() => {
-        navigate('/maintenance');
-         setSelectedUsers([]);
-            setSchedule({ date: '', time: '' });
-            setEstimatedCompletion({ date: '', time: '' });
-        setError(null);
-    }, [navigate]);
-
-    const filteredMaintainers = maintainers.filter((user) =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredInspectors = inspectors.filter((user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const totalPages = Math.ceil(filteredMaintainers.length / itemsPerPage);
-    const paginatedMaintainers = filteredMaintainers.slice(
+      const totalPages = Math.ceil(filteredInspectors.length / itemsPerPage);
+    const paginatedInspectors = filteredInspectors.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
+      const handleSearchClick = () => {
+           setIsSearchExpanded(!isSearchExpanded);
+            if (!isSearchExpanded && searchInputRef.current) {
+                 searchInputRef.current.focus();
+            }
+        };
 
-    const handleSearchClick = () => {
-        setIsSearchExpanded(!isSearchExpanded);
-        if (!isSearchExpanded && searchInputRef.current) {
-            searchInputRef.current.focus();
-        }
-    };
 
     return (
-        <div className="maintenance-assign-container">
+        <div className="complaint-assign-container">
             <div className="text-center mt-4">
-                <h2 className="assign-title">Assign User to Maintenance Request</h2>
+                <h2 className="assign-title">Assign User to Complaint</h2>
             </div>
             <div className="alert-container">
                 {error && (
@@ -161,7 +148,7 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
                     <FontAwesomeIcon icon={faSearch} className="search-icon" onClick={handleSearchClick} />
                     <CFormInput
                         type="text"
-                        placeholder="Search maintainers..."
+                        placeholder="Search inspectors..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="search-input"
@@ -169,8 +156,8 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
                     />
                 </div>
             </div>
-            <div className="form-container mb-4">
-                <CForm onSubmit={handleAssignUsers}>
+           <div className="form-container mb-4">
+                <CForm onSubmit={handleAssignUser}>
                     <CRow className="">
                         <CCol md={6}>
                             <CFormLabel htmlFor="schedule-date">Schedule Date</CFormLabel>
@@ -243,58 +230,54 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
                             </CInputGroup>
                         </CCol>
                     </CRow>
-                
-            
-                 <div className="table-container">
-                <CTable striped bordered hover className="user-table">
-                    <CTableHead>
-                        <CTableRow>
-                            <CTableHeaderCell>Select</CTableHeaderCell>
-                            <CTableHeaderCell>Name</CTableHeaderCell>
-                            <CTableHeaderCell>Email</CTableHeaderCell>
-                            <CTableHeaderCell>Role</CTableHeaderCell>
-                        </CTableRow>
-                    </CTableHead>
-                    <CTableBody>
-                        {loading && (
+           
+                    <div className="table-container">
+                    <CTable striped bordered hover className="user-table">
+                        <CTableHead>
                             <CTableRow>
-                                <CTableDataCell colSpan="4">Loading maintainers...</CTableDataCell>
+                                <CTableHeaderCell>Select</CTableHeaderCell>
+                                <CTableHeaderCell>Name</CTableHeaderCell>
+                                <CTableHeaderCell>Email</CTableHeaderCell>
+                                <CTableHeaderCell>Role</CTableHeaderCell>
                             </CTableRow>
-                        )}
-                        {!loading &&
-                            paginatedMaintainers.map((user) => {
-                                const isSelected = selectedUsers.includes(user._id);
-                                const isDisabled = selectedUsers.length > 0 && !isSelected;
-
-                                return (
-                                    <CTableRow
-                                        key={user._id}
-                                        className={`user-row ${isDisabled ? 'blurred-row' : ''}`}
-                                    >
-                                        <CTableDataCell>
-                                            <CFormCheck
-                                                className="user-checkbox"
-                                                id={`user-checkbox-${user._id}`}
-                                                onChange={() => handleCheckboxChange(user._id)}
-                                                checked={isSelected}
-                                                disabled={isDisabled && !isSelected}
-                                            />
-                                        </CTableDataCell>
-                                        <CTableDataCell>{user.name}</CTableDataCell>
-                                        <CTableDataCell>{user.email}</CTableDataCell>
-                                        <CTableDataCell>{user.role}</CTableDataCell>
-                                    </CTableRow>
-                                );
-                            })}
-                        {!loading && paginatedMaintainers.length === 0 && (
-                            <CTableRow>
-                                <CTableDataCell colSpan="4">No maintainers found.</CTableDataCell>
-                            </CTableRow>
-                        )}
-                    </CTableBody>
-                </CTable>
-            </div>
-              <div className="pagination-container d-flex justify-content-end">
+                        </CTableHead>
+                        <CTableBody>
+                            {loading && (
+                                <CTableRow>
+                                    <CTableDataCell colSpan="4">Loading inspectors...</CTableDataCell>
+                                </CTableRow>
+                            )}
+                            {!loading &&
+                                paginatedInspectors.map((user) => {
+                                    const isSelected = selectedUser === user._id;
+                                    return (
+                                        <CTableRow
+                                            key={user._id}
+                                            className={`user-row`}
+                                        >
+                                            <CTableDataCell>
+                                                <CFormCheck
+                                                    className="user-checkbox"
+                                                    id={`user-checkbox-${user._id}`}
+                                                    onChange={() => handleCheckboxChange(user._id)}
+                                                    checked={isSelected}
+                                                />
+                                            </CTableDataCell>
+                                            <CTableDataCell>{user.name}</CTableDataCell>
+                                            <CTableDataCell>{user.email}</CTableDataCell>
+                                            <CTableDataCell>{user.role}</CTableDataCell>
+                                        </CTableRow>
+                                    );
+                                })}
+                            {!loading && paginatedInspectors.length === 0 && (
+                                <CTableRow>
+                                    <CTableDataCell colSpan="4">No inspectors found.</CTableDataCell>
+                                </CTableRow>
+                            )}
+                        </CTableBody>
+                    </CTable>
+                </div>
+                  <div className="pagination-container d-flex justify-content-end">
                 <CPagination>
                     <CPaginationItem
                         disabled={currentPage === 1}
@@ -331,18 +314,18 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
                     </CPaginationItem>
                 </CPagination>
             </div>
-                    <div className="button-container d-flex justify-content-end mt-4 gap-2 w-75 mx-auto">
-                            <CButton color="secondary" onClick={handleClose} className="cancel-button">
+                      <div className="button-container d-flex justify-content-end mt-4 gap-2 w-75 mx-auto">
+                        <CButton color="secondary" onClick={onClose} className="cancel-button">
                             Cancel
                         </CButton>
                         <CButton color="dark" type="submit" className="assign-button">
                             Assign
                         </CButton>
                 </div>
-                </CForm>
+                 </CForm>
             </div>
-          </div>
+       </div>
     );
 };
 
-export default MaintenanceAssign;
+export default ComplaintAssign;

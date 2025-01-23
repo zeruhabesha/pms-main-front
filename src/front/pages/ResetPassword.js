@@ -14,73 +14,86 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-// import { resetPassword } from '../../api/actions/authActions'; // import your reset password action
+import { resetPassword } from '../../api/actions/authActions';
+import { decryptData } from '../../api/utils/crypto'; // Import decryptData
 import backgroundImage from '../../assets/images/hero-bg-abstract.jpg';
-import logo from '../../assets/images/logo-dark.png'; // Import the logo
+import logo from '../../assets/images/logo-dark.png';
 import { FaLongArrowAltRight } from 'react-icons/fa';
+import { clearError } from '../../api/slice/authSlice';
+
 
 const ResetPassword = () => {
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [errors, setErrors] = useState({});
-    const dispatch = useDispatch();
-    const navigate = useNavigate();
-    const auth = useSelector((state) => state.auth) || {};
-    const { loading, error } = auth;
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errors, setErrors] = useState({});
+  const [resetCode, setResetCode] = useState('');
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const auth = useSelector((state) => state.auth) || {};
+  const { loading, error } = auth;
 
+  // Decrypt the user data from localStorage
+  const encryptedUser = localStorage.getItem('user');
+  const user = encryptedUser ? decryptData(encryptedUser) : null;
 
-    const validate = () => {
-      const errors = {};
-        if(!newPassword) errors.newPassword = "Password is required";
-        if(!confirmPassword) errors.confirmPassword = "Confirm password is required";
-      if (newPassword !== confirmPassword) {
-        errors.confirmPassword = "Passwords do not match";
-      }
-        return errors;
-    };
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const validationErrors = validate();
-        if(Object.keys(validationErrors).length > 0 ) {
-            setErrors(validationErrors);
-            return;
-        }
-        try {
-            // const result = await dispatch(resetPassword({newPassword})).unwrap(); // Dispatch your action
-            toast.success('Password reset successful!', { autoClose: 2000, position: 'top-right' });
-            if (result.token) {
-               navigate('/dashboard', { replace: true });
-               setTimeout(() => {
-                  window.location.reload();
-                }, 100);
-          }
-           else {
-            throw new Error('Password reset failed: No token returned');
-          }
-        } catch (error) {
-          const errorMessage = error.response?.data?.message || 'An error occurred during password reset';
-            setErrors({ general: errorMessage });
-          toast.error(errorMessage, { autoClose: 3000, position: 'top-right' });
-        }
-    };
+  const validate = () => {
+    const errors = {};
+    if (!newPassword) errors.newPassword = 'Password is required';
+    if (!confirmPassword) errors.confirmPassword = 'Confirm password is required';
+    if (!resetCode) errors.resetCode = 'Reset code is required';
+    if (newPassword !== confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match';
+    }
+    return errors;
+};
 
-    return (
-      <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
-      {/* Background with blur effect */}
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundImage: `url(${backgroundImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(5px)',
-            zIndex: -1,
-        }}
-        />
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const validationErrors = validate();
+  if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+  }
+  try {
+      const result = await dispatch(resetPassword({ userId: user._id, newPassword, resetCode })).unwrap();
+      toast.success('Password reset successful!', { autoClose: 2000, position: 'top-right' });
+      dispatch(clearError());
+      navigate('/login', { replace: true });
+  } catch (err) {
+      const errorMessage = err?.response?.data?.message || 'An error occurred during password reset';
+      setErrors({ general: errorMessage });
+      toast.error(errorMessage, { autoClose: 3000, position: 'top-right' });
+  }
+};
+
+if (!user) {
+  return (
+      <CContainer className="text-center">
+          <h2>No user information found. Please log in again.</h2>
+          <CButton color="primary" onClick={() => navigate('/login')}>
+              Back to Login
+          </CButton>
+      </CContainer>
+  );
+}
+
+return (
+  <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
+       {/* Background with blur effect */}
+       <div
+                style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundImage: `url(${backgroundImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: 'blur(5px)',
+                    zIndex: -1,
+                }}
+            />
 
     {/* Foreground content */}
         <CContainer
@@ -144,6 +157,29 @@ const ResetPassword = () => {
           </motion.h1>
             <CCardBody style={{ padding: '2rem' }}>
                 <CForm onSubmit={handleSubmit}>
+                    <div style={{ marginBottom: '1rem' }}>
+                         <CFormLabel htmlFor="resetCode">Reset Code</CFormLabel>
+                         <CFormInput
+                            type="text"
+                            id="resetCode"
+                            placeholder="Enter your reset code"
+                            value={resetCode}
+                            onChange={(e) => setResetCode(e.target.value)}
+                            invalid={!!errors.resetCode}
+                         />
+                         {errors.resetCode && (
+                              <CAlert
+                                color="danger"
+                                style={{
+                                    backgroundColor: '#dc3545',
+                                    color: '#fff',
+                                    textAlign: 'center',
+                              }}
+                              >
+                               {errors.resetCode}
+                              </CAlert>
+                          )}
+                    </div>
                     <div style={{ marginBottom: '1rem' }}>
                         <CFormLabel htmlFor="newPassword">New Password</CFormLabel>
                          <CFormInput
@@ -224,7 +260,7 @@ const ResetPassword = () => {
                          </CButton>
                     </motion.div>
                 </CForm>
-                    <p className="mt-4 text-center">
+                     <p className="mt-4 text-center">
                         <a
                             href="/"
                           style={{
@@ -235,18 +271,18 @@ const ResetPassword = () => {
                              Home
                             <FaLongArrowAltRight style={{ marginLeft: 5 }} />
                         </a>
-                  
-                        <a
-                            href="/#/login"
+
+                       <a
+                             href="/#/login"
                           style={{
-                            color: 'black',
-                            textDecoration: 'none',
-                          }}
+                                color: 'black',
+                                textDecoration: 'none',
+                             }}
                            >
                              Login
                             <FaLongArrowAltRight style={{ marginLeft: 5 }} />
                         </a>
-                    </p>
+                 </p>
             </CCardBody>
         </CCard>
         </CContainer>

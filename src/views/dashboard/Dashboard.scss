@@ -13,11 +13,11 @@
             padding: 1.2rem;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: transform 0.2s ease; /* Removed shadow transition */
                 
             &:hover {
                 transform: translateY(-2px);
-               box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+               /* Removed shadow on hover */
            }
   
   
@@ -62,7 +62,7 @@
   
     .animated-card:hover{
         transform: translateY(-2px);
-         box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+      /*   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1); */ /* Removed shadow on hover */
     }
   
    /* Colored card Styles */

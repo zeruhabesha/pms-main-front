@@ -1,7 +1,7 @@
 import React from 'react';
 import { CModal, CModalBody, CModalHeader, CModalTitle, CModalFooter, CButton } from '@coreui/react';
 
-const SuperAdminDeleteModal = ({ visible, setDeleteModalVisible, adminToDelete, confirmDelete }) => {
+const UserDeleteModal = ({ visible, setDeleteModalVisible, adminToDelete, confirmDelete }) => {
   return (
     <CModal visible={visible} onClose={() => setDeleteModalVisible(false)}>
       <CModalHeader onClose={() => setDeleteModalVisible(false)}>
@@ -22,4 +22,4 @@ const SuperAdminDeleteModal = ({ visible, setDeleteModalVisible, adminToDelete, 
   );
 };
 
-export default SuperAdminDeleteModal;
+export default UserDeleteModal;

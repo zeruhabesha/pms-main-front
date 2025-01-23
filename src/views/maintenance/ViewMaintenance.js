@@ -20,6 +20,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useNavigate } from 'react-router-dom';
 import MaintenanceDetailsModal from './MaintenanceDetailsModal';
+import MaintenanceDeleteModal from './MaintenanceDeleteModal';
+import { fetchMaintenanceById } from '../../api/actions/MaintenanceActions';
 
 
 const ViewMaintenance = () => {
@@ -104,15 +106,34 @@ const ViewMaintenance = () => {
         }
     };
 
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+    const [maintenanceToDelete, setMaintenanceToDelete] = useState(null);
 
-    const handleDelete = async (maintenanceToDelete) => {
-         if (maintenanceToDelete?._id) {
-            try {
+    // const handleDelete = async (maintenanceToDelete) => {
+    //      if (maintenanceToDelete?._id) {
+    //         try {
+    //             await dispatch(deleteMaintenance(maintenanceToDelete._id));
+    //             fetchMaintenanceRequests();
+    //         } catch (error) {
+    //             console.error('Delete error', error);
+    //         }
+    //     }
+    // };
+
+    const handleDelete = (maintenance) => {
+        setMaintenanceToDelete(maintenance);
+        setDeleteModalVisible(true);
+    };
+
+    const confirmDelete = async () => {
+        try {
+            if (maintenanceToDelete?._id) {
                 await dispatch(deleteMaintenance(maintenanceToDelete._id));
-                fetchMaintenanceRequests();
-            } catch (error) {
-                console.error('Delete error', error);
+                fetchMaintenanceRequests(); // Refresh the list
+                setDeleteModalVisible(false);
             }
+        } catch (error) {
+            console.error('Delete error:', error);
         }
     };
 
@@ -176,9 +197,29 @@ const ViewMaintenance = () => {
           navigate('/maintenance/add');
     };
    
-    const handleEdit = (maintenance) => {
-          navigate(`/maintenance/edit/${maintenance._id}`);
-      };
+    const handleEdit = async (maintenance) => {
+        try {
+            // If fetchMaintenanceById is a Redux action that returns a promise:
+            const response = await dispatch(fetchMaintenanceById(maintenance._id)).unwrap();
+    
+            // Check if the response contains data
+            if (response && response.data) {
+                navigate(`/maintenance/edit/${maintenance._id}`, {
+                    state: { editingRequest: response.data },
+                });
+            } else {
+                console.error('No data returned for the selected maintenance.');
+                alert('No data returned for the selected maintenance.');
+            }
+        } catch (error) {
+            console.error('Failed to fetch maintenance details for editing:', error);
+            alert('Failed to fetch maintenance details for editing. Please try again.');
+        }
+    };
+     
+    
+    
+      
       const handleEdit1 = (maintenance) => {
 
     };
@@ -296,6 +337,13 @@ const ViewMaintenance = () => {
                 setVisible={() => handleCloseModal('details')}
                 maintenance={modalStates.details.maintenance}
             />
+            <MaintenanceDeleteModal
+    visible={deleteModalVisible}
+    setDeleteModalVisible={setDeleteModalVisible}
+    maintenanceToDelete={maintenanceToDelete}
+    confirmDelete={confirmDelete}
+/>
+
         </CRow>
     );
 };

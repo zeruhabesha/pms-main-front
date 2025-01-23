@@ -2,7 +2,6 @@ import React from 'react';
 import {
     CRow,
     CCol,
-    CWidgetStatsC,
     CCard,
     CCardBody,
     CCardHeader,
@@ -14,36 +13,50 @@ import {
     CTableDataCell,
 } from '@coreui/react';
 import { CChartDoughnut, CChartBar } from '@coreui/react-chartjs';
-import styled from 'styled-components';
-import {generateBarChartSVG, generateSparkLineSVG } from './chartHelpers';
 import {
     cilPeople,
     cilBuilding,
     cilMoney,
-} from '@coreui/icons';
-import {
-    cilFile,
-    cilArrowTop,
-    cilArrowBottom,
-    cilCheckCircle,
-    cilBan,
-    cilPhone
+    cilTags,
+    cilBarChart,
+    cilGraph,
+    cilUserPlus,
+    cilWarning,
 } from '@coreui/icons';
 import CIcon from '@coreui/icons-react';
 import { useNavigate } from 'react-router-dom';
 import MainChart from "./MainChart";
-import {colors, fadeIn, slideInFromLeft, WidgetStatsContainer, AnimatedCard, ColoredCard, StyledTable, ViewAllButton, ChartContainer} from './styledComponents';
-
-
-
-const AdminDashboard = ({
+import {
+    colors,
+    fadeIn,
+    slideInFromLeft,
+    WidgetStatsContainer,
+    AnimatedCard,
+    ColoredCard,
+    StyledTable,
+    ViewAllButton,
+    ChartContainer,
+    EnhancedChartCard,
+    MetricCard,
+    CircularProgressWrapper,
+    EnhancedTable,
+    StatisticBox,
+    SummaryCard,
+    SparkLine,
+    LabeledValue,
+} from './styledComponents';
+import { generateBarChartSVG, generateSparkLineSVG } from './chartHelpers';
+import "./Dashboard.scss"
+import {  cilCheckCircle as cilCheckCircleIcon, cilClock, cilCalendar, cilList } from '@coreui/icons';
+ const AdminDashboard = ({
                            stats,
                            monthlyRevenue,
                            propertyTypesData,
                            recentProperties,
                            recentTenants,
                            maintenanceStatusData,
-                           getStatusIcon
+                            getStatusIcon,
+                           inspectionStats
                        }) => {
 
     const navigate = useNavigate();
@@ -55,61 +68,114 @@ const AdminDashboard = ({
     const handleViewAllTenants = () => {
         navigate('/tenants');
     };
+        const handleViewAllMaintenance = () => {
+            navigate('/maintenances');
+        };
+    const blurredText = {
+        filter: 'blur(5px)',
+        userSelect: 'none',
+    };
+
+    const summaryCardData = [
+        {
+          icon: cilBuilding,
+          label: "Total Properties",
+          value: "150", // Static Value
+          color: "green",
+        },
+        {
+          icon: cilPeople,
+          label: "Total Tenants",
+          value: "450", // Static Value
+          color: "blue",
+        },
+        {
+          icon: cilMoney,
+          label: "Monthly Revenue",
+          value: "$120,000", // Static Value
+          color: "orange",
+        },
+        {
+          icon: cilTags,
+          label: "Open Maintenance Tasks",
+          value: "35", // Static Value
+          color: "red",
+        },
+      ];
+      
+
+      const renderSummaryCard = (icon, label, value, color) => {
+        return (
+          <CCol sm={6} lg={3}>
+            <SummaryCard>
+              <div className="summary-content">
+                <div className="summary-icon">
+                  <CIcon icon={icon} height={36} style={{ color: color }} />
+                </div>
+                <LabeledValue label={label} value={value} />
+              </div>
+            </SummaryCard>
+          </CCol>
+        );
+      };
+
+      
     return (
         <>
+            {/* Top-Level Summary Metrics */}
+            {/* <CRow className="mb-4">
+
+                 {renderSummaryCard(cilBuilding, "Total Properties", stats?.properties?.toString(), colors.success)}
+                   {renderSummaryCard(cilPeople, "Total Tenants", stats?.tenants?.toString(), colors.info)}
+                    {renderSummaryCard(cilMoney, "Monthly Revenue", `$${stats?.revenue}`, colors.warning)}
+                     {renderSummaryCard(cilTags, "Open Maintenance Tasks", stats?.maintenanceTasks?.toString(), colors.red)}
+            </CRow> */}
             <CRow className="mb-4">
-                <CCol sm={6} lg={3}>
-                    <WidgetStatsContainer
-                        icon={<CIcon icon={cilBuilding} height={36} style={{ color: colors.success }} />}
-                        title="Total Properties"
-                        className="mb-4 widget-property"
-                        color="white"
-                        value={stats.properties.toString()}
-                        progress={{ color: 'secondary', value: 75 }}
-                    >
-                        <div className="widget-header">
-                            <CIcon icon={cilBuilding} height={36} className="icon" style={{ color: colors.success }} />
-                            <span className="title">Total Properties</span>
+      {summaryCardData.map((data, index) =>
+        renderSummaryCard(data.icon, data.label, data.value, data.color)
+      )}
+    </CRow>
+              {/* Secondary Metrics and Trends */}
+            <CRow className="mb-4">
+                 <CCol md={4}>
+                    <MetricCard gradient="linear-gradient(45deg, #FF6B6B, #FF8E53)">
+                        <div className="metric-header">
+                            <CIcon icon={cilGraph} height={24} style={{marginRight: '0.5em'}}/>
+                            <h4>Revenue Growth</h4>
                         </div>
-                        <div className="value">{stats.properties.toString()}</div>
-                    </WidgetStatsContainer>
-                </CCol>
-                <CCol sm={6} lg={3}>
-                    <WidgetStatsContainer
-                        className="mb-4 widget-tenants"
-                        color="white"
-                        value={stats.tenants.toString()}
-                        title="Total Tenants"
-                        icon={<CIcon icon={cilPeople} height={36} style={{ color: colors.info }} />}
-                        progress={{ color: 'secondary', value: 75 }}
-                    >
-                        <div className="widget-header">
-                            <CIcon icon={cilPeople} height={36} className="icon" style={{ color: colors.info }} />
-                            <span className="title">Total Tenants</span>
+                         <div className="metric-body">
+                            {/* For now, just a placeholder */}
+                             <div> <SparkLine data={[10, 20, 15, 25, 30, 22, 28]} /></div>
                         </div>
-                        <div className="value">{stats.tenants.toString()}</div>
-                    </WidgetStatsContainer>
-                </CCol>
-                <CCol sm={6} lg={3}>
-                    <WidgetStatsContainer
-                        className="mb-4 widget-revenue"
-                        color="white"
-                        value={`$${stats.revenue}`}
-                        title="Monthly Revenue"
-                        icon={<CIcon icon={cilMoney} height={36} style={{ color: colors.warning }} />}
-                        progress={{ color: 'secondary', value: 75 }}
-                    >
-                        <div className="widget-header">
-                            <CIcon icon={cilMoney} height={36} className="icon" style={{ color: colors.warning }} />
-                            <span className="title">Monthly Revenue</span>
+                    </MetricCard>
+                 </CCol>
+                   <CCol md={4}>
+                    <MetricCard gradient="linear-gradient(45deg, #42A5F5, #64B5F6)">
+                        <div className="metric-header">
+                            <CIcon icon={cilUserPlus} height={24} style={{marginRight: '0.5em'}}/>
+                             <h4>New Tenants</h4>
                         </div>
-                        <div className="value">{`$${stats.revenue}`}</div>
-                        <span className="trend-arrow up">▲ 10%</span>
-                    </WidgetStatsContainer>
+                        <div className="metric-body">
+                            {/* For now, just a placeholder */}
+                            <div> <SparkLine data={[5, 8, 6, 10, 12, 15, 11]}/></div>
+                        </div>
+                    </MetricCard>
                 </CCol>
-               
+                <CCol md={4}>
+                    <MetricCard gradient="linear-gradient(45deg, #FFCA28, #FFD54F)">
+                         <div className="metric-header">
+                            <CIcon icon={cilWarning} height={24} style={{marginRight: '0.5em'}}/>
+                             <h4>Pending Requests</h4>
+                        </div>
+                         <div className="metric-body">
+                             <LabeledValue value={stats?.pendingRequests?.toString()} />
+                            {/* For now, just a placeholder */}
+                        </div>
+                    </MetricCard>
+                </CCol>
             </CRow>
-            <CRow>
+            {/* Charts and Analysis */}
+            <CRow className="mb-4">
                 <CCol lg={6}>
                     <AnimatedCard className="chart-card">
                         <CCardHeader className="chart-header">Property Distribution</CCardHeader>
@@ -130,31 +196,33 @@ const AdminDashboard = ({
                             </ChartContainer>
                         </CCardBody>
                     </AnimatedCard>
-                </CCol>
-                <CCol lg={6}>
-                    <AnimatedCard className="chart-card">
-                        <CCardHeader className="chart-header">Monthly Revenue</CCardHeader>
-                        <CCardBody className="chart-body">
-                            <ChartContainer>
-                                <CChartBar
-                                    data={monthlyRevenue}
-                                    options={{
-                                        plugins: {
-                                            legend: { display: true, position: 'bottom' },
-                                        },
-                                        scales: {
-                                            x: { grid: { display: false } },
-                                            y: { beginAtZero: true },
-                                        },
-                                        animation: {
-                                            duration: 1500,
-                                            easing: 'easeOutBounce',
-                                        },
-                                    }}
-                                />
-                            </ChartContainer>
+                 </CCol>
+                   <CCol lg={6}>
+                     <AnimatedCard className="chart-card">
+                         <CCardHeader className="chart-header">Monthly Revenue</CCardHeader>
+                         <CCardBody className="chart-body">
+                           <ChartContainer>
+                            <CChartBar
+                                data={monthlyRevenue}
+                                options={{
+                                    plugins: {
+                                        legend: { display: true, position: 'bottom' },
+                                    },
+                                    scales: {
+                                        x: { grid: { display: false } },
+                                        y: { beginAtZero: true },
+                                    },
+                                    animation: {
+                                        duration: 1500,
+                                        easing: 'easeOutBounce',
+                                    },
+                                }}
+                            />
+                             </ChartContainer>
                         </CCardBody>
                     </AnimatedCard>
+                </CCol>
+                 <CCol lg={6}>
                     <AnimatedCard className="chart-card">
                         <CCardHeader className="chart-header">Maintenance Status</CCardHeader>
                         <CCardBody className="chart-body">
@@ -174,48 +242,56 @@ const AdminDashboard = ({
                             </ChartContainer>
                         </CCardBody>
                     </AnimatedCard>
+                 </CCol>
+                 <CCol lg={6}>
+                    <AnimatedCard className="chart-card">
+                        <CCardHeader className="chart-header">
+                            <CIcon icon={cilBarChart} className="me-2" />
+                            General Activity
+                        </CCardHeader>
+                        <CCardBody className="chart-body">
+                            <MainChart />
+                        </CCardBody>
+                    </AnimatedCard>
                 </CCol>
             </CRow>
-            <CRow>
-                <CCol xs={12} sm={6} lg={3}>
-                    <ColoredCard className="mb-4 widget-pending">
-                        <div className="border-start border-start-4  py-1 px-3">
-                            <div className="text-body-secondary text-truncate small">Pending Requests</div>
-                            <div className="fs-5 fw-semibold">{stats.pendingRequests.toString()}</div>
-                            <div className="chart-container">{generateSparkLineSVG([1,3,5,8,6], 60, 20, colors.white)}</div>
+<CRow className="mb-4">
+           <CCol sm={6} lg={3}>
+                    <SummaryCard>
+                         <div className="summary-content">
+                            <div className="summary-icon"><CIcon icon={cilCheckCircleIcon} height={36} style={{ color: colors.success }} /></div>
+                             <LabeledValue label="Completed Inspections" value={<span style={blurredText}>{inspectionStats?.completedInspections}</span>}/>
                         </div>
-                    </ColoredCard>
-                </CCol>
-                <CCol xs={12} sm={6} lg={3}>
-                    <ColoredCard className="mb-4 widget-new-tenants">
-                        <div className="border-start border-start-4  py-1 px-3">
-                            <div className="text-body-secondary text-truncate small">New Tenants This Month</div>
-                            <div className="fs-5 fw-semibold">{stats.newTenants.toString()}</div>
-                            <div className="chart-container">{generateSparkLineSVG([1,3,10,9,12], 60, 20, colors.white)}</div>
-                        </div>
-                    </ColoredCard>
-                </CCol>
-                <CCol xs={12} sm={6} lg={3}>
-                    <ColoredCard className="mb-4 widget-avg-rent">
-                        <div className="border-start border-start-4 py-1 px-3">
-                            <div className="text-body-secondary text-truncate small">Average Rent</div>
-                            <div className="fs-5 fw-semibold">${stats.avgRent}</div>
-                            <div className="chart-container">{generateSparkLineSVG([1400, 1500, 1600, 1550, 1700], 60, 20, colors.white)}</div>
-                        </div>
-                    </ColoredCard>
+                    </SummaryCard>
                 </CCol>
                 <CCol sm={6} lg={3}>
-                    <ColoredCard className="mb-4 widget-maintenance-task">
-                        <div className="border-start border-start-4 py-1 px-3">
-                            <div className="text-body-secondary text-truncate small">Open Maintenance Tasks</div>
-                            <div className="fs-5 fw-semibold">{stats.maintenanceTasks.toString()}</div>
-                            <div className="chart-container">{generateBarChartSVG([1,3,2],3, colors.white)}</div>
-                        </div>
-                    </ColoredCard>
+                    <SummaryCard>
+                         <div className="summary-content">
+                             <div className="summary-icon"><CIcon icon={cilClock} height={36} style={{ color: colors.warning }} /></div>
+                             <LabeledValue label="Pending Inspections" value={<span style={blurredText}>{inspectionStats?.pendingInspections}</span>}/>
+                         </div>
+                    </SummaryCard>
+                </CCol>
+                 <CCol sm={6} lg={3}>
+                    <SummaryCard>
+                         <div className="summary-content">
+                             <div className="summary-icon"><CIcon icon={cilCalendar} height={36} style={{ color: colors.info }} /></div>
+                             <LabeledValue label="Scheduled Inspections" value={<span style={blurredText}>{inspectionStats?.scheduledInspections}</span>}/>
+                         </div>
+                    </SummaryCard>
+                 </CCol>
+                 <CCol sm={6} lg={3}>
+                    <SummaryCard>
+                         <div className="summary-content">
+                             <div className="summary-icon"><CIcon icon={cilList} height={36} style={{ color: colors.primary }} /></div>
+                              <LabeledValue label="Total Inspections" value={<span style={blurredText}>{inspectionStats?.completedInspections + inspectionStats?.pendingInspections}</span>}/>
+                         </div>
+                     </SummaryCard>
                 </CCol>
             </CRow>
-            <CRow className="mt-4">
-                <CCol lg={6}>
+              {/* Data Tables */}
+              <CRow>
+                  <CCol lg={6}>
                     <AnimatedCard className="table-card">
                         <CCardHeader className="table-header">Recent Properties
                         </CCardHeader>
@@ -232,12 +308,12 @@ const AdminDashboard = ({
                                 <CTableBody>
                                     {recentProperties?.map((property, index) => (
                                         <CTableRow key={property._id} className="table-row-item">
-                                            <CTableDataCell>{index + 1}</CTableDataCell>
-                                            <CTableDataCell>{property.title}</CTableDataCell>
-                                            <CTableDataCell>
+                                            <CTableDataCell style={{ fontSize: '0.9rem' }}>{index + 1}</CTableDataCell>
+                                            <CTableDataCell style={{ fontSize: '0.9rem' }}>{property.title}</CTableDataCell>
+                                            <CTableDataCell style={{ fontSize: '0.9rem' }}>
                                                 {getStatusIcon(property.status)}
                                             </CTableDataCell>
-                                            <CTableDataCell>${property.price}</CTableDataCell>
+                                            <CTableDataCell style={{ fontSize: '0.9rem' }}>${property.price}</CTableDataCell>
                                         </CTableRow>
                                     ))}
                                 </CTableBody>
@@ -247,10 +323,10 @@ const AdminDashboard = ({
                             </div>
                         </CCardBody>
                     </AnimatedCard>
-                </CCol>
-                <CCol lg={6}>
+                 </CCol>
+                 <CCol lg={6}>
                     <AnimatedCard className="table-card">
-                        <CCardHeader className="table-header">Recent Tenants</CCardHeader>
+                         <CCardHeader className="table-header">Recent Tenants</CCardHeader>
                         <CCardBody className="table-body">
                             <StyledTable hover>
                                 <CTableHead>
@@ -264,10 +340,10 @@ const AdminDashboard = ({
                                 <CTableBody>
                                     {recentTenants?.map((tenant, index) => (
                                         <CTableRow key={tenant._id} className="table-row-item">
-                                            <CTableDataCell>{index + 1}</CTableDataCell>
-                                            <CTableDataCell>{tenant.tenantName}</CTableDataCell>
-                                            <CTableDataCell>{tenant.contactInformation.email}</CTableDataCell>
-                                            <CTableDataCell>{tenant.contactInformation.phoneNumber}</CTableDataCell>
+                                            <CTableDataCell style={{ fontSize: '0.9rem' }}>{index + 1}</CTableDataCell>
+                                            <CTableDataCell style={{ fontSize: '0.9rem' }}>{tenant.tenantName}</CTableDataCell>
+                                            <CTableDataCell style={{ fontSize: '0.9rem' }}>{tenant.contactInformation.email}</CTableDataCell>
+                                            <CTableDataCell style={{ fontSize: '0.9rem' }}>{tenant.contactInformation.phoneNumber}</CTableDataCell>
                                         </CTableRow>
                                     ))}
                                 </CTableBody>
@@ -279,12 +355,36 @@ const AdminDashboard = ({
                     </AnimatedCard>
                 </CCol>
             </CRow>
-            <CRow>
-                <CCol>
-                    <AnimatedCard className="chart-card">
-                        <CCardHeader className="chart-header">General Activity</CCardHeader>
-                        <CCardBody className="chart-body">
-                            <MainChart/>
+             <CRow>
+                <CCol lg={12}>
+                    <AnimatedCard className="table-card">
+                        <CCardHeader className="table-header">Recent Maintenances</CCardHeader>
+                        <CCardBody className="table-body">
+                            <StyledTable hover>
+                                <CTableHead>
+                                    <CTableRow>
+                                        <CTableHeaderCell>#</CTableHeaderCell>
+                                        <CTableHeaderCell>Description</CTableHeaderCell>
+                                        <CTableHeaderCell>Status</CTableHeaderCell>
+                                         <CTableHeaderCell>Due Date</CTableHeaderCell>
+                                    </CTableRow>
+                                </CTableHead>
+                                <CTableBody>
+                                    {recentProperties?.map((maintenance, index) => (
+                                        <CTableRow key={maintenance._id} className="table-row-item">
+                                            <CTableDataCell style={{ fontSize: '0.9rem' }}>{index + 1}</CTableDataCell>
+                                            <CTableDataCell style={{ fontSize: '0.9rem' }}>{maintenance.description}</CTableDataCell>
+                                            <CTableDataCell style={{ fontSize: '0.9rem' }}>
+                                                {getStatusIcon(maintenance.status)}
+                                            </CTableDataCell>
+                                            <CTableDataCell style={{ fontSize: '0.9rem' }}>{maintenance.dueDate}</CTableDataCell>
+                                        </CTableRow>
+                                    ))}
+                                </CTableBody>
+                            </StyledTable>
+                              <div className="view-all-button">
+                                <ViewAllButton onClick={handleViewAllMaintenance}>View All</ViewAllButton>
+                            </div>
                         </CCardBody>
                     </AnimatedCard>
                 </CCol>
@@ -294,3 +394,4 @@ const AdminDashboard = ({
 };
 
 export default AdminDashboard;
+

@@ -1,4 +1,4 @@
-import React, { useState,useEffect  } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     CTable,
     CTableBody,
@@ -9,7 +9,11 @@ import {
     CButton,
     CPagination,
     CPaginationItem,
-    CProgress
+    CProgress,
+    CDropdown,
+    CDropdownToggle,
+    CDropdownMenu,
+    CDropdownItem,
 } from "@coreui/react";
 import "../paggination.scss";
 import { CIcon } from "@coreui/icons-react";
@@ -18,12 +22,12 @@ import {
     cilCloudDownload as cilDocumentDownload,
     cilFullscreen,
     cilPeople,
-    cilFlagAlt,
     cilPencil,
     cilCreditCard,
     cilMoney,
     cilBank,
-    cilDescription, // Changed from cilNote to cilDescription
+    cilDescription,
+     cilOptions, // Changed from cilNote to cilDescription
 } from "@coreui/icons";
 import { decryptData } from '../../api/utils/crypto';
 
@@ -35,18 +39,20 @@ import { useNavigate } from "react-router-dom";
 import DeleteConfirmationModal from "./DeleteConfirmationModal"; // Import the modal
 
 const AgreementTable = ({
-  agreements,
-  onEdit,
-  onDelete,
-  currentPage,
-  totalPages,
-  handlePageChange,
-  itemsPerPage,
+    agreements,
+    onEdit,
+    onDelete,
+    currentPage,
+    totalPages,
+    handlePageChange,
+    itemsPerPage,
 }) => {
     const dispatch = useDispatch();
-     const navigate = useNavigate();
+    const navigate = useNavigate();
     const [selectedAgreement, setSelectedAgreement] = useState(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(null);
+    const dropdownRefs = useRef({});
 
     const handleDownloadDocument = (fileName) => {
         if (!fileName) {
@@ -124,22 +130,32 @@ const AgreementTable = ({
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
     const handleDeleteClick = (agreement) => {
-      setAgreementToDelete(agreement);
-      setDeleteModalVisible(true);
+        setAgreementToDelete(agreement);
+        setDeleteModalVisible(true);
     };
-  
+
     const handleConfirmDelete = () => {
-      if (agreementToDelete) {
-        onDelete(agreementToDelete._id); // Call the delete handler passed via props
-        setDeleteModalVisible(false); // Close the modal
-        setAgreementToDelete(null);
-      }
+        if (agreementToDelete) {
+            onDelete(agreementToDelete._id); // Call the delete handler passed via props
+            setDeleteModalVisible(false); // Close the modal
+            setAgreementToDelete(null);
+        }
     };
-  
+
     const handleCloseDeleteModal = () => {
-      setDeleteModalVisible(false);
-      setAgreementToDelete(null);
+        setDeleteModalVisible(false);
+        setAgreementToDelete(null);
     };
+
+     const toggleDropdown = (agreementId) => {
+         setDropdownOpen(prevState => prevState === agreementId ? null : agreementId);
+     };
+ 
+     const closeDropdown = () => {
+         setDropdownOpen(null);
+     };
+
+
     return (
         <div>
             <CTable align="middle" className="mb-0 border" hover responsive>
@@ -187,14 +203,14 @@ const AgreementTable = ({
                                     </div>
                                 </CTableDataCell>
                                 <CTableDataCell>
-                                  <div className="d-flex justify-content-between text-nowrap">
-                                      <div className="fw-semibold">
-                                        {agreement.rentAmount ? `$${agreement.rentAmount}` : "N/A"}
-                                      </div>
-                                      <div className="ms-3">
-                                          <small className="text-body-secondary">{usage.period}</small>
-                                       </div>
-                                  </div>
+                                    <div className="d-flex justify-content-between text-nowrap">
+                                        <div className="fw-semibold">
+                                            {agreement.rentAmount ? `$${agreement.rentAmount}` : "N/A"}
+                                        </div>
+                                        <div className="ms-3">
+                                            <small className="text-body-secondary">{usage.period}</small>
+                                        </div>
+                                    </div>
                                     <CProgress thin color={usage.color} value={usage.value} />
                                 </CTableDataCell>
                                 <CTableDataCell className="text-center">
@@ -205,56 +221,58 @@ const AgreementTable = ({
                                     />
                                 </CTableDataCell>
                                 <CTableDataCell>
-                                    <div className="d-flex align-items-center">
-                                    {userPermissions?.editAgreement && (
-                                         <CButton
-                                            color="light"
-                                            size="sm"
-                                           onClick={() => handleEditClick(agreement)}
-                                            className="me-2"
-                                            title="Edit Agreement"
-                                        >
-                                            
-                                              <CIcon icon={cilPencil} />
-                                         </CButton>
-                                        )}
-                                         {userPermissions?.deleteAgreement && (
-                                           <CButton
-                                           color="light"
-                                           size="sm"
-                                           style={{ color: "red" }}
-                                           onClick={() => handleDeleteClick(agreement)}
-                                           className="me-2"
-                                           title="Delete Agreement"
-                                         >
-                                           <CIcon icon={cilTrash} />
-                                         </CButton>
-                                    )}
-                                        <CButton
-                                            color="light"
-                                            size="sm"
-                                            className="me-2"
-                                            onClick={() => handleViewDetails(agreement)}
-                                            title="View Details"
-                                        >
-                                            <CIcon icon={cilFullscreen} />
-                                        </CButton>
-                                          {agreement.documents?.length > 0 &&
-                                        <>
-                                            {agreement.documents.map((doc, i) => (
-                                                <CButton
-                                                    key={i}
-                                                    color="light"
-                                                    size="sm"
-                                                    className="me-2"
-                                                    onClick={() => handleDownloadDocument(doc)}
-                                                    title={`Download ${doc}`}
-                                                >
-                                                    <CIcon icon={cilDocumentDownload} />
-                                                </CButton>
-                                            ))}
-                                        </> }
-                                    </div>
+                                    <CDropdown
+                                        variant="btn-group"
+                                        isOpen={dropdownOpen === agreement?._id}
+                                        onToggle={() => toggleDropdown(agreement?._id)}
+                                        onMouseLeave={closeDropdown}
+                                        innerRef={ref => (dropdownRefs.current[agreement?._id] = ref)}
+                                    >
+                                        <CDropdownToggle color="light" caret={false} size="sm" title="Actions">
+                                            <CIcon icon={cilOptions} />
+                                        </CDropdownToggle>
+                                        <CDropdownMenu>
+                                              {userPermissions?.editAgreement && (
+                                                    <CDropdownItem
+                                                        onClick={() => handleEditClick(agreement)}
+                                                        title="Edit"
+                                                    >
+                                                        <CIcon icon={cilPencil} className="me-2"/>
+                                                        Edit
+                                                    </CDropdownItem>
+                                                )}
+                                                 {userPermissions?.deleteAgreement && (
+                                                    <CDropdownItem
+                                                        onClick={() => handleDeleteClick(agreement)}
+                                                        title="Delete"
+                                                         style={{ color: 'red' }}
+                                                    >
+                                                        <CIcon icon={cilTrash} className="me-2"/>
+                                                      Delete
+                                                    </CDropdownItem>
+                                                )}
+                                                 <CDropdownItem
+                                                        onClick={() => handleViewDetails(agreement)}
+                                                        title="View Details"
+                                                    >
+                                                         <CIcon icon={cilFullscreen} className="me-2"/>
+                                                        Details
+                                                    </CDropdownItem>
+
+                                            {agreement.documents?.length > 0 &&
+                                                agreement.documents.map((doc, i) => (
+                                                    <CDropdownItem
+                                                        key={i}
+                                                        onClick={() => handleDownloadDocument(doc)}
+                                                        title={`Download ${doc}`}
+                                                    >
+                                                        <CIcon icon={cilDocumentDownload} className="me-2" />
+                                                       Download {doc.split('.').slice(-1)[0].toUpperCase()}
+                                                    </CDropdownItem>
+                                                ))
+                                            }
+                                        </CDropdownMenu>
+                                    </CDropdown>
                                 </CTableDataCell>
                             </CTableRow>
                         );
@@ -313,13 +331,13 @@ const AgreementTable = ({
                 onClose={handleCloseModal}
                 agreement={selectedAgreement}
             />
-             {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        visible={deleteModalVisible}
-        onClose={handleCloseDeleteModal}
-        onConfirm={handleConfirmDelete}
-        itemName={agreementToDelete?.property?.title || "this agreement"}
-      />
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                visible={deleteModalVisible}
+                onClose={handleCloseDeleteModal}
+                onConfirm={handleConfirmDelete}
+                itemName={agreementToDelete?.property?.title || "this agreement"}
+            />
         </div>
     );
 };

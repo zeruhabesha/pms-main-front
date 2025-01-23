@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   CButton,
   CRow,
@@ -10,211 +10,239 @@ import {
   CTableBody,
   CTableRow,
   CTableDataCell,
-} from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import { cilPencil, cilTrash, cilFullscreen, cilArrowLeft } from '@coreui/icons'
-import AddImage from './AddImage'
-import { useParams, useNavigate } from 'react-router-dom'
+} from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import {
+  cilPencil,
+  cilTrash,
+  cilFullscreen,
+  cilArrowLeft,
+  cilHome,
+  cilDescription,
+  cilLocationPin,
+  cilBuilding,
+  cilMoney,
+  cilList,
+  cilImage,
+} from '@coreui/icons';
+import AddImage from './AddImage';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   getProperty,
   deletePhoto,
   updatePhoto,
   addPropertyImage,
-} from '../../api/actions/PropertyAction'
-import { useDispatch } from 'react-redux'
-import PropertyPhotoModal from './PropertyPhotoModal'
-import PhotoDeleteModal from './PhotoDeleteModal.js' // Import PhotoDeleteModal
-import { toast } from 'react-toastify'
+} from '../../api/actions/PropertyAction';
+import { useDispatch } from 'react-redux';
+import PropertyPhotoModal from './PropertyPhotoModal';
+import PhotoDeleteModal from './PhotoDeleteModal.js'; // Import PhotoDeleteModal
+import { toast } from 'react-toastify';
+
 const PropertyDetails = () => {
-  const [property, setProperty] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [isFullscreenModalVisible, setFullscreenModalVisible] = useState(false)
-  const [addImageModalVisible, setAddImageModalVisible] = useState(false)
-  const [expandedImage, setExpandedImage] = useState(null)
-  const [selectedPhotoToEdit, setSelectedPhotoToEdit] = useState(null)
-  const [photoDeleteModalVisible, setPhotoDeleteModalVisible] = useState(false) // Add state for photo deletion modal
-  const [photoToDelete, setPhotoToDelete] = useState(null) // Add state for photo to be deleted
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
-  const [propertyToDelete, setPropertyToDelete] = useState(null)
-  const { id } = useParams()
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
+  const [property, setProperty] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isFullscreenModalVisible, setFullscreenModalVisible] = useState(false);
+  const [addImageModalVisible, setAddImageModalVisible] = useState(false);
+  const [expandedImage, setExpandedImage] = useState(null);
+  const [selectedPhotoToEdit, setSelectedPhotoToEdit] = useState(null);
+  const [photoDeleteModalVisible, setPhotoDeleteModalVisible] = useState(false); // Add state for photo deletion modal
+  const [photoToDelete, setPhotoToDelete] = useState(null); // Add state for photo to be deleted
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [propertyToDelete, setPropertyToDelete] = useState(null);
+  const { id } = useParams();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        setLoading(true)
-        const response = await dispatch(getProperty(id)).unwrap()
-        setProperty(response)
-        setError(null)
+        setLoading(true);
+        const response = await dispatch(getProperty(id)).unwrap();
+        setProperty(response);
+        setError(null);
       } catch (err) {
-        setError(err.message || 'Failed to load property details.')
-        setProperty(null)
+        setError(err.message || 'Failed to load property details.');
+        setProperty(null);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchProperty()
-  }, [dispatch, id])
+    fetchProperty();
+  }, [dispatch, id]);
 
   const handleExpandImage = (photoUrl) => {
     if (photoUrl) {
-      setExpandedImage(photoUrl)
-      setFullscreenModalVisible(true)
+      setExpandedImage(photoUrl);
+      setFullscreenModalVisible(true);
     } else {
-      console.error('Invalid photo URL provided to handleExpandImage')
+      console.error('Invalid photo URL provided to handleExpandImage');
     }
-  }
+  };
 
   const handleCloseFullscreen = useCallback(() => {
-    setFullscreenModalVisible(false)
-    setExpandedImage(null)
-  }, [])
+    setFullscreenModalVisible(false);
+    setExpandedImage(null);
+  }, []);
 
   const handleAddImageClick = () => {
-    setAddImageModalVisible(true)
-    setSelectedPhotoToEdit(null)
-  }
+    setAddImageModalVisible(true);
+    setSelectedPhotoToEdit(null);
+  };
 
   const handleCloseAddImageModal = useCallback(() => {
-    setAddImageModalVisible(false)
-    setSelectedPhotoToEdit(null)
-  }, [])
+    setAddImageModalVisible(false);
+    setSelectedPhotoToEdit(null);
+  }, []);
   const handleDeletePropertyClick = (property) => {
-    setPropertyToDelete(property)
-    setDeleteModalVisible(true)
-  }
+    setPropertyToDelete(property);
+    setDeleteModalVisible(true);
+  };
 
   const handlePhotoDeleteClick = (photo) => {
-    setPhotoToDelete(photo)
-    setPhotoDeleteModalVisible(true)
-  }
+    setPhotoToDelete(photo);
+    setPhotoDeleteModalVisible(true);
+  };
   const handlePhotoDelete = async (photoToDelete) => {
     try {
-      setLoading(true)
-      await dispatch(deletePhoto({ propertyId: id, photoId: photoToDelete.id })).unwrap()
-      const response = await dispatch(getProperty(id)).unwrap()
-      setProperty(response)
-      setError(null)
-      toast.success('Photo deleted successfully!')
+      setLoading(true);
+      await dispatch(deletePhoto({ propertyId: id, photoId: photoToDelete.id })).unwrap();
+      const response = await dispatch(getProperty(id)).unwrap();
+      setProperty(response);
+      setError(null);
+      toast.success('Photo deleted successfully!');
     } catch (err) {
-      setError(err.message || 'Failed to delete the photo.')
-      toast.error(err.message || 'Failed to delete the photo.')
+      setError(err.message || 'Failed to delete the photo.');
+      toast.error(err.message || 'Failed to delete the photo.');
     } finally {
-      setLoading(false)
-      setPhotoDeleteModalVisible(false)
+      setLoading(false);
+      setPhotoDeleteModalVisible(false);
     }
-  }
+  };
 
   const handlePhotoUpdate = (photo) => {
-    setSelectedPhotoToEdit(photo)
-    setAddImageModalVisible(true)
-  }
+    setSelectedPhotoToEdit(photo);
+    setAddImageModalVisible(true);
+  };
 
   const handleUpdatePhotoSuccess = async () => {
-    setAddImageModalVisible(false)
-    setSelectedPhotoToEdit(null)
+    setAddImageModalVisible(false);
+    setSelectedPhotoToEdit(null);
     try {
-      setLoading(true)
-      const response = await dispatch(getProperty(id)).unwrap()
-      setProperty(response)
-      setError(null)
+      setLoading(true);
+      const response = await dispatch(getProperty(id)).unwrap();
+      setProperty(response);
+      setError(null);
     } catch (err) {
-      setError(err.message || 'Failed to reload property data.')
-      toast.error(err.message || 'Failed to reload property data.')
+      setError(err.message || 'Failed to reload property data.');
+      toast.error(err.message || 'Failed to reload property data.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handlePhotoAdd = async (photo) => {
     try {
-      setLoading(true)
-      await dispatch(addPropertyImage({ id, photo })).unwrap()
-      const response = await dispatch(getProperty(id)).unwrap()
-      setProperty(response)
-      setError(null)
-      setAddImageModalVisible(false)
-      toast.success('Photo added successfully!')
+      setLoading(true);
+      await dispatch(addPropertyImage({ id, photo })).unwrap();
+      const response = await dispatch(getProperty(id)).unwrap();
+      setProperty(response);
+      setError(null);
+      setAddImageModalVisible(false);
+      toast.success('Photo added successfully!');
     } catch (err) {
-      setError(err.message || 'Failed to add photo.')
-      toast.error(err.message || 'Failed to add photo.')
+      setError(err.message || 'Failed to add photo.');
+      toast.error(err.message || 'Failed to add photo.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handlePhotoEdit = async (newPhotoFile) => {
     try {
-      setLoading(true)
+      setLoading(true);
       await dispatch(
         updatePhoto({
           id: id,
           photo: newPhotoFile,
           photoId: selectedPhotoToEdit.id,
         }),
-      ).unwrap()
-      handleUpdatePhotoSuccess()
+      ).unwrap();
+      handleUpdatePhotoSuccess();
     } catch (error) {
-      setError(error.message || 'Failed to update the photo.')
+      setError(error.message || 'Failed to update the photo.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (loading) {
-    return <CSpinner color="dark" />
+    return <CSpinner color="dark" />;
   }
 
   if (error) {
-    return <p>Error: {error}</p>
+    return <p>Error: {error}</p>;
   }
 
   if (!property) {
-    return <p>No property found!</p>
+    return <p>No property found!</p>;
   }
 
   return (
     <>
-      <CButton color="secondary" onClick={() => navigate('/property')} className="mb-3">
+      {/* <CButton color="secondary" onClick={() => navigate('/property')} className="mb-3">
         <CIcon icon={cilArrowLeft} /> Back to Properties
-      </CButton>
+      </CButton> */}
       <CCard className="border-0 shadow-sm">
         <CCardBody>
           <CTable bordered responsive>
             <CTableBody>
               <CTableRow>
-                <CTableDataCell className="fw-bold">Title:</CTableDataCell>
+                <CTableDataCell className="fw-bold">
+                  <CIcon icon={cilHome} className="me-1" />
+                  Title:
+                </CTableDataCell>
                 <CTableDataCell>{property.title || 'N/A'}</CTableDataCell>
               </CTableRow>
               <CTableRow>
-                <CTableDataCell className="fw-bold">Description:</CTableDataCell>
+                <CTableDataCell className="fw-bold">
+                 <CIcon icon={cilDescription} className="me-1" /> Description:
+                </CTableDataCell>
                 <CTableDataCell>
                   {property.description || 'No description available'}
                 </CTableDataCell>
               </CTableRow>
               <CTableRow>
-                <CTableDataCell className="fw-bold">Address:</CTableDataCell>
+                <CTableDataCell className="fw-bold">
+                  <CIcon icon={cilLocationPin} className="me-1" /> Address:
+                </CTableDataCell>
                 <CTableDataCell>{property.address || 'N/A'}</CTableDataCell>
               </CTableRow>
               <CTableRow>
-                <CTableDataCell className="fw-bold">Property Type:</CTableDataCell>
+                <CTableDataCell className="fw-bold">
+                  <CIcon icon={cilHome} className="me-1" /> Property Type:
+                </CTableDataCell>
                 <CTableDataCell>{property.propertyType || 'N/A'}</CTableDataCell>
               </CTableRow>
               <CTableRow>
-                <CTableDataCell className="fw-bold">Price:</CTableDataCell>
+                <CTableDataCell className="fw-bold">
+                  <CIcon icon={cilMoney} className="me-1" /> Price:
+                </CTableDataCell>
                 <CTableDataCell>{property.price ? `$${property.price}` : 'N/A'}</CTableDataCell>
               </CTableRow>
               <CTableRow>
-                <CTableDataCell className="fw-bold">Rent Price:</CTableDataCell>
+                <CTableDataCell className="fw-bold">
+                  <CIcon icon={cilMoney} className="me-1" /> Rent Price:
+                </CTableDataCell>
                 <CTableDataCell>
                   {property.rentPrice ? `$${property.rentPrice}` : 'N/A'}
                 </CTableDataCell>
               </CTableRow>
               <CTableRow>
-                <CTableDataCell className="fw-bold">Number of Units:</CTableDataCell>
+                <CTableDataCell className="fw-bold">
+                  <CIcon icon={cilBuilding} className="me-1" /> Number of Units:
+                </CTableDataCell>
                 <CTableDataCell>{property.numberOfUnits || 'N/A'}</CTableDataCell>
               </CTableRow>
               <CTableRow>
@@ -222,7 +250,9 @@ const PropertyDetails = () => {
                 <CTableDataCell>{property.floorPlan || 'N/A'}</CTableDataCell>
               </CTableRow>
               <CTableRow>
-                <CTableDataCell className="fw-bold">Amenities:</CTableDataCell>
+                <CTableDataCell className="fw-bold">
+                 <CIcon icon={cilList} className="me-1" /> Amenities:
+                </CTableDataCell>
                 <CTableDataCell>
                   {property.amenities && property.amenities.length > 0
                     ? property.amenities.join(', ')
@@ -302,7 +332,7 @@ const PropertyDetails = () => {
             </CCol>
             <CCol className="mt-6" xs={12}>
               <CButton color="dark" onClick={handleAddImageClick}>
-                Add Photo
+              <CIcon icon={cilImage} className="me-1" /> Add Photo
               </CButton>
             </CCol>
           </CRow>
@@ -330,7 +360,7 @@ const PropertyDetails = () => {
         isEdit={!!selectedPhotoToEdit}
       />
     </>
-  )
-}
+  );
+};
 
-export default PropertyDetails
+export default PropertyDetails;
