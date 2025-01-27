@@ -94,7 +94,7 @@ const ViewMaintenance = () => {
     }, [searchState.term]);
 
 
-    const handlePageChange = (page) => {
+    const handlePageChange = useCallback((page) => {
         if (page !== currentPage) {
             dispatch(
                 fetchMaintenances({
@@ -104,7 +104,7 @@ const ViewMaintenance = () => {
                 }),
             );
         }
-    };
+    }, [dispatch, currentPage, searchState.debouncedTerm, ITEMS_PER_PAGE]);
 
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [maintenanceToDelete, setMaintenanceToDelete] = useState(null);
@@ -140,29 +140,37 @@ const ViewMaintenance = () => {
     const handleSearchChange = (value) => {
         setSearchState((prev) => ({ ...prev, term: value }));
     };
-
     const csvData = useMemo(
         () =>
-            maintenances.map((maintenance, index) => ({
-                index: (currentPage - 1) * 10 + index + 1,
-                tenantName: maintenance.tenant?.tenantName || 'N/A',
-                email: maintenance.tenant?.contactInformation?.email || 'N/A',
-                phone: maintenance.tenant?.contactInformation?.phoneNumber || 'N/A',
-                status: maintenance.status || 'N/A',
-            })),
+            maintenances.map((maintenance, index) => {
+                if (!maintenance) return {}; // Skip undefined maintenance records
+                const tenant = maintenance.tenant || {}; // Default to an empty object if tenant is undefined
+                return {
+                    index: (currentPage - 1) * ITEMS_PER_PAGE + index + 1,
+                    tenantName: tenant.tenantName || 'N/A',
+                    email: tenant.contactInformation?.email || 'N/A',
+                    phone: tenant.contactInformation?.phoneNumber || 'N/A',
+                    status: maintenance.status || 'N/A',
+                };
+            }),
         [maintenances, currentPage]
     );
+    
+    
 
     // Data for clipboard
     const clipboardData = useMemo(
         () =>
             maintenances
-                .map(
-                    (maintenance, index) =>
-                        `${(currentPage - 1) * 10 + index + 1}. ${maintenance.tenant?.tenantName || 'N/A'} - ${
-                            maintenance.tenant?.contactInformation?.email || 'N/A'
-                        } - ${maintenance.status || 'N/A'}`
-                )
+                .map((maintenance, index) => {
+                    if (!maintenance) return 'Invalid record';
+                    const tenant = maintenance.tenant || {};
+                    return `${(currentPage - 1) * ITEMS_PER_PAGE + index + 1}. ${
+                        tenant.tenantName || 'N/A'
+                    } - ${tenant.contactInformation?.email || 'N/A'} - ${
+                        maintenance.status || 'N/A'
+                    }`;
+                })
                 .join('\n'),
         [maintenances, currentPage]
     );
@@ -172,21 +180,25 @@ const ViewMaintenance = () => {
         try {
             const doc = new jsPDF();
             doc.text('Maintenance Requests', 14, 10);
-
-            const tableData = maintenances.map((maintenance, index) => [
-                (currentPage - 1) * 10 + index + 1,
-                maintenance.tenant?.tenantName || 'N/A',
-                maintenance.tenant?.contactInformation?.email || 'N/A',
-                maintenance.tenant?.contactInformation?.phoneNumber || 'N/A',
-                maintenance.status || 'N/A',
-            ]);
-
+    
+            const tableData = maintenances.map((maintenance, index) => {
+                if (!maintenance) return [];
+                const tenant = maintenance.tenant || {};
+                return [
+                    (currentPage - 1) * ITEMS_PER_PAGE + index + 1,
+                    tenant.tenantName || 'N/A',
+                    tenant.contactInformation?.email || 'N/A',
+                    tenant.contactInformation?.phoneNumber || 'N/A',
+                    maintenance.status || 'N/A',
+                ];
+            });
+    
             doc.autoTable({
                 head: [['#', 'Tenant Name', 'Email', 'Phone', 'Status']],
                 body: tableData,
                 startY: 20,
             });
-
+    
             doc.save('maintenance_requests.pdf');
         } catch (error) {
             console.error('PDF export error:', error);
@@ -311,19 +323,26 @@ const ViewMaintenance = () => {
                         ) : error ? (
                             <div className="text-danger">{error}</div>
                         ) : maintenances && maintenances.length > 0 ? (
-                            <MaintenanceTable
-                                maintenanceList={maintenances}
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                totalRequests={totalMaintenanceRequests}
-                                searchTerm={searchState.term}
-                                setSearchTerm={handleSearchChange}
-                                handleDelete={handleDelete}
-                                handleEdit={handleEdit}
-                                handleEdit1={handleEdit1}
-                                handleViewDetails={handleViewDetails}
-                                handleAssign={handleAssign}
-                                handlePageChange={handlePageChange}
+                            
+                 
+<MaintenanceTable
+    maintenanceList={maintenances.map((maintenance) => ({
+        ...maintenance,
+        tenantName: maintenance?.tenant?.tenantName || 'N/A',
+        email: maintenance?.tenant?.contactInformation?.email || 'N/A',
+        phone: maintenance?.tenant?.contactInformation?.phoneNumber || 'N/A',
+    }))}                currentPage={currentPage}
+                totalPages={totalPages}
+                totalRequests={totalMaintenanceRequests}
+                searchTerm={searchState.term}
+                setSearchTerm={handleSearchChange}
+                handleDelete={setMaintenanceToDelete}
+                // handleEdit={handleEdit}
+                handleEdit={(maintenance) => navigate(`/maintenance/edit/${maintenance._id}`)}
+                handleEdit1={handleEdit1}
+                handleViewDetails={handleViewDetails}
+                handleAssign={handleAssign}
+                handlePageChange={handlePageChange} // Correctly pass the function
                             />
                         ) : (
                             <div className="text-center text-muted">No maintenance records found.</div>

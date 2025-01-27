@@ -19,12 +19,26 @@ export const addMaintenance = createAsyncThunk(
     'maintenance/add',
     async (maintenanceData, { rejectWithValue }) => {
         try {
-            return await MaintenanceService.addMaintenance(maintenanceData);
+            console.log('Action: Sending maintenance request...');
+            const response = await MaintenanceService.addMaintenance(maintenanceData);
+            console.log('Action: Received response:', response);
+
+            if (!response || !response.data) {
+                throw new Error('Invalid response format');
+            }
+
+            return response.data;
         } catch (error) {
-            return rejectWithValue(error.message || 'Failed to add maintenance');
+            console.error('Action: Error occurred:', error);
+
+            // Pass only serializable details
+            return rejectWithValue({
+                message: error.message || 'Failed to create maintenance request',
+            });
         }
     }
 );
+
 
 // Update maintenance record
 export const updateMaintenance = createAsyncThunk(

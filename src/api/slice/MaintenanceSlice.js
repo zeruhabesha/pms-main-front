@@ -68,7 +68,8 @@ const maintenanceSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message || 'Failed to add maintenance';
       })
-
+     
+    
       // Update Maintenance
       .addCase(updateMaintenance.pending, (state) => {
         state.loading = true;

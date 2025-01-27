@@ -21,7 +21,7 @@ import { decryptData } from "../../api/utils/crypto";
 import { useNavigate } from "react-router-dom";
 import { filterProperties } from "../../api/actions/PropertyAction";
 import { addComplaint, updateComplaint } from "../../api/actions/ComplaintAction";
-import PropertySelect from "./PropertySelect";
+import PropertySelect from "../guest/PropertySelect";
 import {
     cilUser,
     cilHome,
@@ -31,6 +31,8 @@ import {
     cilPaperclip
 } from '@coreui/icons';
 import { CIcon } from '@coreui/icons-react';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'; // Ensure styles are imported
 
 const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
     const dispatch = useDispatch();
@@ -77,24 +79,35 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
             const encryptedUser = localStorage.getItem("user");
             const decryptedUser = decryptData(encryptedUser);
             const tenantId = decryptedUser?._id || "";
-
+    
             if (editingComplaint) {
                 setFormData({
-                    ...formData,
-                    ...editingComplaint,
                     tenant: tenantId,
-                    property: editingComplaint?.property?._id || ""
+                    property: editingComplaint?.property?._id || "",
+                    complaintType: editingComplaint?.complaintType || "Noise",
+                    description: editingComplaint?.description || "",
+                    status: editingComplaint?.status || "Pending",
+                    priority: editingComplaint?.priority || "Low",
+                    supportingFiles: [],
+                    feedback: editingComplaint?.feedback || "",
                 });
             } else {
-                setFormData((prev) => ({
-                    ...prev,
+                setFormData({
                     tenant: tenantId,
-                }));
+                    property: "",
+                    complaintType: "Noise",
+                    description: "",
+                    status: "Pending",
+                    priority: "Low",
+                    supportingFiles: [],
+                    feedback: "",
+                });
             }
         };
-
+    
         initializeForm();
     }, [editingComplaint]);
+    
 
 
      const handleChange = (e) => {
@@ -143,8 +156,6 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
 
 
     const handleSubmit = async () => {
-        console.log('Form Data Before Submit:', formData);
-    
         try {
             const submissionData = new FormData();
             submissionData.append('tenant', formData.tenant);
@@ -152,7 +163,6 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
             submissionData.append('complaintType', formData.complaintType);
             submissionData.append('description', formData.description);
             submissionData.append('priority', formData.priority);
-            submissionData.append('feedback', formData.feedback);
     
             if (formData.supportingFiles?.length > 0) {
                 formData.supportingFiles.forEach((file) =>
@@ -160,14 +170,23 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                 );
             }
     
-            console.log([...submissionData]); // Inspect the submitted data
-            await dispatch(addComplaint(submissionData)).unwrap();
-            handleClose();
+            if (editingComplaint) {
+                // Update complaint
+                await dispatch(updateComplaint({ id: editingComplaint._id, formData: submissionData })).unwrap();
+                toast.success('Complaint updated successfully');
+            } else {
+                // Add complaint
+                await dispatch(addComplaint(submissionData)).unwrap();
+                toast.success('Complaint added successfully');
+            }
+    
+            handleClose(); // Close the modal
         } catch (error) {
             console.error('Submit Error:', error);
-            setError('Failed to submit complaint.');
+            toast.error('Failed to submit complaint. Please try again.');
         }
-    };
+    };    
+    
     
     
 
@@ -188,9 +207,9 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
 
     return (
         <CModal visible={visible} onClose={handleClose} alignment="center" backdrop="static" size="lg">
-            <CModalHeader className="bg-dark text-white">
-                <CModalTitle>{editingComplaint ? 'Edit Complaint' : 'Add Complaint'}</CModalTitle>
-            </CModalHeader>
+           <CModalHeader className="bg-dark text-white">
+    <CModalTitle>{editingComplaint ? 'Edit Complaint' : 'Add Complaint'}</CModalTitle>
+</CModalHeader>
             <CModalBody>
                 <div className="maintenance-form">
                     <CCard className="border-0 shadow-sm">
@@ -304,15 +323,15 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                     Cancel
                 </CButton>
                 <CButton color="dark" onClick={handleSubmit} disabled={isLoading}>
-                    {isLoading ? (
-                        <>
-                            <CSpinner size="sm" className="me-2" />
-                            {editingComplaint ? 'Updating...' : 'Adding...'}
-                        </>
-                    ) : (
-                        editingComplaint ? 'Update Complaint' : 'Add Complaint'
-                    )}
-                </CButton>
+    {isLoading ? (
+        <>
+            <CSpinner size="sm" className="me-2" />
+            {editingComplaint ? 'Updating...' : 'Adding...'}
+        </>
+    ) : (
+        editingComplaint ? 'Update Complaint' : 'Add Complaint'
+    )}
+</CButton>
             </CModalFooter>
         </CModal>
     );

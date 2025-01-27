@@ -116,13 +116,10 @@ const ViewGuest = () => {
   };
 
   const handleEdit = (guest) => {
-    // setEditingGuest(guest);
-      // setGuestModalVisible(true);
-       //Not needed with the new approach
-        // Implement editing if needed in the future with a modal
-         console.log(guest)
-     toast.error("Not implemented for now")
-  };
+    setEditingGuest(guest); // Set the guest to be edited
+    setAddGuestModalVisible(true); // Open the modal for editing
+};
+
 
   // const handleSave = async (updatedData) => {
   //       if (!editingGuest?._id) {
@@ -213,27 +210,33 @@ const ViewGuest = () => {
                                  </div>
                                  </div>
 
-                         <GuestTable
-                           guests={guests}
-                          currentPage={currentPage}
-                          totalPages={totalPages}
-                          searchTerm={searchTerm}
-                           setSearchTerm={setSearchTerm}
-                          handleEdit={handleEdit}
-                          handleDelete={handleDelete}
-                          handlePageChange={handlePageChange}
-                            totalGuests={totalGuests}
-                         />
+                                 <GuestTable
+    guests={guests}
+    currentPage={currentPage}
+    totalPages={totalPages}
+    searchTerm={searchTerm}
+    setSearchTerm={setSearchTerm}
+    handleEdit={handleEdit}
+    handleDelete={handleDelete}
+    handlePageChange={handlePageChange}
+    totalGuests={totalGuests}
+/>
+
+
+
 
                   </CCardBody>
               </CCard>
           </CCol>
 
           {/* Modals */}
-               <AddGuest
-                   visible={addGuestModalVisible}
-                    setVisible={setAddGuestModalVisible}
-               />
+{/* AddGuest Modal */}
+<AddGuest
+    visible={addGuestModalVisible}
+    setVisible={setAddGuestModalVisible}
+    editingGuest={editingGuest}
+    setEditingGuest={setEditingGuest}
+/>
           <GuestDeleteModal
             visible={deleteModalVisible}
             setDeleteModalVisible={setDeleteModalVisible}

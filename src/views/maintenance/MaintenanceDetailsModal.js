@@ -42,38 +42,30 @@ const MaintenanceDetailsModal = ({ visible, setVisible, maintenance }) => {
         }
     };
 
-    const getTenantName = () => {
-        return maintenance.tenant && maintenance.tenant.tenantName ? maintenance.tenant.tenantName : 'N/A';
-    };
+    const getTenantName = () => maintenance?.tenant?.tenantName || 'N/A';
 
-    const getTenantEmail = () => {
-        return maintenance.tenant && maintenance.tenant.contactInformation && maintenance.tenant.contactInformation.email ? maintenance.tenant.contactInformation.email : 'N/A';
-    };
+const getTenantEmail = () => maintenance?.tenant?.contactInformation?.email || 'N/A';
 
-    const getTenantPhone = () => {
-        return maintenance.tenant && maintenance.tenant.contactInformation && maintenance.tenant.contactInformation.phoneNumber ? maintenance.tenant.contactInformation.phoneNumber : 'N/A';
-    };
+const getTenantPhone = () => maintenance?.tenant?.contactInformation?.phoneNumber || 'N/A';
 
-    const getLeaseStartDate = () => {
-        return maintenance.tenant && maintenance.tenant.leaseAgreement && maintenance.tenant.leaseAgreement.startDate ? formatDate(maintenance.tenant.leaseAgreement.startDate) : 'N/A';
-    };
+const getLeaseStartDate = () =>
+  maintenance?.tenant?.leaseAgreement?.startDate
+    ? formatDate(maintenance.tenant.leaseAgreement.startDate)
+    : 'N/A';
 
-    const getLeaseEndDate = () => {
-          return maintenance.tenant && maintenance.tenant.leaseAgreement && maintenance.tenant.leaseAgreement.endDate ? formatDate(maintenance.tenant.leaseAgreement.endDate) : 'N/A';
-     };
+const getLeaseEndDate = () =>
+  maintenance?.tenant?.leaseAgreement?.endDate
+    ? formatDate(maintenance.tenant.leaseAgreement.endDate)
+    : 'N/A';
 
-    const getRentAmount = () => {
-         return maintenance.tenant && maintenance.tenant.leaseAgreement && maintenance.tenant.leaseAgreement.rentAmount ? maintenance.tenant.leaseAgreement.rentAmount : 'N/A';
-    };
+const getRentAmount = () => maintenance?.tenant?.leaseAgreement?.rentAmount || 'N/A';
 
+const getPropertyUnit = () =>
+  maintenance?.tenant?.propertyInformation?.unit || 'N/A';
 
-    const getPropertyUnit = () => {
-        return maintenance.tenant && maintenance.tenant.propertyInformation && maintenance.tenant.propertyInformation.unit ? maintenance.tenant.propertyInformation.unit : 'N/A';
-    };
+const getPropertyTitle = () =>
+  maintenance?.property?.title || 'N/A';
 
-     const getPropertyTitle = () => {
-        return maintenance.property && maintenance.property.title ? maintenance.property.title : 'N/A';
-     };
 
     return (
         <CModal size="lg" visible={visible} onClose={() => setVisible(false)} backdrop="static" keyboard={false} >
@@ -200,28 +192,35 @@ const MaintenanceDetailsModal = ({ visible, setVisible, maintenance }) => {
                          </CTableBody>
                 </CTable>
 
-                {maintenance.photosOrVideos && maintenance.photosOrVideos.length > 0 && (
-                    <>
-                        <h5><CIcon icon={cilImage} className="me-1" />Photos/Videos</h5>
-                        <div className="d-flex flex-wrap mt-2">
-                            {maintenance.photosOrVideos.map((file, idx) => (
-                                <img
-                                    key={idx}
-                                     src={`http://localhost:4000/api/v1/maintenances/${maintenance._id}/${file}` || placeholderImage}
-                                    alt="Maintenance media"
-                                    style={{
-                                        width: '100px',
-                                        height: '100px',
-                                        objectFit: 'cover',
-                                        marginRight: '10px',
-                                        marginBottom: '10px',
-                                    }}
-                                    onError={(e) => { e.target.src = placeholderImage; }} // Fallback to placeholder image if the media fails to load
-                                />
-                            ))}
-                        </div>
-                    </>
-                )}
+                {maintenance.requestedFiles && maintenance.requestedFiles.length > 0 && (
+    <>
+        <h5><CIcon icon={cilImage} className="me-1" />Photos/Videos</h5>
+        <div className="d-flex flex-wrap mt-2">
+            {maintenance.requestedFiles.map((file, idx) => {
+                // Construct the full URL for each file
+                const fileUrl = `http://localhost:4000/api/v1/maintenances/${file}`; // Use the relative path from the file
+                return (
+                    <img
+                        key={idx}
+                        src={fileUrl}
+                        alt="Maintenance media"
+                        style={{
+                            width: '100px',
+                            height: '100px',
+                            objectFit: 'cover',
+                            marginRight: '10px',
+                            marginBottom: '10px',
+                        }}
+                        onError={(e) => {
+                            e.target.src = placeholderImage; // Fallback to placeholder image if the media fails to load
+                        }}
+                    />
+                );
+            })}
+        </div>
+    </>
+)}
+
             </CModalBody>
             <CModalFooter>
                 <CButton color="secondary" onClick={() => setVisible(false)}>

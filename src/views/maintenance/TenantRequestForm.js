@@ -24,7 +24,7 @@ const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [noPropertiesMessage, setNoPropertiesMessage] = useState(null);
     const [formData, setFormData] = useState({
-        tenant: '',
+        tenant: '', // Default to an empty string
         property: '',
         typeOfRequest: '',
         description: '',
@@ -33,7 +33,8 @@ const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
         notes: '',
         requestedFiles: [],
         requestDate: new Date(),
-    });
+    });    
+    
     const [localError, setError] = useState(null); // Separate local error state
     const [fetchError, setFetchError] = useState(null);
       const [isEditing, setIsEditing] = useState(false);
@@ -41,48 +42,55 @@ const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
 
       useEffect(() => {
         const initializeForm = async () => {
-          setIsLoading(true);
+            setIsLoading(true);
             setFetchError(null); // Reset any previous fetch errors
             try {
-             const encryptedUser = localStorage.getItem('user');
-                if(!encryptedUser) {
-                     setError('User not found, please login again');
-                     return;
+                const encryptedUser = localStorage.getItem('user');
+                if (!encryptedUser) {
+                    setError('User not found. Please log in again.');
+                    setIsLoading(false);
+                    return;
                 }
-            const decryptedUser = decryptData(encryptedUser);
-             const tenantId = decryptedUser?._id || '';
-              let initialFormData = {
+                const decryptedUser = decryptData(encryptedUser);
+                console.log('Decrypted User:', decryptedUser);
+                const tenantId = decryptedUser?._id || ''; // Ensure tenantId is extracted safely
+        
+                let initialFormData = {
                     ...formData,
                     tenant: tenantId,
-                   requestDate: new Date(),
+                    requestDate: new Date(),
                 };
-              if (id) {
-                  setIsEditing(true)
-                   // Fetch the maintenance request data for editing
-                  const result = await dispatch(fetchMaintenanceById(id)).unwrap();
-                   if (result) {
-                      initialFormData = {
-                           ...result,
-                          tenant: tenantId,
+        
+                if (id) {
+                    setIsEditing(true);
+                    // Fetch the maintenance request data for editing
+                    const result = await dispatch(fetchMaintenanceById(id)).unwrap();
+                    if (result) {
+                        initialFormData = {
+                            ...result,
+                            tenant: tenantId,
                             requestDate: result.requestDate
-                                    ? new Date(result.requestDate)
-                                    : new Date(),
-                       };
-                   }else {
-                          setFetchError('Failed to fetch maintenance details for editing. Please try again.');
-                   }
-                 }
-              setFormData(initialFormData);
-           } catch (err) {
-             console.error('Fetch error:', err);
-              setError(err?.message || "Failed to initialize form data, try again");
-          }finally {
-           setIsLoading(false);
-         }
-      };
-
+                                ? new Date(result.requestDate)
+                                : new Date(),
+                        };
+                    } else {
+                        setFetchError('Failed to fetch maintenance details for editing. Please try again.');
+                    }
+                }
+        
+                setFormData(initialFormData);
+            } catch (err) {
+                console.error('Fetch error:', err);
+                setError(err?.message || 'Failed to initialize form data. Please try again.');
+            } finally {
+                setIsLoading(false);
+            }
+        
+        };
+    
         initializeForm();
-      }, [dispatch, id]);
+    }, [dispatch, id]);
+    
 
 
     // Form change handlers
@@ -105,6 +113,25 @@ const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
         const files = Array.from(e.target.files);
         setFormData((prev) => ({ ...prev, requestedFiles: files }));
     };
+    const validateFormData = (data) => {
+        if (!data.property) return 'Property is required';
+        if (!data.typeOfRequest) return 'Type of request is required';
+        if (!data.description) return 'Description is required';
+        if (!data.urgencyLevel) return 'Urgency level is required';
+    
+        // Validate files
+        if (data.requestedFiles.length > 0) {
+            const maxFileSize = 5 * 1024 * 1024; // 5MB
+            for (const file of data.requestedFiles) {
+                if (file.size > maxFileSize) {
+                    return `File ${file.name} is too large. Maximum size is 5MB.`;
+                }
+            }
+        }
+    
+        return null;
+    };
+    
 
     // Form validation
     const validateForm = () => {
@@ -135,53 +162,111 @@ const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
         return null;
     };
 
-    const handleSubmit = async () => {
+    const createFormDataWithLogs = (formData) => {
+        const submissionData = new FormData();
+        
+        // Log the input data
+        console.log('Creating FormData with:', {
+            ...formData,
+            requestedFiles: formData.requestedFiles ? `${formData.requestedFiles.length} files` : 'no files'
+        });
+
         try {
-           setIsLoading(true);
-           setError(null);
-            // Validation
-           const validationError = validateForm();
-           if (validationError) {
-              setError(validationError);
-              return;
-           }
-        // Create FormData
-            const submissionData = new FormData();
-            for (const key in formData) {
-                if (formData.hasOwnProperty(key)) {
-                    if (key === 'requestedFiles') {
-                        // Handle multiple files
-                        const files = formData[key];
-                        if (files && files.length > 0) {
-                           for (let i = 0; i < files.length; i++) {
-                               submissionData.append('requestedFiles', files[i]);
-                           }
-                      }
-                   } else if (key === 'requestDate') {
-                       submissionData.append(key, formData[key].toISOString());
-                    }
-                   else if (formData[key] != null && formData[key] !== '') {
-                        // Handle all other fields
-                        submissionData.append(key, formData[key]);
-                   }
-                }
+            // Add required fields
+            submissionData.append('tenant', formData.tenant || '');
+            submissionData.append('property', formData.property || '');
+            submissionData.append('typeOfRequest', formData.typeOfRequest || '');
+            submissionData.append('description', formData.description || '');
+            submissionData.append('urgencyLevel', formData.urgencyLevel || '');
+
+            // Add optional fields
+            if (formData.preferredAccessTimes) {
+                submissionData.append('preferredAccessTimes', formData.preferredAccessTimes);
+            }
+            if (formData.notes) {
+                submissionData.append('notes', formData.notes);
             }
 
-            // Dispatch action
+            // Handle files
+            if (formData.requestedFiles && formData.requestedFiles.length > 0) {
+                Array.from(formData.requestedFiles).forEach((file, index) => {
+                    submissionData.append(`requestedFiles`, file);
+                    console.log(`Appending file ${index}:`, file.name);
+                });
+            }
+
+            // Log the final FormData entries
+            console.log('FormData entries:');
+            for (let pair of submissionData.entries()) {
+                console.log(pair[0], pair[1] instanceof File ? pair[1].name : pair[1]);
+            }
+
+            return submissionData;
+        } catch (error) {
+            console.error('Error creating FormData:', error);
+            throw new Error(`Failed to prepare form data: ${error.message}`);
+        }
+    };
+
+
+     const handleSubmit = async (e) => {
+        e?.preventDefault();
+        
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            // Validate form data
+            const validationError = validateFormData(formData);
+            if (validationError) {
+                setError(validationError);
+                return;
+            }
+
+            console.log('Starting submission with form data:', formData);
+
+            // Create and validate FormData
+            const submissionData = createFormDataWithLogs(formData);
+
+            // Dispatch the action
+            console.log('Dispatching addMaintenance action...');
             const result = await dispatch(addMaintenance(submissionData)).unwrap();
 
+            console.log('Submission result:', result);
+
+            // Handle successful submission
             if (result) {
-              console.log('Maintenance request submitted successfully');
-              navigate('/maintenance');
-          }
+                console.log('Maintenance request created successfully');
+                navigate('/maintenance');
+            } else {
+                throw new Error('No response data received');
+            }
 
         } catch (error) {
-          console.error('Submit error:', error);
-            setError(typeof error === 'string' ? error : 'Failed to submit maintenance request. Please try again.');
+            console.error('Submission error details:', error);
+            
+            let errorMessage = 'Failed to create maintenance request: ';
+            
+            if (error.response) {
+                // Server responded with an error
+                errorMessage += error.response.data?.message || error.response.statusText;
+                console.error('Server error:', error.response.data);
+            } else if (error.request) {
+                // Request was made but no response received
+                errorMessage += 'No response from server';
+                console.error('Network error:', error.request);
+            } else {
+                // Error in request setup
+                errorMessage += error.message || 'Unknown error occurred';
+                console.error('Request setup error:', error);
+            }
+
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
     };
+
 
 
   const handleClose = () => {
@@ -190,9 +275,9 @@ const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
 
     return (
         <div className="maintenance-form">
-            <div className="d-flex justify-content-center">
-                <CCard className="border-0 shadow-sm">
-                    <CCardBody>
+        <CCard className="border-0 shadow-sm">
+            <CCardBody>
+                <form onSubmit={handleSubmit} encType="multipart/form-data">
                         <div className="text-center mb-4">
                             {isEditing ? 'Edit Request' : 'New Request'}
                         </div>
@@ -216,13 +301,14 @@ const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
                             <CCol xs={12} className="form-group">
                                 <CFormLabel htmlFor="tenant">Tenant ID</CFormLabel>
                                 <CFormInput
-                                    id="tenant"
-                                    name="tenant"
-                                    type="text"
-                                    value={formData.tenant}
-                                    readOnly
-                                    className="form-control-animation"
-                                />
+    id="tenant"
+    name="tenant"
+    type="text"
+    value={formData.tenant || ''} // Fallback to an empty string if tenant is undefined
+    readOnly
+    className="form-control-animation"
+/>
+
                             </CCol>
                             <CCol xs={12}>
                                 <CFormLabel htmlFor="property">Property</CFormLabel>
@@ -327,9 +413,9 @@ const TenantRequestForm = ({ onSubmit, editingRequest = null }) => {
                                     )}
                             </CButton>
                         </div>
-                    </CCardBody>
-                </CCard>
-            </div>
+                        </form>
+                </CCardBody>
+            </CCard>
         </div>
     );
 };

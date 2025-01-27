@@ -50,25 +50,36 @@ class MaintenanceService {
 
     async addMaintenance(maintenanceData) {
         try {
-            console.log('Submitting maintenance data:');
-            if (maintenanceData instanceof FormData) {
-                for (let [key, value] of maintenanceData.entries()) {
-                    console.log(key, value);
-                }
+            console.log('Service: Sending maintenance request...');
+    
+            if (!(maintenanceData instanceof FormData)) {
+                throw new Error('Invalid data format: FormData expected');
             }
-
+    
             const response = await httpCommon.post('/maintenances', maintenanceData, {
                 headers: {
                     ...this.getAuthHeader(),
                     'Content-Type': 'multipart/form-data',
                 },
             });
-
+    
+            console.log('Service: Received response:', response);
+    
+            if (!response.data) {
+                throw new Error('Invalid response from server');
+            }
+    
             return response.data;
         } catch (error) {
-            throw this.handleError(error);
+            console.error('Service: Error details:', error);
+    
+            // Extract error details
+            const message = error.response?.data?.message || 'Failed to create maintenance request';
+            throw new Error(message); // Throw a serializable error message
         }
     }
+    
+
 
     async updateMaintenance(id, maintenanceData) {
         try {
@@ -183,12 +194,22 @@ class MaintenanceService {
     }
 
     handleError(error) {
-        console.error('API Error:', error.response?.data || error.message);
-        return {
-            message: error.response?.data?.message || error.message || 'An error occurred',
-            status: error.response?.status || 500,
-        };
+        console.error('API Error:', error);
+        
+        // If it's already an Error object, return it
+        if (error instanceof Error) {
+            return error;
+        }
+
+        // If it's a response error
+        if (error.response?.data) {
+            return new Error(error.response.data.message || 'Server error occurred');
+        }
+
+        // Default error
+        return new Error(error.message || 'An unexpected error occurred');
     }
+
 }
 
 export default new MaintenanceService();
