@@ -46,13 +46,30 @@ export const addUser = createAsyncThunk(
     'user/add',
     async (userData, { rejectWithValue }) => {
         try {
-            // Pass the userData here
-             return await UserService.addUser(userData);
+            // Validate role before sending
+            const validRoles = ['Admin', 'Inspector', 'Maintainer', 'User'];
+            const formattedRole = userData.role.charAt(0).toUpperCase() + userData.role.slice(1);
+            
+            if (!validRoles.includes(formattedRole)) {
+                throw new Error(`Invalid role. Must be one of: ${validRoles.join(', ')}`);
+            }
+
+            const formattedUserData = {
+                ...userData,
+                role: formattedRole
+            };
+
+            const response = await UserService.addUser(formattedUserData);
+            return response;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error.response?.data || {
+                message: error.message,
+                error: error.toString()
+            });
         }
     }
 );
+
 
 // Update User
 export const updateUser = createAsyncThunk(

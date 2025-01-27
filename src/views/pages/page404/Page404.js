@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate hook for navigation
-import './Page404.css'; // CSS file for animations
+import { useNavigate } from 'react-router-dom';
+import './Page404.css';
+
+// Import SVG Runner & Jump Line
+import { ReactComponent as RunnerSVG } from '../../../assets/images/runner.svg';
+import { ReactComponent as JumpLineSVG } from '../../../assets/images/jump_line.svg';
 
 const Page404 = () => {
   const [isJumping, setIsJumping] = useState(false);
   const [score, setScore] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
-  const navigate = useNavigate(); // Hook to navigate to different routes
+  const navigate = useNavigate();
 
   // Handle jump animation
   const handleJump = () => {
@@ -14,15 +18,15 @@ const Page404 = () => {
       setIsJumping(true);
       setTimeout(() => {
         setIsJumping(false);
-      }, 500); // Dino stays "up" for 500ms
+      }, 500);
     }
   };
 
-  // Handle key press for jump (spacebar)
+  // Handle key press for jump
   useEffect(() => {
     const handleKeyPress = (event) => {
       if (event.code === 'Space' || event.key === ' ') {
-        event.preventDefault(); // Prevent default spacebar action (scrolling)
+        event.preventDefault();
         handleJump();
       }
     };
@@ -34,32 +38,32 @@ const Page404 = () => {
     };
   }, [isJumping, isGameOver]);
 
-  // Increase score every second if the game is not over
-  useEffect(() => {
-    let scoreInterval;
-    if (!isGameOver) {
-      scoreInterval = setInterval(() => {
-        setScore((prevScore) => prevScore + 1);
-      }, 100);
-    }
+    // Increase score every second if the game is not over
+    useEffect(() => {
+        let scoreInterval;
+        if (!isGameOver) {
+          scoreInterval = setInterval(() => {
+            setScore((prevScore) => prevScore + 1);
+          }, 100);
+        }
+    
+        return () => clearInterval(scoreInterval);
+      }, [isGameOver]);
 
-    return () => clearInterval(scoreInterval);
-  }, [isGameOver]);
-
-  // Handle collision detection
+  // Collision Detection
   useEffect(() => {
     const detectCollision = () => {
       const dinoElement = document.querySelector('.dino');
-      const cactusElement = document.querySelector('.cactus');
+      const jumpLineElement = document.querySelector('.jump-line');
 
-      if (dinoElement && cactusElement) {
+      if (dinoElement && jumpLineElement) {
         const dinoRect = dinoElement.getBoundingClientRect();
-        const cactusRect = cactusElement.getBoundingClientRect();
+        const jumpLineRect = jumpLineElement.getBoundingClientRect();
 
         if (
-          dinoRect.right > cactusRect.left &&
-          dinoRect.left < cactusRect.right &&
-          dinoRect.bottom > cactusRect.top
+          dinoRect.right > jumpLineRect.left &&
+          dinoRect.left < jumpLineRect.right &&
+          dinoRect.bottom > jumpLineRect.top
         ) {
           setIsGameOver(true);
         }
@@ -67,8 +71,7 @@ const Page404 = () => {
     };
 
     const collisionInterval = setInterval(detectCollision, 50);
-
-    return () => clearInterval(collisionInterval);
+      return () => clearInterval(collisionInterval);
   }, []);
 
   const handleRestart = () => {
@@ -76,25 +79,29 @@ const Page404 = () => {
     setScore(0);
   };
 
-  const handleGoToLogin = () => {
-    navigate('/login'); // Navigate to the login page
-  };
+    const handleGoToLogin = () => {
+        navigate('/login');
+    };
 
   return (
     <div className="page404-container">
       <div className="ground" />
       <h1 className="error-text">404</h1>
       <p className="error-message">Oops! You're lost. The page you're looking for was not found.</p>
-      <p className="instruction-text">Press the spacebar to make the dino jump!</p>
-     
-      <div className={`dino ${isJumping ? 'dino-jump' : ''}`} />
-      <div className="cactus" />
-      <div className="score">Score: {score}</div>
-
+      <p className="instruction-text">Press the spacebar to make the runner jump!</p>
+       
+      <div className={`dino ${isJumping ? 'dino-jump' : ''}`}>
+          <RunnerSVG />
+        </div>
+      <div className="jump-line">
+          <JumpLineSVG />
+      </div>
+        <div className="score">Score: {score}</div>
+      
       {isGameOver && (
         <div className="game-over">
           <h2>Game Over</h2>
-          <button style={{display:`inline`}} onClick={handleRestart} className="restart-btn">
+             <button style={{display:`inline`}} onClick={handleRestart} className="restart-btn">
             Restart
           </button>
           <button  onClick={handleGoToLogin} className="login-btn">

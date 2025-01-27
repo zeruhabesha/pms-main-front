@@ -58,7 +58,7 @@ const ViewGuest = () => {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-   const [addGuestMode, setAddGuestMode] = useState(false);
+   const [addGuestModalVisible, setAddGuestModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [guestToDelete, setGuestToDelete] = useState(null);
   const [editingGuest, setEditingGuest] = useState(null);
@@ -152,10 +152,10 @@ const ViewGuest = () => {
     // }
   // };
     const handleAddGuestClick = () => {
-        setAddGuestMode(true)
+        setAddGuestModalVisible(true)
     }
      const handleCancelAddGuest = () => {
-        setAddGuestMode(false);
+        setAddGuestModalVisible(false);
     };
 
   return (
@@ -212,9 +212,7 @@ const ViewGuest = () => {
                                 /> */}
                                  </div>
                                  </div>
-                       {addGuestMode ? (
-                                 <AddGuest onCancel={handleCancelAddGuest} />
-                        ) : (
+
                          <GuestTable
                            guests={guests}
                           currentPage={currentPage}
@@ -226,20 +224,22 @@ const ViewGuest = () => {
                           handlePageChange={handlePageChange}
                             totalGuests={totalGuests}
                          />
-                        )}
 
                   </CCardBody>
               </CCard>
           </CCol>
 
           {/* Modals */}
-
-   <GuestDeleteModal
-         visible={deleteModalVisible}
-         setDeleteModalVisible={setDeleteModalVisible}
-         guestToDelete={guestToDelete}
-         confirmDelete={confirmDelete}
-       />
+               <AddGuest
+                   visible={addGuestModalVisible}
+                    setVisible={setAddGuestModalVisible}
+               />
+          <GuestDeleteModal
+            visible={deleteModalVisible}
+            setDeleteModalVisible={setDeleteModalVisible}
+            guestToDelete={guestToDelete}
+            confirmDelete={confirmDelete}
+          />
           <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
       </CRow>
   );

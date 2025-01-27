@@ -95,21 +95,44 @@ class PropertyService {
 }
 
 
-  async createProperty(propertyData) {
-    try {
-      this.validatePropertyData(propertyData)
-      const formData = this.createFormData(propertyData)
-      const response = await httpCommon.post(this.baseURL, formData, {
-        headers: {
-          ...this.getAuthHeader(),
-          'Content-Type': 'multipart/form-data',
-        },
-      })
-      return PropertyAdapter.toDTO(response.data?.data)
-    } catch (error) {
-      throw this.handleError(error)
+async createProperty(propertyData) {
+  try {
+    this.validatePropertyData(propertyData)
+    const formData = this.createFormData(propertyData)
+    
+    // Add retry logic
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        const response = await httpCommon.post(this.baseURL, formData, {
+          headers: {
+            ...this.getAuthHeader(),
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        return PropertyAdapter.toDTO(response.data?.data);
+      } catch (error) {
+        attempt++;
+        
+        // If it's a permission error and we haven't exhausted retries, wait and try again
+        if (error.message?.includes('EPERM') && attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+          continue;
+        }
+        
+        throw error;
+      }
     }
+  } catch (error) {
+    // Enhanced error handling
+    if (error.message?.includes('EPERM')) {
+      throw new Error('Unable to save property images. Please try again or contact support if the issue persists.');
+    }
+    throw this.handleError(error);
   }
+}
 
   async addPropertyImage(id, photo) {
     try {
@@ -390,20 +413,23 @@ createFormData(data) {
     }
   }
 
+
+  
   handleError(error, customMessage) {
-    console.error('API Error:', error.response?.data || error.message)
-    const message =
-      customMessage ||
-      error.response?.data?.message ||
-      error.message ||
-      'An unexpected error occurred'
-    throw {
-      message: message,
-      status: error.response?.status || 500,
-      errors: error.response?.data?.errors || [],
-      httpError: true, // Important for differentiating between network and validation errors
-    }
-  }
+    console.error('API Error:', error.response?.data || error.message);
+    
+    // Enhanced error handling for file permission errors
+    if (error.response?.data?.error?.includes('EPERM')) {
+      return {
+        message: 'Unable to process file upload. Please try again or contact support.',
+        status: error.response?.status || 500,
+        errors: [{
+          field: 'photos',
+          message: 'File permission error occurred'
+        }],
+        httpError: true
+      };
+    }}
 }
 
 const propertyService = new PropertyService()

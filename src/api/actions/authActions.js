@@ -3,21 +3,35 @@ import authServices from '../services/auth.services';
 
 export const login = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
   try {
-    const response = await authServices.login(credentials);
-    console.log('Full Login API Response:', response);
+      const response = await authServices.login(credentials);
+      console.log('Full Login API Response:', response);
 
-    const { token, user } = response.data?.data || {};
+      if (response?.data?.status === 'success') {
+          const { token, refreshToken, user } = response.data?.data || {};
+          
+          if (!token || !user) {
+              throw new Error('Invalid login response: token or user is missing');
+          }
 
-    if (!token || !user) {
-      throw new Error('Invalid login response: token or user is missing');
-    }
-
-    return { token, user };
+          return {
+              token,
+              refreshToken,
+              user,
+              status: user.status,
+              success: true
+          };
+      } else {
+          return rejectWithValue({
+              message: response?.data?.message || 'Login failed. Please check your credentials.'
+          });
+      }
   } catch (error) {
-    console.error('Login Error:', error.response ? error.response.data : error.message);
-    return rejectWithValue(error.response?.data?.message || 'Failed to login');
+      return rejectWithValue({
+          message: error.response?.data?.message || 'An error occurred during login'
+      });
   }
 });
+
 
 export const checkStatus = createAsyncThunk(
   'auth/checkStatus',
@@ -80,3 +94,17 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   localStorage.removeItem('maintenances_data');
   return true;
 });
+
+export const decryptData = (encryptedData) => {
+  try {
+    if (!encryptedData) return null; // Crucial check
+    const bytes = CryptoJS.AES.decrypt(encryptedData, SECRET_KEY);
+    if (bytes.toString() === '') {
+      return null; // Handle empty string or invalid decryption
+    }
+    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+  } catch (error) {
+    console.error('Decryption error:', error);
+    return null; // Important: Return null on failure
+  }
+};

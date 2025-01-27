@@ -37,6 +37,8 @@ const Profile = React.lazy(() => import('./views/Profile/ViewProfile'));
 const Complaints = React.lazy(() => import('./views/complaints/Complaints'));
 const Guest = React.lazy(() => import('./views/guest/ViewGuest'));
 const AddGuest = React.lazy(() => import('./views/guest/AddGuest'));
+const ViewClearance = React.lazy(() => import('./views/Clearance/ViewClearance'));
+const AddClearance = React.lazy(() => import('./views/Clearance/AddClearance'));
 
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
@@ -105,7 +107,11 @@ const App = () => {
             <Route path="/complaint" element={<ProtectedRoute element={Complaints} />} />
             <Route path='/complaint/assign/:id' element={<ProtectedRoute element={ComplaintAssign} />} />
             <Route path="/guest" element={<ProtectedRoute element={Guest} />} />
-            <Route path="/add-guest" element={<ProtectedRoute element={AddGuest} />} />
+            <Route path="/guest/add" element={<ProtectedRoute element={AddGuest} />} />
+            <Route path="/guest/edit/:id" element={<ProtectedRoute element={AddGuest} />} />
+            <Route path="/clearance" element={<ProtectedRoute element={ViewClearance} />} />
+            <Route path="/clearance/add" element={<ProtectedRoute element={AddClearance} />} />
+            <Route path="/clearance/edit/:id" element={<ProtectedRoute element={AddClearance} />} />
           </Route>
           <Route path="*" element={<Navigate to="/404" />} />
         </Routes>

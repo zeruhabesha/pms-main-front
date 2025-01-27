@@ -3,13 +3,19 @@ import http from '../http-common';
 class AuthService {
   async login(credentials) {
     try {
-      const response = await http.post('/auth/login', credentials);
-      return response;
+        const response = await http.post('/auth/login', credentials);
+        
+        if (response.data?.status === 'success') {
+            // Set Authorization header for subsequent requests
+            http.defaults.headers.common['Authorization'] = `Bearer ${response.data.data.token}`;
+        }
+        
+        return response;
     } catch (error) {
-      console.error('Service Error:', error.response ? error.response.data : error.message);
-      throw error;
+        console.error('Service Error:', error.response?.data || error.message);
+        throw error;
     }
-  }
+}
 
   async checkStatus(email) {
     console.log('Email:', email);

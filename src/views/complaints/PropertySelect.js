@@ -30,7 +30,7 @@ const PropertySelect = ({ value, onChange, required }) => {
                 Select Property
             </option>
  {properties?.map((property) => (
-    <option key={property._id} value={property._id}>
+    <option key={property.id} value={property.id}>
         {property.title}
     </option>
 ))}

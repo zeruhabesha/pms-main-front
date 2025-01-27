@@ -281,15 +281,17 @@ const AddTenant = () => {
                         {errorMessage && <CAlert color="danger">{errorMessage}</CAlert>}
                         <CForm onSubmit={handleSubmit}>
                             <CRow className="g-3">
+                            <CCol md={6}>
                                  <CFormInput
                                      label={<><CIcon icon={cilUser} className="me-1" /> Tenant Name</>}
                                     name="tenantName"
                                     value={tenantData.tenantName}
                                     onChange={(e) => setTenantData({...tenantData, tenantName: e.target.value})}
                                     required
-                                    invalid={!tenantData.tenantName.trim()}
+                                    // invalid={!tenantData.tenantName.trim()}
                                     style={{backgroundColor: 'aliceblue'}}
-                                />
+                                /> </CCol>
+                                <CCol md={6}>
                                 <CFormInput
                                      label={<><CIcon icon={cilEnvelopeOpen} className="me-1" />Email</>}
                                     type="email"
@@ -306,8 +308,8 @@ const AddTenant = () => {
                                         })
                                     }
                                     required
-                                    invalid={!tenantData.contactInformation.email.trim()}
-                                />
+                                    // invalid={!tenantData.contactInformation.email.trim()}
+                                /> </CCol>
                                 <CCol md={6}>
                                     <CFormInput
                                         label={<><CIcon icon={cilPhone} className="me-1" />Phone Number</>}

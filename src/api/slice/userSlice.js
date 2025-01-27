@@ -101,15 +101,23 @@ const userSlice = createSlice({
             .addCase(addUser.fulfilled, (state, action) => {
                 state.loading = false;
                 if (action.payload) {
-                  // Directly add new user to the list of users.
-                    state.users = [action.payload, ...state.users];
-                } else {
-                    state.error = 'Failed to add user: No data returned';
+                    // Add user to appropriate list based on role
+                    const newUser = action.payload;
+                    switch (newUser.role) {
+                        case 'Inspector':
+                            state.inspectors = [newUser, ...state.inspectors];
+                            break;
+                        case 'Maintainer':
+                            state.maintainers = [newUser, ...state.maintainers];
+                            break;
+                        default:
+                            state.users = [newUser, ...state.users];
+                    }
                 }
             })
             .addCase(addUser.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload || 'Failed to add user';
+                state.error = action.payload?.message || 'Failed to add user';
             })
 
             // Update User

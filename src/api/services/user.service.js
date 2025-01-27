@@ -139,25 +139,32 @@ class UserService {
     }
 }
   
-    async addUser(userData) {
-        try {
-            console.log('Adding user:', userData);
-            console.log('Request URL:', `${this.baseURL}/user`);
+async addUser(userData) {
+  try {
+      // Ensure role is capitalized to match enum values
+      const formattedUserData = {
+          ...userData,
+          role: userData.role.charAt(0).toUpperCase() + userData.role.slice(1)
+      };
 
-            // Make sure that your front end sets the `role` property to a valid value.
-            
-            const response = await httpCommon.post('/users', userData, {
-              headers: { ...this.getAuthHeader(), 'Content-Type': 'application/json' },
-            });
-            
-            console.log('Response:', response.data);
-        
-            return response.data?.data;
-          } catch (error) {
-            console.error('Error adding user:', error.response?.data || error.message);
-            throw this.handleError(error);
-          }
-    }
+      const response = await httpCommon.post('/users', formattedUserData, {
+          headers: { 
+              ...this.getAuthHeader(), 
+              'Content-Type': 'application/json' 
+          },
+      });
+      
+      if (response.data?.status === 'error') {
+          throw new Error(response.data.message || 'Failed to add user');
+      }
+
+      return response.data?.data;
+  } catch (error) {
+      console.error('Error adding user:', error.response?.data || error.message);
+      throw this.handleError(error);
+  }
+}
+
 
     async updateUser(id, userData) {
       if (!userData) {

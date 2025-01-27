@@ -1,94 +1,137 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
     CCard,
     CCardBody,
     CCardHeader,
     CButton,
     CAlert,
-    CSpinner
+    CSpinner,
+    CRow,
+    CCol,
+    CForm,
+    CFormInput,
+    CFormLabel,
+    CFormSelect,
+    CFormTextarea,
 } from "@coreui/react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import AgreementForm from "./AgreementForm";
-import { fetchTenants } from "../../api/actions/TenantActions";
-import { filterProperties } from "../../api/actions/PropertyAction";
-import { useNavigate, useParams } from "react-router-dom";
-import {
-    fetchAgreement,
-    addAgreement,
-    updateAgreement,
-} from "../../api/actions/AgreementActions";
-import { clearSelectedAgreement } from "../../api/slice/AgreementSlice";
+import { decryptData } from "../../api/utils/crypto";
+import { addClearance } from "../../api/actions/ClearanceAction";
+import PropertySelect from "../guest/PropertySelect";
+import { reset } from "../../api/slice/clearanceSlice";
+import { clearError } from "../../api/slice/clearanceSlice"; // Correct Import
+// import "./AddClearance.css"
 
-const AddAgreement = () => {
+const AddClearance = ({ visible, setVisible }) => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
-    const { id } = useParams();
-    const isEditing = !!id;
-
-    const { tenants, loading: tenantsLoading, error: tenantsError } =
-        useSelector((state) => state.tenant);
     const { properties, loading: propertiesLoading, error: propertiesError } =
         useSelector((state) => state.property);
-    const { selectedAgreement, loading: agreementLoading, error: agreementError } =
-        useSelector((state) => state.agreement);
+    const { isLoading, error } = useSelector((state) => state.clearance);
+       const [loadingUser, setLoadingUser] = useState(true);
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
+    const [formData, setFormData] = useState({
+        user: "",
+        property: "",
+        tenant: "",
+        reason: "",
+        notes: "",
+        inspectionDate: null, // Set to null as default
+        status: "pending",
+    });
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                await Promise.all([
-                    dispatch(fetchTenants()).unwrap(),
-                    dispatch(filterProperties()).unwrap(),
-                ]);
-                if (isEditing) {
-                   await dispatch(fetchAgreement(id)).unwrap();
-                 }
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                setFormError(error.message || "Failed to load initial data.");
+        const fetchUser = async() => {
+            setLoadingUser(true);
+            const encryptedUser = localStorage.getItem("user");
+             if (encryptedUser) {
+                try {
+                    const decryptedUser = decryptData(encryptedUser);
+                    if (decryptedUser && decryptedUser._id) {
+                        setFormData((prev) => ({
+                            ...prev,
+                            user: decryptedUser._id,
+                        }));
+                        setLoadingUser(false);
+                    } else {
+                        setFormError("Invalid user data, try to log in again.");
+                        setLoadingUser(false);
+                    }
+                } catch (error) {
+                    setFormError("Error decoding token, try to log in again.");
+                    setLoadingUser(false);
+                }
+            } else{
+               setLoadingUser(false)
             }
         };
+      fetchUser()
+    }, []);
 
-        fetchData();
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
 
-        return () => {
-            dispatch(clearSelectedAgreement());
-        };
-    }, [dispatch, id, isEditing]);
+      const handleDismissError = () => {
+          dispatch(clearError());
+      };
 
 
-     const handleFormSubmit = async (formData) => {
-        if (!formData.tenant || !formData.property) {
-            setFormError("Tenant and Property are required fields.");
-            toast.error("Tenant and Property are required fields.");
+    const validateForm = () => {
+        if (!formData.property) return "Please select a property.";
+        if (!formData.tenant) return "Please select a tenant.";
+        if (!formData.inspectionDate) return "Please select the inspection date.";
+        if (!formData.reason) return "Please enter the reason for clearance.";
+        return null;
+    };
+
+    const handleFormSubmit = async () => {
+        const validationError = validateForm();
+        if (validationError) {
+            setFormError(validationError);
+            toast.error(validationError);
             return;
         }
+
         try {
-            setIsSubmitting(true);
             setFormError("");
-            if (isEditing) {
-                await dispatch(
-                    updateAgreement({ id: id, agreementData: formData })
-                ).unwrap();
-                toast.success("Agreement updated successfully.");
-            } else {
-                await dispatch(addAgreement(formData)).unwrap();
-                toast.success("Agreement added successfully.");
-            }
-            navigate("/agreement");
+            const response = await dispatch(addClearance(formData)).unwrap();
+           if(response.success){
+                toast.success("Clearance request submitted successfully!");
+                dispatch(reset());
+                handleClose();
+           }else{
+                const errorMsg =
+                    response.message ||
+                    "Failed to add clearance request.";
+                setFormError(errorMsg);
+                toast.error(errorMsg);
+           }
+
         } catch (error) {
             const errorMsg =
                 error.message ||
                 error.response?.data?.message ||
-                "Failed to save the agreement.";
-            setFormError(errorMsg);
+                "Failed to add clearance request.";
+             setFormError(errorMsg);
             toast.error(errorMsg);
-        } finally {
-            setIsSubmitting(false);
         }
+    };
+
+    const handleClose = () => {
+        setVisible(false);
+        setFormData({
+            user: "",
+            property: "",
+            tenant: "",
+            reason: "",
+            notes: "",
+            inspectionDate: null,
+            status: "pending",
+        });
+        setFormError("");
     };
 
     const renderLoadingState = () => (
@@ -100,37 +143,150 @@ const AddAgreement = () => {
 
     const renderErrorState = (error) => {
         if (!error) return null;
-        return (
-            <CAlert color="danger" dismissible onClose={() => setFormError("")}>
-                {typeof error === "object" ? error.message || JSON.stringify(error) : error}
+         return (
+            <CAlert color="danger" dismissible onClose={handleDismissError}>
+                {typeof error === "object"
+                    ? error.message || JSON.stringify(error)
+                    : error}
             </CAlert>
         );
     };
 
+     const renderUserLoadingState = () => (
+          <div className="text-center p-4">
+              <CSpinner color="dark" />
+              <p>Loading User data...</p>
+          </div>
+      );
+
+
     return (
         <CCard>
             <CCardHeader className="d-flex justify-content-between align-items-center">
-                <strong>{isEditing ? "Edit Agreement" : "Add Agreement"}</strong>
+                <strong>Add Clearance</strong>
             </CCardHeader>
             <CCardBody>
+               {renderErrorState(error)}
                 {renderErrorState(formError)}
-                {renderErrorState(tenantsError)}
                 {renderErrorState(propertiesError)}
-                 {renderErrorState(agreementError)}
-                {tenantsLoading || propertiesLoading || (isEditing && agreementLoading)  ? (
-                    renderLoadingState()
-                ) : (
-                    <AgreementForm
-                        tenants={tenants}
-                        properties={properties}
-                        initialData={isEditing ? selectedAgreement : null}
-                        onSubmit={handleFormSubmit}
-
-                    />
-                )}
+                 {loadingUser ? (
+                        renderUserLoadingState()
+                    ) :(
+                         propertiesLoading ? (
+                            renderLoadingState()
+                        ) : (
+                            <CForm>
+                                <CRow className="g-3">
+                                    <CCol md={6}>
+                                        <CFormLabel htmlFor="user">User ID</CFormLabel>
+                                        <CFormInput
+                                            id="user"
+                                            type="text"
+                                            value={formData.user}
+                                            readOnly
+                                            className="input-background"
+                                        />
+                                    </CCol>
+                                    <CCol md={6}>
+                                        <CFormLabel htmlFor="property">Property</CFormLabel>
+                                        <PropertySelect
+                                            value={formData.property}
+                                            onChange={(e) =>
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    property: e.target.value,
+                                                }))
+                                            }
+                                        />
+                                    </CCol>
+                                    <CCol md={6}>
+                                        <CFormLabel htmlFor="tenant">Tenant</CFormLabel>
+                                        <CFormSelect
+                                            name="tenant"
+                                            value={formData.tenant}
+                                            onChange={(e) =>
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    tenant: e.target.value,
+                                                }))
+                                            }
+                                        >
+                                            <option value="">Select Tenant</option>
+                                            {properties
+                                                ?.filter(
+                                                    (property) =>
+                                                        property._id === formData.property
+                                                )?.[0]
+                                                ?.tenants?.map((tenant, index) => (
+                                                    <option key={index} value={tenant?._id}>
+                                                        {tenant?.name}
+                                                    </option>
+                                                ))}
+                                        </CFormSelect>
+                                    </CCol>
+                                     <CCol md={6}>
+                                        <CFormLabel htmlFor="inspectionDate">
+                                            Inspection Date
+                                        </CFormLabel>
+                                         <CFormInput
+                                            type="date"
+                                            name="inspectionDate"
+                                            value={formData.inspectionDate || ""}
+                                             onChange={handleChange}
+                                            className="input-background"
+                                        />
+                                     </CCol>
+                                    <CCol md={6}>
+                                        <CFormLabel htmlFor="reason">Reason</CFormLabel>
+                                        <CFormInput
+                                            type="text"
+                                            name="reason"
+                                            value={formData.reason}
+                                            onChange={handleChange}
+                                            className="input-background"
+                                        />
+                                    </CCol>
+                                    <CCol md={6}>
+                                        <CFormLabel htmlFor="notes">Notes</CFormLabel>
+                                        <CFormTextarea
+                                            name="notes"
+                                            value={formData.notes}
+                                            onChange={handleChange}
+                                             className="input-background"
+                                        />
+                                    </CCol>
+                                </CRow>
+                                <div className="d-flex justify-content-end mt-4">
+                                    <CButton
+                                        color="secondary"
+                                        variant="ghost"
+                                        onClick={handleClose}
+                                        disabled={isLoading}
+                                        className="me-2"
+                                    >
+                                        Cancel
+                                    </CButton>
+                                    <CButton
+                                        color="dark"
+                                        onClick={handleFormSubmit}
+                                        disabled={isLoading}
+                                    >
+                                        {isLoading ? (
+                                            <>
+                                                <CSpinner size="sm" className="me-2" />
+                                                Submitting...
+                                            </>
+                                        ) : (
+                                            "Submit"
+                                        )}
+                                    </CButton>
+                                </div>
+                            </CForm>
+                        )
+                    )}
             </CCardBody>
         </CCard>
     );
 };
 
-export default AddAgreement;
+export default AddClearance;

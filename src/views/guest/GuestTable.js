@@ -36,8 +36,15 @@ import {
     cilInfo,
     cilCalendar,
     cilDescription,
-    cilPeople
+    cilPeople,
+    cilPrint,
+    cilUser,
+    cilEnvelopeOpen,
+    cilCheckCircle,
+    cilWarning,
+    cilXCircle,
 } from '@coreui/icons';
+
 import { CSVLink } from 'react-csv';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import jsPDF from 'jspdf';
@@ -294,14 +301,14 @@ const GuestTable = ({
                                 <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
                             )}
                         </CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('email')} style={{ cursor: 'pointer' }}>
+                        {/* <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('email')} style={{ cursor: 'pointer' }}>
                             Email
                             {sortConfig.key === 'email' && (
                                 <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
                             )}
-                        </CTableHeaderCell>
+                        </CTableHeaderCell> */}
                          <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('phoneNumber')} style={{ cursor: 'pointer' }}>
-                            Phone
+                            Contacts
                             {sortConfig.key === 'phoneNumber' && (
                                 <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
                             )}
@@ -337,10 +344,15 @@ const GuestTable = ({
                                 {guest?.name || 'N/A'}
                              </CTableDataCell>
                             <CTableDataCell>
-                                {guest?.email || 'N/A'}
-                            </CTableDataCell>
-                             <CTableDataCell>
-                                {guest?.phoneNumber || 'N/A'}
+                                  <div className="small text-body-secondary text-nowrap">
+                                                                    <CIcon icon={cilEnvelopeOpen} size="sm" className="me-1" />
+                                                                    {guest?.email || 'N/A'}
+                                                                </div>
+                                                                <div className="small text-body-secondary text-nowrap">
+                                                                    <CIcon icon={cilUser} size="sm" className="me-1" />
+                                                                    {guest?.phoneNumber || 'N/A'}
+                                                                </div>
+                          
                             </CTableDataCell>
                            <CTableDataCell>
                                 {formatDate(guest?.arrivalDate) || 'N/A'}

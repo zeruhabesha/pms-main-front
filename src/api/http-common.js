@@ -1,35 +1,39 @@
 // src/api/http-common.js
 import axios from 'axios'
-import { encryptData, decryptData } from './utils/crypto'
+import { encryptData, decryptData } from './utils/crypto';
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1'
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
 
 const httpCommon = axios.create({
   baseURL,
-})
+});
 
 // Utility functions for token management
 const tokenManager = {
   getToken() {
     try {
-      const encryptedToken = localStorage.getItem('token')
-      if (!encryptedToken) return null
+      const encryptedToken = localStorage.getItem('token');
+      if (!encryptedToken) return null;
 
-      const token = decryptData(encryptedToken)
-      if (!token) return null
+      const token = decryptData(encryptedToken);
+      if (!token) return null;
 
-      // Check if token is expired
-      const tokenData = JSON.parse(atob(token.split('.')[1]))
-      if (tokenData.exp * 1000 < Date.now()) {
-        this.clearTokens()
-        return null
+      // Validate token structure (very important)
+      if (typeof token !== 'string' || !token.includes('.')) {
+        throw new Error('Invalid token format');
       }
 
-      return token
+      const tokenData = JSON.parse(atob(token.split('.')[1]));
+      if (!tokenData || tokenData.exp * 1000 < Date.now()) {
+          this.clearTokens();
+          return null;
+      }
+
+      return token;
     } catch (error) {
-      console.error('Token retrieval error:', error)
-      this.clearTokens()
-      return null
+      console.error('Token retrieval error:', error);
+      this.clearTokens();
+      return null;
     }
   },
 
@@ -123,6 +127,7 @@ httpCommon.interceptors.response.use(
     return Promise.reject(error)
   },
 )
+
 
 // Add custom methods to handle common scenarios
 httpCommon.setAuthTokens = (token, refreshToken) => {

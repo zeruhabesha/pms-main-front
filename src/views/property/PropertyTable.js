@@ -40,6 +40,7 @@ import {
     cilOptions,
     cilSearch,
     cilMoney,
+    cilLocationPin,
 } from '@coreui/icons';
 import { decryptData } from '../../api/utils/crypto';
 import PropTypes from 'prop-types';
@@ -311,14 +312,14 @@ const PropertyTable = ({
                                 />
                             )}
                         </CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('address')} style={{ cursor: 'pointer' }}>
+                        {/* <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('address')} style={{ cursor: 'pointer' }}>
                             Address
                             {sortConfig.key === 'address' && (
                                 <CIcon
                                     icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom}
                                 />
                             )}
-                        </CTableHeaderCell>
+                        </CTableHeaderCell> */}
                         <CTableHeaderCell className="bg-body-tertiary">
                             Status
                         </CTableHeaderCell>
@@ -333,12 +334,19 @@ const PropertyTable = ({
                             return (
                                 <CTableRow key={property.id || index} className={isRowBlurred ? 'blurred-row' : ''}>
                                     <CTableDataCell className="text-center">{rowNumber}</CTableDataCell>
-                                    <CTableDataCell>{property.title || 'N/A'}</CTableDataCell>
+                                    <CTableDataCell>
+                                    <div>{property.title || 'N/A'}</div>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <span>
+                                        <CIcon icon={cilLocationPin} size="sm" className="me-1" />
+                                        {property.address || 'N/A'}</span>
+                                    </div>
+                                        </CTableDataCell>
                                     <CTableDataCell>
                                         {property?.propertyType || 'N/A'}
                                     </CTableDataCell>
                                     <CTableDataCell>{formatCurrency(property.price)}</CTableDataCell>
-                                    <CTableDataCell>{property.address || 'N/A'}</CTableDataCell>
+                                    {/* <CTableDataCell>{property.address || 'N/A'}</CTableDataCell> */}
                                     <CTableDataCell>
                                         {getStatusIcon(property.status)}
                                     </CTableDataCell>
@@ -348,9 +356,7 @@ const PropertyTable = ({
                                               isOpen={dropdownOpen === property.id}
                                                onToggle={() => toggleDropdown(property.id)}
                                                 onMouseLeave={closeDropdown}
-                                                 innerRef={ref => (dropdownRefs.current[property.id] = ref)}
-
-                                        >
+                                                 innerRef={ref => (dropdownRefs.current[property.id] = ref)}>
                                             <CDropdownToggle color="light" caret={false} size="sm" title="Actions">
                                                 <CIcon icon={cilOptions} />
                                             </CDropdownToggle>

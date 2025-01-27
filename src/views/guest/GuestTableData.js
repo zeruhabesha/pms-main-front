@@ -53,14 +53,14 @@ const GuestTableData = ({
                                 <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
                             )}
                         </CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('email')} style={{ cursor: 'pointer' }}>
+                        {/* <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('email')} style={{ cursor: 'pointer' }}>
                             Email
                             {sortConfig.key === 'email' && (
                                 <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
                             )}
-                        </CTableHeaderCell>
+                        </CTableHeaderCell> */}
                          <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('phoneNumber')} style={{ cursor: 'pointer' }}>
-                            Phone
+                            Contacts
                             {sortConfig.key === 'phoneNumber' && (
                                 <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
                             )}
@@ -96,10 +96,14 @@ const GuestTableData = ({
                                 {guest?.name || 'N/A'}
                             </CTableDataCell>
                             <CTableDataCell>
-                                {guest?.email || 'N/A'}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                                {guest?.phoneNumber || 'N/A'}
+                                
+                                <div className="small text-body-secondary text-nowrap">
+                                        <span>Email:{guest?.email || 'N/A'}</span>
+                                    </div>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <span>Phone No:{guest?.phoneNumber || 'N/A'}</span>
+                                    </div>
+                                
                             </CTableDataCell>
                              <CTableDataCell>
                                 {formatDate(guest?.arrivalDate) || 'N/A'}
@@ -130,18 +134,19 @@ const GuestTableData = ({
                                             <CIcon icon={cilOptions} />
                                         </CDropdownToggle>
                                         <CDropdownMenu>
-                                             {userPermissions?.editGuest && (
+                                             {/* {userPermissions?.editGuest && ( */}
                                                 <CDropdownItem  onClick={() => handleEdit(guest?._id)} title="Edit">
                                                     <CIcon icon={cilPencil} className="me-2"/>
                                                     Edit
                                                 </CDropdownItem>
-                                            )}
-                                             {userPermissions?.deleteGuest && (
+                                             {/* )} */}
+
+                                             {/* {userPermissions?.deleteGuest && ( */}
                                                 <CDropdownItem  onClick={() => handleDelete(guest?._id)} title="Delete"  style={{ color: 'red' }}>
                                                     <CIcon icon={cilTrash} className="me-2"/>
                                                     Delete
                                                 </CDropdownItem>
-                                            )}
+                                            {/* )} */}
                                             <CDropdownItem onClick={() => handleModalOpen(guest)} title="View Details">
                                                  <CIcon icon={cilFullscreen} className="me-2"/>
                                                 View Details

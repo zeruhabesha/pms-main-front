@@ -28,6 +28,8 @@ import {
     cilBank,
     cilDescription,
      cilOptions, // Changed from cilNote to cilDescription
+     cilLocationPin,
+     cilCalendar
 } from "@coreui/icons";
 import { decryptData } from '../../api/utils/crypto';
 
@@ -191,15 +193,21 @@ const AgreementTable = ({
                                 <CTableDataCell>
                                     <div>{agreement.property?.title || "N/A"}</div>
                                     <div className="small text-body-secondary text-nowrap">
-                                        <span>Address:{agreement.property?.address}</span>
+                                        <span>
+                                        <CIcon icon={cilLocationPin} size="sm" className="me-1" />
+                                            {agreement.property?.address}</span>
                                     </div>
                                 </CTableDataCell>
                                 <CTableDataCell>
                                     <div className="small text-body-secondary text-nowrap">
-                                        <span>Start:{formatDate(agreement.leaseStart)}</span>
+                                        <span>                                  
+                                              <CIcon icon={cilCalendar} size="sm" className="me-1" />
+                                        {formatDate(agreement.leaseStart)}</span>
                                     </div>
                                     <div className="small text-body-secondary text-nowrap">
-                                        <span>End:{formatDate(agreement.leaseEnd)}</span>
+                                        <span>
+                                        <CIcon icon={cilCalendar} size="sm" className="me-1" />
+                                            {formatDate(agreement.leaseEnd)}</span>
                                     </div>
                                 </CTableDataCell>
                                 <CTableDataCell>

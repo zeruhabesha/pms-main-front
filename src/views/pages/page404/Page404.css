@@ -12,7 +12,7 @@
 }
 
 .error-text {
-  font-size: 10rem; /* Slightly smaller on the vertical */
+  font-size: 10rem;
   color: #e74c3c; /* A more vibrant error red */
   margin: 0% 0% -3% 0%;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Added text shadow */
@@ -34,22 +34,31 @@
 
 /* Dino Animation */
 .dino {
-  position: absolute;
-  bottom: 50px;
-  width: 80px;
-  height: 80px;
-   background: url('../../../assets/images/rabbit.png') 0 0 / cover;
-  animation: run 0.6s steps(2) infinite; /* Slight speed adjust */
-  transition: transform 0.2s ease; /* Smooth transition for position */
+position: absolute;
+bottom: 50px;
+width: 80px;
+height: 80px;
+ /* background: url('../../../assets/images/rabbit.png') 0 0 / cover; */ /* Removing sprite image */
+animation: run 0.6s linear infinite; /*  adjust speed */
+transition: transform 0.2s ease;
+display: flex; /* Use flex to align SVG inside the container */
+align-items: flex-end; /* Align SVG to the bottom */
+justify-content: center; /* horizontally center the SVG*/
+}
+
+.dino svg {
+width: 80%;
+height: 80%;
 }
 
 .dino-jump {
-animation: run 0.6s steps(2) infinite, jump 0.5s cubic-bezier(0.25, 0.1, 0.25, 1.0); /* Added cubic-bezier for smoother jump*/
+  animation: run 0.6s linear infinite, jump 0.5s cubic-bezier(0.25, 0.1, 0.25, 1.0);
 }
+
 
 @keyframes run {
   100% {
-    background-position: -160px; /* Adjusted the spritesheet offset*/
+      transform: translateX(-0px);
   }
 }
 
@@ -58,32 +67,41 @@ animation: run 0.6s steps(2) infinite, jump 0.5s cubic-bezier(0.25, 0.1, 0.25, 1
       transform: translateY(0);
   }
   50% {
-      transform: translateY(-120px); /* Slight decrease jump height for better visibility*/
+      transform: translateY(-120px);
   }
   100% {
       transform: translateY(0);
   }
 }
 
-/* Cactus Animation */
-.cactus {
-  position: absolute;
-  bottom: 50px;
-  right: -50px;
-  width: 40px;
-  height: 80px;
-   background: url('../../../assets/images/tree.png') 0 0 / cover;
-  animation: move-cactus 3s linear infinite;
+/* Jump Line Animation */
+.jump-line {
+position: absolute;
+bottom: 50px;
+right: -50px;
+width: 60px;
+height: 60px;
+  display: flex; /* Use flex to align SVG inside the container */
+  align-items: center; /* horizontally center the SVG*/
+  justify-content: center; /* vertically center the SVG*/
+  animation: move-jump-line 3s linear infinite;
+
 }
 
-@keyframes move-cactus {
-  0% {
-      right: -50px;
-  }
-  100% {
-      right: 100%;
-  }
+.jump-line svg{
+width: 100%;
+height: 100%;
 }
+
+@keyframes move-jump-line {
+0% {
+    right: -50px;
+}
+100% {
+    right: 100%;
+}
+}
+
 
 /* Ground Animation */
 .ground {
@@ -115,7 +133,7 @@ animation: run 0.6s steps(2) infinite, jump 0.5s cubic-bezier(0.25, 0.1, 0.25, 1
   right: 3vh;
   font-size: 2rem;
   color: #34495e;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Shadow */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* Game Over Screen */
@@ -145,13 +163,12 @@ animation: run 0.6s steps(2) infinite, jump 0.5s cubic-bezier(0.25, 0.1, 0.25, 1
   border-radius: 5px;
   cursor: pointer;
   margin-top: 10px;
-  transition: background-color 0.3s ease; /* Smooth Hover */
+  transition: background-color 0.3s ease;
 }
 
 .restart-btn:hover {
   background-color: #2980b9;
 }
-
 .game-over .login-btn {
   padding: 1vh 2vh;
   font-size: 1.3rem;
@@ -169,6 +186,7 @@ animation: run 0.6s steps(2) infinite, jump 0.5s cubic-bezier(0.25, 0.1, 0.25, 1
   background-color: #d35400;
 }
 
+
 /* Add a subtle background pattern for depth*/
 .page404-container::before {
   content: '';
@@ -178,7 +196,7 @@ animation: run 0.6s steps(2) infinite, jump 0.5s cubic-bezier(0.25, 0.1, 0.25, 1
   right: 0;
   bottom: 0;
   background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
-  background-size: 20px 20px; /* Adjust for pattern size */
-  pointer-events: none; /* Allow interactions */
-  z-index: -1; /* Behind other content */
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: -1;
 }

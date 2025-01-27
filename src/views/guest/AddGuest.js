@@ -1,154 +1,285 @@
-import React from 'react';
+import React, { useEffect, useState } from "react";
 import {
-    CButton,
-    CForm,
     CFormInput,
+    CFormLabel,
     CRow,
     CCol,
-    CAlert,
-    CSpinner,
     CCard,
-    CCardHeader,
     CCardBody,
-} from '@coreui/react';
-import { useDispatch, useSelector } from 'react-redux';
-import { createGuest } from '../../api/actions/guestActions';
-import { useNavigate } from 'react-router-dom';
-import { reset } from '../../api/slice/guestSlice';
-import { toast } from 'react-toastify';
-import { useForm } from 'react-hook-form';
-import PropertySelect from './PropertySelect';
+    CSpinner,
+    CAlert,
+    CButton,
+    CModal,
+    CModalBody,
+    CModalHeader,
+    CModalTitle,
+    CModalFooter,
+    CForm, //Import CForm here
+} from "@coreui/react";
+import { useDispatch, useSelector } from "react-redux";
+import { decryptData } from "../../api/utils/crypto";
+import { useNavigate } from "react-router-dom";
+import { createGuest } from "../../api/actions/guestActions";
+import PropertySelect from "./PropertySelect";
+import { reset } from "../../api/slice/guestSlice";
+import { toast } from "react-toastify";
+import {
+    cilUser,
+    cilHome,
+    cilInfo,
+    cilEnvelopeClosed,
+    cilPhone,
+    cilCalendar,
+    cilDescription ,
+} from '@coreui/icons';
+import { CIcon } from '@coreui/icons-react';
 
-const AddGuest = ({ onCancel }) => {
-    const { register, handleSubmit, formState: { errors }, watch } = useForm();
+const AddGuest = ({ visible, setVisible }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const properties = useSelector((state) => state.property.properties);
+    const loading = useSelector((state) => state.property.loading);
+    const error = useSelector((state) => state.property.error);
     const { isLoading } = useSelector((state) => state.guest);
+    const [noPropertiesMessage, setNoPropertiesMessage] = useState(null);
+    const [localError, setError] = useState(null);
+    const [formData, setFormData] = useState({
+        user: "", // Initialize user to empty
+        property: "",
+        name: "",
+        email: "",
+        phoneNumber: "",
+        arrivalDate: "",
+        departureDate: "",
+        reason: "",
+        accessCode: "",
+        notes: "",
+    });
+      useEffect(() => {
+          const fetchUser =  () => {
+            const encryptedUser = localStorage.getItem("user");
+               if (encryptedUser) {
+                   try {
+                       const decryptedUser = decryptData(encryptedUser);
+                        if (decryptedUser && decryptedUser._id) {
+                             setFormData((prev) => ({ ...prev, user: decryptedUser._id }));
 
-    const user = "66092f0a18c25a177c011766"; //get from the logged user or some auth state
-     const watchedProperty = watch("property")
+                         } else {
+                            setError("Invalid user data, try to log in again")
+                           }
 
-    const onSubmit = async (data) => {
-      try {
-          await dispatch(createGuest({
-                  ...data,
-                  user: user,
-              })).unwrap();
+                    } catch (error) {
+                        setError("Error decoding token, try to log in again")
+                   }
+                 }
+           };
+        fetchUser();
+        if (properties.length === 0 && !loading && !error) {
+            setNoPropertiesMessage('No properties available for this tenant.');
+        } else {
+            setNoPropertiesMessage(null);
+        }
+    }, [properties, loading, error]);
 
-          toast.success('Guest added successfully!');
-          dispatch(reset());
-           onCancel();
-      } catch (error) {
-            toast.error(error.message || 'Failed to add guest');
+
+
+      const handleChange = (e) => {
+           const { name, value } = e.target;
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        };
+
+    const validateForm = () => {
+        if (!formData.property) return "Please select a property.";
+        if (!formData.name) return "Please enter the guest name.";
+         if (!formData.phoneNumber) return "Please enter the guest phone number.";
+         if (!formData.arrivalDate) return "Please select the arrival date.";
+        if (!formData.departureDate) return "Please select the departure date.";
+         if (!formData.reason) return "Please enter the reason for visit.";
+
+        return null;
+    };
+
+    const onSubmit = async () => {
+          const validationError = validateForm();
+            if (validationError) {
+                setError(validationError);
+                 return;
+            }
+
+        try {
+            await dispatch(createGuest(formData)).unwrap();
+           toast.success('Guest added successfully!');
+            dispatch(reset());
+             handleClose()
+
+        } catch (error) {
+            setError(error.message || 'Failed to add guest');
         }
     };
 
 
-    return (
-        <CRow>
-            <CCol xs={12}>
-                <CCard className="mb-4">
-                    <CCardHeader>
-                        <strong>Add Guest</strong>
-                    </CCardHeader>
-                    <CCardBody>
-                        <CForm onSubmit={handleSubmit(onSubmit)}>
-                            <CRow className="g-3">
-                                <CCol md={6}>
-                                    <CFormInput
-                                        {...register('name', { required: 'Name is required' })}
-                                        label="Name"
-                                        type="text"
-                                        style={{ backgroundColor: 'aliceblue' }}
-                                    />
-                                    {errors.name && <span style={{ color: "red" }}>{errors.name.message}</span>}
-                                </CCol>
-                                <CCol md={6}>
-                                    <CFormInput
-                                        {...register('email')}
-                                        label="Email"
-                                        type="email"
-                                        style={{ backgroundColor: 'aliceblue' }}
-                                    />
-                                    {errors.email && <span style={{ color: "red" }}>{errors.email.message}</span>}
-                                </CCol>
-                                <CCol md={6}>
-                                    <CFormInput
-                                        {...register('phoneNumber', { required: 'Phone number is required' })}
-                                        label="Phone Number"
-                                        type="tel"
-                                        style={{ backgroundColor: 'aliceblue' }}
-                                    />
-                                    {errors.phoneNumber && <span style={{ color: "red" }}>{errors.phoneNumber.message}</span>}
-                                </CCol>
-                                <CCol md={6}>
-                                      <PropertySelect
-                                        value={watchedProperty}
-                                        onChange={(e) => {}}
-                                       required
-                                       register={register}
-                                    />
-                                </CCol>
-                                 <CCol md={6}>
-                                    <CFormInput
-                                        {...register('arrivalDate', { required: 'Arrival date is required' })}
-                                        label="Arrival Date"
-                                        type="date"
-                                        style={{ backgroundColor: 'aliceblue' }}
-                                    />
-                                    {errors.arrivalDate && <span style={{ color: "red" }}>{errors.arrivalDate.message}</span>}
-                                </CCol>
-                                <CCol md={6}>
-                                    <CFormInput
-                                        {...register('departureDate')}
-                                        label="Departure Date"
-                                        type="date"
-                                        style={{ backgroundColor: 'aliceblue' }}
-                                    />
-                                     {errors.departureDate && <span style={{ color: "red" }}>{errors.departureDate.message}</span>}
-                                </CCol>
-                                <CCol md={6}>
-                                    <CFormInput
-                                        {...register('reason', { required: 'Reason is required' })}
-                                        label="Reason for Visit"
-                                        type="text"
-                                        style={{ backgroundColor: 'aliceblue' }}
-                                    />
-                                    {errors.reason && <span style={{ color: "red" }}>{errors.reason.message}</span>}
-                                </CCol>
+  const handleClose = () => {
+      setVisible(false);
+      setFormData({
+            user: "",
+            property: "",
+            name: "",
+            email: "",
+            phoneNumber: "",
+            arrivalDate: "",
+            departureDate: "",
+            reason: "",
+            accessCode: "",
+            notes: "",
+        });
+      setError(null)
 
-                                 <CCol md={6}>
-                                    <CFormInput
-                                        {...register('accessCode')}
-                                        label="Access Code"
+    };
+    const handlePropertyChange = (e) => {
+            setFormData((prev) => ({ ...prev, property: e.target.value }));
+        };
+    return (
+       <CModal visible={visible} onClose={handleClose} alignment="center" backdrop="static" size="lg">
+            <CModalHeader className="bg-dark text-white">
+                <CModalTitle> Add Guest</CModalTitle>
+            </CModalHeader>
+            <CModalBody>
+                <div className="maintenance-form">
+                    <CCard className="border-0 shadow-sm">
+                        <CCardBody>
+                             {localError && (
+                                <CAlert color="danger" className="mb-3">
+                                    {localError}
+                                </CAlert>
+                            )}
+                             {noPropertiesMessage && (
+                                <CAlert color="info" className="mb-3">
+                                    {noPropertiesMessage}
+                                </CAlert>
+                            )}
+
+                             <CForm onSubmit={onSubmit}>
+                            <CRow className="g-3">
+                                  <CCol md={6}>
+                                    <CFormLabel htmlFor="user"><CIcon icon={cilUser} className="me-1" />User ID</CFormLabel>
+                                      <CFormInput
+                                        id="user"
                                         type="text"
-                                         style={{ backgroundColor: 'aliceblue' }}
+                                        value={formData.user}
+                                          readOnly
+                                        style={{ backgroundColor: 'aliceblue' }}
+                                       />
+                                </CCol>
+                                 <CCol md={6}>
+                                      <CFormLabel htmlFor="property"><CIcon icon={cilHome} className="me-1"/>Property</CFormLabel>
+                                        <PropertySelect
+                                            value={formData.property}
+                                          onChange={handlePropertyChange}
+                                         required
                                     />
-                                     {errors.accessCode && <span style={{ color: "red" }}>{errors.accessCode.message}</span>}
                                 </CCol>
                                 <CCol md={6}>
                                     <CFormInput
-                                        {...register('notes')}
-                                        label="Notes"
-                                        type="textarea"
+                                      label={<span><CIcon icon={cilUser} className="me-1" />Name</span>}
+                                      type="text"
+                                        name="name"
+                                         value={formData.name}
+                                       onChange={handleChange}
+                                        style={{ backgroundColor: 'aliceblue' }}
+                                    />
+                                </CCol>
+                                <CCol md={6}>
+                                    <CFormInput
+                                        label={<span><CIcon icon={cilEnvelopeClosed} className="me-1" />Email</span>}
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        style={{ backgroundColor: 'aliceblue' }}
+                                    />
+                                </CCol>
+                                <CCol md={6}>
+                                    <CFormInput
+                                         label={<span><CIcon icon={cilPhone} className="me-1" />Phone Number</span>}
+                                        type="tel"
+                                        name="phoneNumber"
+                                         value={formData.phoneNumber}
+                                          onChange={handleChange}
+                                        style={{ backgroundColor: 'aliceblue' }}
+                                    />
+                                </CCol>
+                                 <CCol md={6}>
+                                    <CFormInput
+                                         label={<span><CIcon icon={cilCalendar} className="me-1" />Arrival Date</span>}
+                                        type="date"
+                                        name="arrivalDate"
+                                         value={formData.arrivalDate}
+                                          onChange={handleChange}
+                                        style={{ backgroundColor: 'aliceblue' }}
+                                    />
+                                </CCol>
+                                <CCol md={6}>
+                                    <CFormInput
+                                        label={<span><CIcon icon={cilCalendar} className="me-1" />Departure Date</span>}
+                                        type="date"
+                                        name="departureDate"
+                                        value={formData.departureDate}
+                                          onChange={handleChange}
+                                        style={{ backgroundColor: 'aliceblue' }}
+                                    />
+                                </CCol>
+                                <CCol md={6}>
+                                    <CFormInput
+                                        label={<span><CIcon icon={cilInfo} className="me-1" />Reason for Visit</span>}
+                                        type="text"
+                                         name="reason"
+                                        value={formData.reason}
+                                          onChange={handleChange}
+                                        style={{ backgroundColor: 'aliceblue' }}
+                                    />
+                                </CCol>
+                                 <CCol md={6}>
+                                    <CFormInput
+                                        label={<span><CIcon icon={cilInfo} className="me-1" />Access Code</span>}
+                                        type="text"
+                                        name="accessCode"
+                                          value={formData.accessCode}
+                                        onChange={handleChange}
                                          style={{ backgroundColor: 'aliceblue' }}
                                     />
-                                     {errors.notes && <span style={{ color: "red" }}>{errors.notes.message}</span>}
+                                </CCol>
+                                <CCol md={6}>
+                                    <CFormInput
+                                          label={<span><CIcon icon={cilDescription} className="me-1" />Notes</span>}
+                                        type="textarea"
+                                         name="notes"
+                                       value={formData.notes}
+                                          onChange={handleChange}
+                                         style={{ backgroundColor: 'aliceblue' }}
+                                    />
                                 </CCol>
                             </CRow>
-                            <div className="d-flex justify-content-end mt-3">
-                                <CButton color="secondary" onClick={() =>  onCancel()} disabled={isLoading}>
-                                    Cancel
-                                </CButton>
-                                <CButton color="dark" type="submit" disabled={isLoading} className="ms-2">
-                                    {isLoading ? <CSpinner size="sm" /> : 'Add Guest'}
-                                </CButton>
-                            </div>
-                        </CForm>
-                    </CCardBody>
-                </CCard>
-            </CCol>
-        </CRow>
+                           </CForm>
+                        </CCardBody>
+                    </CCard>
+                </div>
+            </CModalBody>
+            <CModalFooter className="border-top-0">
+                <CButton color="secondary" variant="ghost" onClick={handleClose} disabled={isLoading}>
+                    Cancel
+                </CButton>
+                <CButton color="dark" onClick={onSubmit} disabled={isLoading}>
+                    {isLoading ? (
+                        <>
+                            <CSpinner size="sm" className="me-2" />
+                                Adding...
+                        </>
+                    ) : (
+                       'Add Guest'
+                    )}
+                </CButton>
+            </CModalFooter>
+        </CModal>
     );
 };
 

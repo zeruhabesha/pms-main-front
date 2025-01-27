@@ -27,6 +27,8 @@ const Profile = React.lazy(() => import('./views/Profile/ViewProfile'));
 const Complaints = React.lazy(() => import('./views/complaints/Complaints'));
 const Guest = React.lazy(() => import('./views/guest/ViewGuest'));
 const AddGuest = React.lazy(() => import('./views/guest/AddGuest'));
+const ViewClearance = React.lazy(() => import('./views/Clearance/ViewClearance'));
+const AddClearance = React.lazy(() => import('./views/Clearance/AddClearance'));
 
 const routes = [
   // Public routes (no authentication required)
@@ -59,7 +61,11 @@ const routes = [
   { path: '/complaint', name: 'Complaints', element: () => <ProtectedRoute element={Complaints} /> },
   { path: '/complaint/assign/:id', name: 'Complaints Add', element: () => <ProtectedRoute element={ComplaintAssign} /> },
   { path: '/guest', name: 'Guest', element: () => <ProtectedRoute element={Guest} /> },
-  { path: '/add-guest', name: 'Add Guest', element: () => <ProtectedRoute element={AddGuest} /> },
+  { path: '/guest/add', name: 'Add Guest', element: () => <ProtectedRoute element={AddGuest} /> },
+  { path: '/guest/edit/:id', name: 'View Guest', element: () => <ProtectedRoute element={AddGuest} /> },
+  { path: '/clearance/edit/:id', name: 'Edit Clearance', element: () => <ProtectedRoute element={ViewClearance} /> },
+  { path: '/clearance/add', name: 'Add Clearance', element: () => <ProtectedRoute element={AddClearance} /> },
+  { path: '/clearance', name: 'View Clearance', element: () => <ProtectedRoute element={ViewClearance} /> },
   
 ];
 

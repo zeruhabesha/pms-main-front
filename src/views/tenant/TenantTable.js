@@ -45,8 +45,7 @@ import placeholder from '../image/placeholder.png';
 import { decryptData } from '../../api/utils/crypto';
 import TenantDetailsModal from './TenantDetailsModal'
 import { setSelectedTenant, clearError } from '../../api/slice/TenantSlice';
-import ClearancePDFButton from './ClearancePDFButton';
-
+import { useNavigate } from 'react-router-dom';
 const TenantTable = ({
     tenants = [],
     currentPage,
@@ -61,6 +60,7 @@ const TenantTable = ({
     itemsPerPage = 10,
 }) => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
     const [userPermissions, setUserPermissions] = useState(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -230,6 +230,10 @@ const TenantTable = ({
         }
     };
 
+  const handleClearance = (tenantId) => {
+         navigate(`/clearance/add?tenantId=${tenantId}`)
+    };
+
 
     return (
         <div>
@@ -384,8 +388,12 @@ const TenantTable = ({
                                                     <CIcon icon={cilFullscreen} className="me-2"/>
                                                          Details
                                                 </CDropdownItem>
-                                                   <CDropdownItem>
-                                                          <ClearancePDFButton tenant={tenant} />
+                                                  <CDropdownItem
+                                                        onClick={() => handleClearance(tenant?._id)}
+                                                        title="Clearance"
+                                                    >
+                                                       <CIcon icon={cilClipboard} className="me-2"/>
+                                                        Clearance
                                                     </CDropdownItem>
                                         </CDropdownMenu>
                                 </CDropdown>

@@ -8,8 +8,7 @@ import {
     CCardHeader,
     CCardBody,
     CAlert,
-    CFormSelect, // Import CFormSelect here
-    CFormInput,
+    CFormSelect,
 } from '@coreui/react';
 import {
     fetchComplaints,
@@ -19,7 +18,6 @@ import {
     assignComplaint,
     submitComplaintFeedback,
 } from '../../api/actions/ComplaintAction';
-  
 import ComplaintsTable from './ComplaintsTable';
 import ComplaintModal from './ComplaintModal';
 import ComplaintDeleteModal from './ComplaintDeleteModal';
@@ -27,6 +25,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import '../Super.scss';
 import 'react-toastify/dist/ReactToastify.css';
 import { createSelector } from 'reselect';
+import { Routes, Route, useNavigate  } from 'react-router-dom';
+import ComplaintAssign from './ComplaintAssign'; // Import the component
 
 
 const selectComplaintState = (state) => state.complaint || {
@@ -39,7 +39,8 @@ const selectComplaintState = (state) => state.complaint || {
 };
 
 const ViewComplaints = () => {
-  const dispatch = useDispatch();
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
     const complaintSelector = useMemo(() => createSelector(
         selectComplaintState,
       (complaint) => ({
@@ -54,11 +55,11 @@ const ViewComplaints = () => {
     const { complaints, loading, error, totalPages, currentPage, totalComplaints } = useSelector(complaintSelector);
 
   const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [complaintModalVisible, setComplaintModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [complaintToDelete, setComplaintToDelete] = useState(null);
-  const [editingComplaint, setEditingComplaint] = useState(null);
+    const [editingComplaint, setEditingComplaint] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const itemsPerPage = 10;
 
@@ -66,16 +67,14 @@ const ViewComplaints = () => {
         dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
     }, [dispatch, currentPage, searchTerm, statusFilter]);
 
-
   const handlePageChange = (page) => {
       if (page !== currentPage) {
            dispatch(fetchComplaints({ page, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
       }
     };
-
-    const handleStatusFilterChange = (e) => {
-        setStatusFilter(e.target.value);
-    };
+  const handleStatusFilterChange = (e) => {
+    setStatusFilter(e.target.value);
+  };
   const handleDelete = (complaint) => {
     setComplaintToDelete(complaint);
     setDeleteModalVisible(true);
@@ -96,51 +95,45 @@ const ViewComplaints = () => {
       toast.error(error?.message || 'Failed to delete complaint');
     }
   };
-
-
   const handleEdit = (complaint) => {
     setEditingComplaint(complaint);
     setComplaintModalVisible(true);
   };
-
     const handleSave = async (updatedData) => {
-    if (!editingComplaint?._id) {
-      toast.error('No complaint selected for editing');
-      return;
-    }
+        if (!editingComplaint?._id) {
+            toast.error('No complaint selected for editing');
+            return;
+        }
   
-    try {
-        await dispatch(updateComplaint({ id: editingComplaint._id, complaintData: updatedData })).unwrap();
-          dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
-        setComplaintModalVisible(false);
-          setEditingComplaint(null)
-        toast.success('Complaint updated successfully');
-    } catch (error) {
-      toast.error(error?.message || 'Failed to update complaint');
-    }
-  };
-
-   const handleAssign = async (complaintId, userId) => {
         try {
-            await dispatch(assignComplaint({id: complaintId, userId})).unwrap();
+            await dispatch(updateComplaint({ id: editingComplaint._id, complaintData: updatedData })).unwrap();
+            dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
+            setComplaintModalVisible(false);
+            setEditingComplaint(null)
+            toast.success('Complaint updated successfully');
+        } catch (error) {
+            toast.error(error?.message || 'Failed to update complaint');
+        }
+    };
+    const handleAssign = async (complaintId, updatedData) => {
+        try {
+             await dispatch(assignComplaint({id: complaintId, ...updatedData})).unwrap();
              dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
             toast.success('Complaint assigned successfully');
         } catch (error) {
             toast.error(error?.message || 'Failed to assign complaint');
         }
     }
-
-
-  const handleAddComplaint = async (complaintData) => {
-    try {
-      await dispatch(addComplaint(complaintData)).unwrap();
-      dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
-        toast.success('Complaint added successfully');
-       setComplaintModalVisible(false);
-    } catch (error) {
-      toast.error(error?.message || 'Failed to add Complaint');
-    }
-  };
+    const handleAddComplaint = async (complaintData) => {
+        try {
+            await dispatch(addComplaint(complaintData)).unwrap();
+            dispatch(fetchComplaints({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
+            toast.success('Complaint added successfully');
+            setComplaintModalVisible(false);
+        } catch (error) {
+            toast.error(error?.message || 'Failed to add Complaint');
+        }
+    };
    const handleFeedback = async (complaintId, feedback) => {
         try {
            await dispatch(submitComplaintFeedback({ id: complaintId, feedback })).unwrap();
@@ -160,10 +153,10 @@ const ViewComplaints = () => {
             <div id="container">
               <button
                 className="learn-more"
-                onClick={() => {
-                  setEditingComplaint(null);
-                  setComplaintModalVisible(true);
-                }}
+                  onClick={() => {
+                    setEditingComplaint(null);
+                    setComplaintModalVisible(true);
+                  }}
               >
                 <span className="circle" aria-hidden="true">
                   <span className="icon arrow"></span>
@@ -195,50 +188,47 @@ const ViewComplaints = () => {
                         <option value="Resolved">Resolved</option>
                         <option value="Closed">Closed</option>
                     </CFormSelect>
-            
              <div  style={{ width: '100%',  marginLeft: '20px'}} >
-                   {/* <CFormInput
-          type="text"
-          placeholder="Search by tenant, property or type"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-             /> */}
                 </div>
                  </div>
-            <ComplaintsTable
-              complaints={complaints}
-                totalComplaints={totalComplaints}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              handleEdit={handleEdit}
-              handleDelete={handleDelete}
-              handlePageChange={handlePageChange}
-                handleAssign={handleAssign}
-                handleFeedback={handleFeedback}
-            />
+              <Routes>
+                  <Route
+                      path="/"
+                      element={
+                          <ComplaintsTable
+                            complaints={complaints}
+                            totalComplaints={totalComplaints}
+                              currentPage={currentPage}
+                              totalPages={totalPages}
+                              searchTerm={searchTerm}
+                              setSearchTerm={setSearchTerm}
+                              handleEdit={handleEdit}
+                              handleDelete={handleDelete}
+                              handlePageChange={handlePageChange}
+                           />
+                      }
+                  />
+                <Route path="/assign/:id" element={<ComplaintAssign onAssign={handleAssign} />} />
+              </Routes>
           </CCardBody>
         </CCard>
       </CCol>
-
-      {/* Modals */}
       {complaintModalVisible && (
         <ComplaintModal
-  visible={complaintModalVisible}
-  setVisible={setComplaintModalVisible}
-  editingComplaint={editingComplaint}
-  handleSave={handleSave}
-  handleAddComplaint={handleAddComplaint}
-/>
+          visible={complaintModalVisible}
+          setVisible={setComplaintModalVisible}
+          editingComplaint={editingComplaint}
+          handleSave={handleSave}
+          handleAddComplaint={handleAddComplaint}
+        />
       )}
-      <ComplaintDeleteModal
-        visible={deleteModalVisible}
-        setDeleteModalVisible={setDeleteModalVisible}
-        complaintToDelete={complaintToDelete}
-        confirmDelete={confirmDelete}
-      />
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+        <ComplaintDeleteModal
+            visible={deleteModalVisible}
+            setDeleteModalVisible={setDeleteModalVisible}
+            complaintToDelete={complaintToDelete}
+            confirmDelete={confirmDelete}
+        />
+        <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </CRow>
   );
 };

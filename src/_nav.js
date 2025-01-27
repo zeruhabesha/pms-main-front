@@ -98,12 +98,7 @@ const _nav = [
         text: '3',
       },
     },
-    {
-      component: CNavItem,
-      name: 'Report',
-      to: '/report',
-      icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
-    },
+
     {
       component: CNavItem,
       name: 'Complaints',
@@ -119,7 +114,14 @@ const _nav = [
         color: 'warning',
         text: '1',
       },
-    }
+      
+    },
+    {
+      component: CNavItem,
+      name: 'Report',
+      to: '/report',
+      icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
+    },
   ] : []),
 
   ...(userRole === 'Tenant' ? [
