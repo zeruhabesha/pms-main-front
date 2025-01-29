@@ -116,6 +116,7 @@ const _nav = [
       },
       
     },
+  
     {
       component: CNavItem,
       name: 'Report',
@@ -160,7 +161,13 @@ const _nav = [
         color: 'warning',
         text: '1',
       },
-    }
+    },
+      {
+        component: CNavItem,
+        name: 'Clearance',
+        to: '/clearance',
+        icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
+      }, 
   ] : []),
 
     ...(userRole === 'User' ? [

@@ -33,6 +33,7 @@ import {
     cilDescription ,
 } from '@coreui/icons';
 import { CIcon } from '@coreui/icons-react';
+import { addGuest, updateGuest } from '../../api/actions/guestActions';
 
 const AddGuest = ({ visible, setVisible, editingGuest, setEditingGuest }) => {
     const dispatch = useDispatch();
@@ -41,27 +42,46 @@ const AddGuest = ({ visible, setVisible, editingGuest, setEditingGuest }) => {
     const properties = useSelector((state) => state.property.properties);
     const loading = useSelector((state) => state.property.loading);
     const error = useSelector((state) => state.property.error);
-    const { isLoading } = useSelector((state) => state.guest);
+    // const { isLoading } = useSelector((state) => state.guest);
     const [noPropertiesMessage, setNoPropertiesMessage] = useState(null);
     const [localError, setError] = useState(null);
     const [formData, setFormData] = useState({
-        user: "",
-        property: "",
-        name: "",
-        email: "",
-        phoneNumber: "",
-        arrivalDate: "",
-        departureDate: "",
-        reason: "",
-        accessCode: "",
-        notes: "",
+      name: '',
+      email: '',
+      phoneNumber: '',
+      arrivalDate: '',
+      departureDate: '',
+      reason: '',
+      accessCode: '',
+      notes: '',
     });
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (editingGuest) {
-            setFormData(editingGuest); // Prepopulate the form with the editing guest's data
+          setFormData({
+            name: editingGuest.name || '',
+            email: editingGuest.email || '',
+            phoneNumber: editingGuest.phoneNumber || '',
+            arrivalDate: editingGuest.arrivalDate || '',
+            departureDate: editingGuest.departureDate || '',
+            reason: editingGuest.reason || '',
+            accessCode: editingGuest.accessCode || '',
+            notes: editingGuest.notes || '',
+          });
+        } else {
+          setFormData({
+            name: '',
+            email: '',
+            phoneNumber: '',
+            arrivalDate: '',
+            departureDate: '',
+            reason: '',
+            accessCode: '',
+            notes: '',
+          });
         }
-    }, [editingGuest]);
+      }, [editingGuest]);
 
 
       useEffect(() => {
@@ -92,10 +112,11 @@ const AddGuest = ({ visible, setVisible, editingGuest, setEditingGuest }) => {
 
 
 
- const handleChange = (e) => {
+    const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-    };
+      };
+    
 
     const validateForm = () => {
         if (!formData.property) return "Please select a property.";
@@ -133,7 +154,25 @@ const AddGuest = ({ visible, setVisible, editingGuest, setEditingGuest }) => {
         }
     };
 
-
+    // const handleSubmit = async (e) => {
+    //     e.preventDefault();
+    //     setIsLoading(true);
+    //     try {
+    //       if (editingGuest) {
+    //         await dispatch(updateGuest({ id: editingGuest._id, guestData: formData })).unwrap();
+    //         toast.success('Guest updated successfully!');
+    //       } else {
+    //         await dispatch(addGuest(formData)).unwrap();
+    //         toast.success('Guest added successfully!');
+    //       }
+    //       setVisible(false);
+    //       setEditingGuest(null);
+    //     } catch (error) {
+    //       toast.error(error?.message || 'Failed to save guest.');
+    //     } finally {
+    //       setIsLoading(false);
+    //     }
+    //   };
 
     const handleClose = () => {
         setVisible(false);
@@ -158,9 +197,10 @@ const AddGuest = ({ visible, setVisible, editingGuest, setEditingGuest }) => {
         };
     return (
         <CModal visible={visible} onClose={handleClose} alignment="center" backdrop="static" size="lg">
-            <CModalHeader className="bg-dark text-white">
-                <CModalTitle>{editingGuest ? "Edit Guest" : "Add Guest"}</CModalTitle>
-            </CModalHeader>
+            <CModalHeader>
+        <CModalTitle>{editingGuest ? 'Edit Guest' : 'Add Guest'}</CModalTitle>
+      </CModalHeader>
+   
             <CModalBody>
                 <div className="maintenance-form">
                     <CCard className="border-0 shadow-sm">
@@ -176,7 +216,7 @@ const AddGuest = ({ visible, setVisible, editingGuest, setEditingGuest }) => {
                                 </CAlert>
                             )}
 
-                             <CForm onSubmit={onSubmit}>
+<CForm onSubmit={onSubmit}>
                             <CRow className="g-3">
                                   <CCol md={6}>
                                     <CFormLabel htmlFor="user"><CIcon icon={cilUser} className="me-1" />User ID</CFormLabel>

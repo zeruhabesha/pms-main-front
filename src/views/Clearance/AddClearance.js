@@ -15,7 +15,6 @@ import {
     CModalTitle,
     CModalFooter,
     CForm,
-    CFormSelect,
     CTooltip,
 } from "@coreui/react";
 import { useDispatch, useSelector } from "react-redux";
@@ -34,7 +33,8 @@ import {
 } from "@coreui/icons";
 import { CIcon } from "@coreui/icons-react";
 
-const AddClearance = ({ visible, setVisible }) => {
+const AddClearance = ({ visible, setVisible, tenantId }) => {
+    
     const dispatch = useDispatch();
     const properties = useSelector((state) => state.property.properties);
     const loading = useSelector((state) => state.property.loading);
@@ -45,13 +45,14 @@ const AddClearance = ({ visible, setVisible }) => {
     const [formData, setFormData] = useState({
         user: "",
         property: "",
-        tenant: "",
+        tenant: tenantId || "", // Pre-fill the tenant ID if provided
         reason: "",
         notes: "",
         inspectionDate: "",
         status: "pending",
-    });
+      });
 
+      
     useEffect(() => {
         const fetchUser = () => {
             const encryptedUser = localStorage.getItem("user");
@@ -79,7 +80,7 @@ const AddClearance = ({ visible, setVisible }) => {
         } else {
             setNoPropertiesMessage(null);
         }
-    }, [properties, loading, error]);
+    }, [properties, loading, error, tenantId]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -89,6 +90,7 @@ const AddClearance = ({ visible, setVisible }) => {
     const validateForm = () => {
         if (!formData.property) return "Please select a property.";
         if (!formData.tenant) return "Please select a tenant.";
+         // Changed: Tenant is pre-filled, no need to validate it here.
         if (!formData.inspectionDate) return "Please select the inspection date.";
         if (!formData.reason) return "Please enter the reason for clearance.";
         return null;
@@ -116,7 +118,7 @@ const AddClearance = ({ visible, setVisible }) => {
             setFormData({
                 user: "",
                 property: "",
-                tenant: "",
+                tenant: tenantId || "", // Keep the tenantId if it exists
                 reason: "",
                 notes: "",
                 inspectionDate: "",
@@ -130,9 +132,6 @@ const AddClearance = ({ visible, setVisible }) => {
         setFormData((prev) => ({ ...prev, property: e.target.value }));
     };
 
-    const handleTenantChange = (e) => {
-        setFormData((prev) => ({ ...prev, tenant: e.target.value }));
-    };
 
     return (
         <CModal
@@ -164,23 +163,6 @@ const AddClearance = ({ visible, setVisible }) => {
                         <CForm>
                             <CRow className="g-3">
                                 <CCol md={6}>
-                                    <CFormLabel htmlFor="user">
-                                        <CIcon icon={cilUser} className="me-1" />
-                                        User ID
-                                    </CFormLabel>
-                                    <CTooltip content="Your user ID is auto-filled and cannot be changed.">
-                                        <CFormInput
-                                            id="user"
-                                            type="text"
-                                            value={formData.user}
-                                            readOnly
-                                            style={{
-                                                backgroundColor: "aliceblue",
-                                            }}
-                                        />
-                                    </CTooltip>
-                                </CCol>
-                                <CCol md={6}>
                                     <CFormLabel htmlFor="property">
                                         <CIcon
                                             icon={cilHome}
@@ -196,36 +178,20 @@ const AddClearance = ({ visible, setVisible }) => {
                                 </CCol>
                                 <CCol md={6}>
                                     <CFormLabel htmlFor="tenant">
-                                        <CIcon
-                                            icon={cilHome}
-                                            className="me-1"
-                                        />
-                                        Tenant
+                                    <CIcon icon={cilUser} className="me-1" />
+                                        Tenant ID
                                     </CFormLabel>
-                                    <CFormSelect
-                                        name="tenant"
-                                        value={formData.tenant}
-                                        onChange={handleTenantChange}
-                                        required
-                                    >
-                                        <option value="">
-                                            Select Tenant
-                                        </option>
-                                        {properties
-                                            ?.filter(
-                                                (property) =>
-                                                    property._id ===
-                                                    formData.property
-                                            )?.[0]
-                                            ?.tenants?.map((tenant, index) => (
-                                                <option
-                                                    key={index}
-                                                    value={tenant?._id}
-                                                >
-                                                    {tenant?.name}
-                                                </option>
-                                            ))}
-                                    </CFormSelect>
+                                    <CTooltip content="Your user ID is auto-filled and cannot be changed.">
+                                        <CFormInput
+                                            id="user"
+                                            type="text"
+                                            value={formData.user}
+                                            readOnly
+                                            style={{
+                                                backgroundColor: "aliceblue",
+                                            }}
+                                        />
+                                    </CTooltip>
                                 </CCol>
                                 <CCol md={6}>
                                     <CFormInput

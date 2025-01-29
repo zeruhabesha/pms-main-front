@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     fetchMaintenances,
     deleteMaintenance,
+    fetchMaintenanceById,
 } from '../../api/actions/MaintenanceActions';
 import { CRow, CCol, CCard, CCardBody, CCardHeader, CFormInput, CSpinner, CButton } from '@coreui/react';
 import MaintenanceTable from './MaintenanceTable';
@@ -21,7 +22,6 @@ import 'jspdf-autotable';
 import { useNavigate } from 'react-router-dom';
 import MaintenanceDetailsModal from './MaintenanceDetailsModal';
 import MaintenanceDeleteModal from './MaintenanceDeleteModal';
-import { fetchMaintenanceById } from '../../api/actions/MaintenanceActions';
 
 
 const ViewMaintenance = () => {
@@ -41,15 +41,13 @@ const ViewMaintenance = () => {
         term: '',
         debouncedTerm: '',
     });
-    
-     const [modalStates, setModalStates] = useState({
+
+    const [modalStates, setModalStates] = useState({
         details: { visible: false, maintenance: null },
     });
 
     const [userPermissions, setUserPermissions] = useState(null);
     const [role, setRole] = useState(null);
-
-
 
     const ITEMS_PER_PAGE = 10;
 
@@ -109,16 +107,7 @@ const ViewMaintenance = () => {
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [maintenanceToDelete, setMaintenanceToDelete] = useState(null);
 
-    // const handleDelete = async (maintenanceToDelete) => {
-    //      if (maintenanceToDelete?._id) {
-    //         try {
-    //             await dispatch(deleteMaintenance(maintenanceToDelete._id));
-    //             fetchMaintenanceRequests();
-    //         } catch (error) {
-    //             console.error('Delete error', error);
-    //         }
-    //     }
-    // };
+
 
     const handleDelete = (maintenance) => {
         setMaintenanceToDelete(maintenance);
@@ -140,23 +129,22 @@ const ViewMaintenance = () => {
     const handleSearchChange = (value) => {
         setSearchState((prev) => ({ ...prev, term: value }));
     };
-    const csvData = useMemo(
+
+     const csvData = useMemo(
         () =>
             maintenances.map((maintenance, index) => {
                 if (!maintenance) return {}; // Skip undefined maintenance records
                 const tenant = maintenance.tenant || {}; // Default to an empty object if tenant is undefined
                 return {
                     index: (currentPage - 1) * ITEMS_PER_PAGE + index + 1,
-                    tenantName: tenant.tenantName || 'N/A',
-                    email: tenant.contactInformation?.email || 'N/A',
-                    phone: tenant.contactInformation?.phoneNumber || 'N/A',
+                    tenantName: tenant.name || 'N/A',
+                    email: tenant.email || 'N/A',
+                     phone: tenant.phoneNumber || 'N/A',
                     status: maintenance.status || 'N/A',
                 };
             }),
         [maintenances, currentPage]
     );
-    
-    
 
     // Data for clipboard
     const clipboardData = useMemo(
@@ -166,8 +154,8 @@ const ViewMaintenance = () => {
                     if (!maintenance) return 'Invalid record';
                     const tenant = maintenance.tenant || {};
                     return `${(currentPage - 1) * ITEMS_PER_PAGE + index + 1}. ${
-                        tenant.tenantName || 'N/A'
-                    } - ${tenant.contactInformation?.email || 'N/A'} - ${
+                        tenant.name || 'N/A'
+                    } - ${tenant.email || 'N/A'} - ${
                         maintenance.status || 'N/A'
                     }`;
                 })
@@ -180,25 +168,25 @@ const ViewMaintenance = () => {
         try {
             const doc = new jsPDF();
             doc.text('Maintenance Requests', 14, 10);
-    
+
             const tableData = maintenances.map((maintenance, index) => {
                 if (!maintenance) return [];
                 const tenant = maintenance.tenant || {};
                 return [
                     (currentPage - 1) * ITEMS_PER_PAGE + index + 1,
-                    tenant.tenantName || 'N/A',
-                    tenant.contactInformation?.email || 'N/A',
-                    tenant.contactInformation?.phoneNumber || 'N/A',
+                    tenant.name || 'N/A',
+                    tenant.email || 'N/A',
+                     tenant.phoneNumber || 'N/A',
                     maintenance.status || 'N/A',
                 ];
             });
-    
+
             doc.autoTable({
                 head: [['#', 'Tenant Name', 'Email', 'Phone', 'Status']],
                 body: tableData,
                 startY: 20,
             });
-    
+
             doc.save('maintenance_requests.pdf');
         } catch (error) {
             console.error('PDF export error:', error);
@@ -206,15 +194,13 @@ const ViewMaintenance = () => {
     }, [maintenances, currentPage]);
 
     const handleAddRequest = () => {
-          navigate('/maintenance/add');
+        navigate('/maintenance/add');
     };
    
-    const handleEdit = async (maintenance) => {
+     const handleEdit = async (maintenance) => {
         try {
-            // If fetchMaintenanceById is a Redux action that returns a promise:
             const response = await dispatch(fetchMaintenanceById(maintenance._id)).unwrap();
     
-            // Check if the response contains data
             if (response && response.data) {
                 navigate(`/maintenance/edit/${maintenance._id}`, {
                     state: { editingRequest: response.data },
@@ -228,13 +214,9 @@ const ViewMaintenance = () => {
             alert('Failed to fetch maintenance details for editing. Please try again.');
         }
     };
-     
-    
-    
-      
-      const handleEdit1 = (maintenance) => {
 
-    };
+   
+    
     const handleViewDetails = (maintenance) => {
            handleOpenModal('details', maintenance);
     };
@@ -264,14 +246,14 @@ const ViewMaintenance = () => {
             },
         }));
     };
+
     return (
         <CRow>
             <CCol xs={12}>
                 <CCard className="mb-4">
                     <CCardHeader className="d-flex justify-content-between align-items-center">
                         <strong>Maintenance Records</strong>
-                        {/* {userPermissions?.addMaintenanceRecord && ( */}
-                        {role === 'Tenant' && (
+                         {role === 'Tenant' && (
                               <div id="container">
                                 <button className="learn-more" onClick={handleAddRequest}>
                                     <span className="circle" aria-hidden="true">
@@ -280,15 +262,15 @@ const ViewMaintenance = () => {
                                     <span className="button-text">Add Request</span>
                                 </button>
                             </div>
-                         )} 
+                         )}
                     </CCardHeader>
                     <CCardBody>
                         <div className="d-flex mb-3 gap-2">
-                            
+                           
                             <div className="d-flex gap-2">
                                 <CSVLink
                                     data={csvData}
-                                    headers={[
+                                     headers={[
                                         { label: '#', key: 'index' },
                                         { label: 'Tenant Name', key: 'tenantName' },
                                         { label: 'Email', key: 'email' },
@@ -323,26 +305,23 @@ const ViewMaintenance = () => {
                         ) : error ? (
                             <div className="text-danger">{error}</div>
                         ) : maintenances && maintenances.length > 0 ? (
-                            
-                 
-<MaintenanceTable
-    maintenanceList={maintenances.map((maintenance) => ({
-        ...maintenance,
-        tenantName: maintenance?.tenant?.tenantName || 'N/A',
-        email: maintenance?.tenant?.contactInformation?.email || 'N/A',
-        phone: maintenance?.tenant?.contactInformation?.phoneNumber || 'N/A',
-    }))}                currentPage={currentPage}
-                totalPages={totalPages}
-                totalRequests={totalMaintenanceRequests}
-                searchTerm={searchState.term}
-                setSearchTerm={handleSearchChange}
-                handleDelete={setMaintenanceToDelete}
-                // handleEdit={handleEdit}
-                handleEdit={(maintenance) => navigate(`/maintenance/edit/${maintenance._id}`)}
-                handleEdit1={handleEdit1}
-                handleViewDetails={handleViewDetails}
-                handleAssign={handleAssign}
-                handlePageChange={handlePageChange} // Correctly pass the function
+                             <MaintenanceTable
+                                maintenanceList={maintenances.map(maintenance => ({
+                                    ...maintenance,
+                                    tenantName: maintenance.tenant?.name || 'N/A',
+                                     email: maintenance.tenant?.email || 'N/A',
+                                     phone: maintenance.tenant?.phoneNumber || 'N/A',
+                                }))}
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                totalRequests={totalMaintenanceRequests}
+                                searchTerm={searchState.term}
+                                setSearchTerm={handleSearchChange}
+                                handleDelete={setMaintenanceToDelete}
+                                handleEdit={handleEdit}
+                                handleViewDetails={handleViewDetails}
+                                handleAssign={handleAssign}
+                                handlePageChange={handlePageChange}
                             />
                         ) : (
                             <div className="text-center text-muted">No maintenance records found.</div>
@@ -350,18 +329,17 @@ const ViewMaintenance = () => {
                     </CCardBody>
                 </CCard>
             </CCol>
-            {/* Modals */}
-                <MaintenanceDetailsModal
+            <MaintenanceDetailsModal
                 visible={modalStates.details.visible}
                 setVisible={() => handleCloseModal('details')}
                 maintenance={modalStates.details.maintenance}
             />
-            <MaintenanceDeleteModal
-    visible={deleteModalVisible}
-    setDeleteModalVisible={setDeleteModalVisible}
-    maintenanceToDelete={maintenanceToDelete}
-    confirmDelete={confirmDelete}
-/>
+             <MaintenanceDeleteModal
+                visible={deleteModalVisible}
+                setDeleteModalVisible={setDeleteModalVisible}
+                maintenanceToDelete={maintenanceToDelete}
+                confirmDelete={confirmDelete}
+            />
 
         </CRow>
     );

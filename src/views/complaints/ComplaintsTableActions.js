@@ -1,4 +1,3 @@
-// src/components/complaints/ComplaintsTableActions.js
 import React from 'react';
 import {
     CButton,
@@ -42,12 +41,12 @@ const ComplaintsTableActions = ({
                     <CIcon icon={cilCloudDownload} />
                 </CButton>
             </div>
-             <CFormInput
+            <CFormInput
                 type="text"
                 placeholder="Search by tenant, property or type"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                 style={{width: '100%'}}
+                style={{ width: '100%' }}
             />
         </div>
     );

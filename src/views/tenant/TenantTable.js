@@ -46,6 +46,8 @@ import { decryptData } from '../../api/utils/crypto';
 import TenantDetailsModal from './TenantDetailsModal'
 import { setSelectedTenant, clearError } from '../../api/slice/TenantSlice';
 import { useNavigate } from 'react-router-dom';
+
+
 const TenantTable = ({
     tenants = [],
     currentPage,
@@ -58,7 +60,8 @@ const TenantTable = ({
     handlePageChange,
     handleFetchTenants,
     itemsPerPage = 10,
-}) => {
+  }) => {
+    
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
@@ -230,10 +233,19 @@ const TenantTable = ({
         }
     };
 
-  const handleClearance = (tenantId) => {
-         navigate(`/clearance/add?tenantId=${tenantId}`)
-    };
-
+//   const handleClearance = (tenantId) => {
+//          navigate(`/clearance/add?tenantId=${tenantId}`)
+//     };
+const handleClearance = (tenantId) => {
+    if (tenantId) {
+      navigate(`/clearance/add?tenantId=${tenantId}`); // Navigate to the clearance page with the tenant ID
+    }
+  };
+    // const handleClearance = (tenantId) => {
+    //     if (typeof props.handleClearance === 'function') {
+    //       props.handleClearance(tenantId); // Call the parent's handler with the tenant ID
+    //     }
+    //   };
 
     return (
         <div>
@@ -292,7 +304,8 @@ const TenantTable = ({
                     </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                    {sortedTenants?.map((tenant, index) => (
+      {tenants?.map((tenant, index) => (
+                    // {sortedTenants?.map((tenant, index) => (
                         <CTableRow key={tenant?._id || index}>
                             <CTableDataCell className="text-center">
                                 {(currentPage - 1) * itemsPerPage + index + 1}
@@ -388,13 +401,20 @@ const TenantTable = ({
                                                     <CIcon icon={cilFullscreen} className="me-2"/>
                                                          Details
                                                 </CDropdownItem>
-                                                  <CDropdownItem
-                                                        onClick={() => handleClearance(tenant?._id)}
-                                                        title="Clearance"
+                                                {/* <CDropdownItem
+                                                    onClick={() => handleClearance(tenant?._id)}
+                                                    title="Clearance"
                                                     >
-                                                       <CIcon icon={cilClipboard} className="me-2"/>
+                                                    <CIcon icon={cilClipboard} className="me-2" />
+                                                    Clearance
+                                                    </CDropdownItem> */}
+                                                    <CDropdownItem
+                                                        onClick={() => handleClearance(tenant?._id)} // Navigate to clearance
+                                                        title="Clearance"
+                                                        >
+                                                        <CIcon icon={cilClipboard} className="me-2" />
                                                         Clearance
-                                                    </CDropdownItem>
+                                                        </CDropdownItem>
                                         </CDropdownMenu>
                                 </CDropdown>
                             </CTableDataCell>

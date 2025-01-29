@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
     CTable,
     CTableHead,
@@ -18,6 +18,13 @@ import {
     CInputGroup,
     CFormInput,
     CInputGroupText,
+    CFormCheck, // Import CFormCheck here
+    CModal,
+    CModalHeader,
+    CModalTitle,
+    CModalBody,
+    CModalFooter,
+
 } from '@coreui/react';
 import "../paggination.scss";
 import { CSVLink } from 'react-csv';
@@ -48,6 +55,9 @@ import PropertyDeleteModal from './PropertyDeleteModal';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import './slider.scss'; // Import your custom CSS
+import PropertyTableRow from './PropertyTableRow';
+import { debounce } from 'lodash';
+
 
 const PropertyTable = ({
     properties = [],
@@ -55,6 +65,9 @@ const PropertyTable = ({
     onEdit = () => {},
     onDelete = () => {},
     onView = () => {},
+    onPhotoDelete = () => {},
+    onPhotoUpdate = () => {},
+    onDeleteMultiple = () => {},
     currentPage = 1,
     handlePageChange = () => {},
     totalPages = 1,
@@ -66,11 +79,15 @@ const PropertyTable = ({
     const [dropdownOpen, setDropdownOpen] = useState(null);
     const dropdownRefs = useRef({});
      const [selectedStatus, setSelectedStatus] = useState('');
-     const [priceRange, setPriceRange] = useState([0, 1000000]); // Initial price range
-     const [sliderMax, setSliderMax] = useState(1000000) // Initial max value of price
+    const [priceRange, setPriceRange] = useState([0, 1000000]); // Initial price range
+    const [sliderMax, setSliderMax] = useState(1000000) // Initial max value of price
+      const [selectedRows, setSelectedRows] = useState([]); // To track selected rows
 
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showMultiDeleteConfirm, setShowMultiDeleteConfirm] = useState(false);
 
-    totalPages = Math.ceil(totalProperties / itemsPerPage);
+    const totalPagesComputed = useMemo(() => Math.ceil(totalProperties / itemsPerPage), [totalProperties, itemsPerPage]);
+
 
     useEffect(() => {
         const encryptedUser = localStorage.getItem('user');
@@ -81,22 +98,25 @@ const PropertyTable = ({
             }
         }
     }, []);
-    useEffect(() => {
+
+     useEffect(() => {
         if (properties && properties.length > 0) {
             // Find the maximum price in the properties array
-           const maxPrice = properties.reduce((max, property) => {
+            const maxPrice = properties.reduce((max, property) => {
                 return Math.max(max, Number(property.price || 0));
             }, 0);
 
             // Update the sliderMax state with the calculated maximum price
             setSliderMax(maxPrice > 1000000 ? maxPrice : 1000000);
 
-             setPriceRange([0, maxPrice > 1000000 ? maxPrice : 1000000]);
-          } else {
+            setPriceRange([0, maxPrice > 1000000 ? maxPrice : 1000000]);
+        } else {
             setSliderMax(1000000);
-             setPriceRange([0, 1000000]);
-          }
+            setPriceRange([0, 1000000]);
+        }
     }, [properties])
+
+
 
     const handleSort = (key) => {
         setSortConfig((prevConfig) => ({
@@ -109,9 +129,9 @@ const PropertyTable = ({
         setDropdownOpen(prevState => prevState === propertyId ? null : propertyId);
     };
 
-     const closeDropdown = () => {
+    const closeDropdown = () => {
         setDropdownOpen(null);
-      };
+    };
 
 
     const sortedProperties = useMemo(() => {
@@ -127,47 +147,39 @@ const PropertyTable = ({
         });
     }, [properties, sortConfig]);
 
-      const filteredProperties = useMemo(() => {
-           let filtered = sortedProperties;
+    const filteredProperties = useMemo(() => {
+        let filtered = sortedProperties;
 
-          if (selectedStatus) {
-           filtered = filtered.filter(property =>
-             property.status?.toLowerCase() === selectedStatus.toLowerCase()
-           );
-         }
-          filtered = filtered.filter(property => {
-             const price = Number(property.price);
-              return price >= priceRange[0] && price <= priceRange[1];
+        if (selectedStatus) {
+            filtered = filtered.filter(property =>
+                property.status?.toLowerCase() === selectedStatus.toLowerCase()
+            );
+        }
+        filtered = filtered.filter(property => {
+            const price = Number(property.price);
+            return price >= priceRange[0] && price <= priceRange[1];
         });
 
 
-          return filtered;
-       }, [sortedProperties, selectedStatus, priceRange]);
+        return filtered;
+    }, [sortedProperties, selectedStatus, priceRange]);
 
-
-
-    const csvData = filteredProperties.map((property, index) => ({
+      const csvData = filteredProperties.map((property, index) => ({
         index: (currentPage - 1) * itemsPerPage + index + 1,
         title: property.title || 'N/A',
-        price: property.price || 'N/A',
+         price: property.price || 'N/A',
         address: property.address || 'N/A',
-        type: property.propertyType || 'N/A',
+          type: property.propertyType || 'N/A'
     }));
-
-    const formatCurrency = (amount) => {
+    const formatCurrency = (amount, currency = 'ETB') => {
         if (!amount) return 'N/A';
-        try {
-            return new Intl.NumberFormat(navigator.language, {
-                style: 'currency',
-                currency: 'USD',
-            }).format(amount);
-        } catch (e) {
-            console.error('Error formatting currency', e);
-            return 'N/A';
-        }
+        return new Intl.NumberFormat('en-ET', {
+            style: 'currency',
+            currency,
+        }).format(amount);
     };
-
-    const generatePDFTableData = () => {
+    
+      const generatePDFTableData = () => {
         return filteredProperties.map((property, index) => [
             (currentPage - 1) * itemsPerPage + index + 1,
             property.title || 'N/A',
@@ -179,7 +191,7 @@ const PropertyTable = ({
 
     const exportToPDF = () => {
         if (!filteredProperties.length) {
-            console.warn('No properties to export to PDF');
+             console.warn('No properties to export to PDF');
             return;
         }
         const doc = new jsPDF();
@@ -192,21 +204,20 @@ const PropertyTable = ({
         });
         doc.save('property_data.pdf');
     };
-
     const getPaginationRange = (currentPage, totalPages) => {
         if (totalPages <= 10) {
             return Array.from({ length: totalPages }, (_, i) => i + 1);
         }
 
-        const delta = 2;
+         const delta = 2;
         const range = [];
 
-        for (let i = Math.max(1, currentPage - delta); i <= Math.min(totalPages, currentPage + delta); i++) {
+         for (let i = Math.max(1, currentPage - delta); i <= Math.min(totalPages, currentPage + delta); i++) {
             range.push(i);
-        }
+         }
 
         if (range[0] > 1) {
-            if (range[0] > 2) range.unshift('...');
+             if (range[0] > 2) range.unshift('...');
             range.unshift(1);
         }
 
@@ -217,16 +228,15 @@ const PropertyTable = ({
 
         return range;
     };
-
      const statusOptions = useMemo(() => {
         const allStatuses = properties.map((property) => property.status?.toLowerCase() || 'open');
         const uniqueStatuses = Array.from(new Set(allStatuses)).sort(); // Sort the unique statuses
         return ['', ...uniqueStatuses];
     }, [properties]);
 
-    const getStatusIcon = (status) => {
+     const getStatusIcon = (status) => {
         const statusIconMap = {
-            open: <CIcon icon={cilCheckCircle} className="text-success" title="Open" />,
+             open: <CIcon icon={cilCheckCircle} className="text-success" title="Open" />,
             reserved: <CIcon icon={cilBan} className="text-danger" title="Reserved" />,
             closed: <CIcon icon={cilPeople} className="text-dark" title="Closed" />, // Updated icon
             'under maintenance': <CIcon icon={cilPhone} className="text-warning" title="Under Maintenance" />, // Updated icon
@@ -235,8 +245,7 @@ const PropertyTable = ({
         };
         return statusIconMap[status?.toLowerCase()] || null;
     };
-
-    const openDeleteModal = (property) => {
+     const openDeleteModal = (property) => {
         setDeleteModal({ visible: true, propertyToDelete: property });
     };
 
@@ -244,55 +253,171 @@ const PropertyTable = ({
         setDeleteModal({ visible: false, propertyToDelete: null });
     };
 
-    const handlePriceSliderChange = (value) => {
-       setPriceRange(value)
-    };
+    const handlePriceSliderChange = debounce((value) => {
+        setPriceRange(value);
+    }, 300); // Delay updates by 300ms
+
+const handleCheckboxChange = useCallback((propertyId) => {
+        setSelectedRows(prevSelected => {
+            const isCurrentlySelected = prevSelected.includes(propertyId);
+            if (isCurrentlySelected) {
+                return prevSelected.filter(id => id !== propertyId);
+            } else {
+                return [...prevSelected, propertyId];
+            }
+        });
+    }, []);
+
+
+     // Fixed handleSelectAllRows to only select/deselect current page items
+     const handleSelectAllRows = useCallback(() => {
+        const allPropertyIds = filteredProperties.map(property => property._id);
+        const allSelected = allPropertyIds.every(id => selectedRows.includes(id));
+    
+        setSelectedRows(prevSelected => allSelected ? [] : [...new Set([...prevSelected, ...allPropertyIds])]);
+    }, [filteredProperties, selectedRows]);
+    
+
+
+const handleMultiDeleteConfirm = async () => {
+    if (selectedRows.length === 0) return;
+
+    setIsDeleting(true);
+    try {
+        await onDeleteMultiple(selectedRows);
+        setSelectedRows([]);
+        setShowMultiDeleteConfirm(false);
+    } catch (error) {
+        console.error('Error deleting properties:', error);
+    } finally {
+        setIsDeleting(false);
+    }
+};
+
+     const handleMultiDelete = () => {
+        if (selectedRows.length > 0) {
+            setShowMultiDeleteConfirm(true);
+         }
+     };
+
+  const isRowSelected = useCallback((propertyId) => {
+    return selectedRows.includes(propertyId);
+}, [selectedRows]);
+
+// const [selectedProperty, setSelectedProperty] = useState(null);
+
+// const handleViewProperty = useCallback((property) => {
+//     console.log('Viewing property:', property);
+//     setSelectedProperty(property); // Ensure this state update doesn’t cause unnecessary re-renders
+// }, []);
 
     return (
         <div>
-            <div className="d-flex justify-content-between mb-3">
-      <div className="d-flex gap-1" style={{ width: '80%'}}> {/* Container for slider and price */}
-                 <div style={{width: '95%'}} className="d-flex  mt-2 gap-1">
-                       <Slider
-                           range
-                           min={0}
-                           max={sliderMax}
+             <div className="d-flex justify-content-between mb-3">
+                <div className="d-flex gap-1" style={{ width: '80%' }}>
+                    <div style={{ width: '95%' }} className="d-flex  mt-2 gap-1">
+                        <Slider
+                            range
+                            min={0}
+                            max={sliderMax}
                             value={priceRange}
-                           onChange={handlePriceSliderChange}
+                            onChange={handlePriceSliderChange}
                             step={100}
-                            marks={{
-                              [priceRange[0]]: {
-                                  label: <div className="rc-slider-mark-text-with-value"> {formatCurrency(priceRange[0])}</div>
-                              },
+                             marks={{
+                                [priceRange[0]]: {
+                                    label: <div className="rc-slider-mark-text-with-value"> {formatCurrency(priceRange[0])}</div>
+                                },
                                 [priceRange[1]]: {
                                     label: <div className="rc-slider-mark-text-with-value">{formatCurrency(priceRange[1])}</div>
                                 }
-                            }}
+                             }}
                             handle={(props) => {
-                                 const { value, dragging, index, ...restProps } = props
-                                 return (
+                                const { value, dragging, index, ...restProps } = props
+                                return (
                                     <div {...restProps} >
                                     </div>
                                 );
                             }}
-                       />
-                       </div>
+                        />
+                    </div>
 
-                   </div>
+                </div>
 
-                     <CFormSelect
-                           style={{ width: '20%', minWidth: '200px' }} // Ensure a minimum width
-                        value={selectedStatus}
-                         onChange={(e) => setSelectedStatus(e.target.value)}
-                         options={statusOptions.map(status => ({ label: status || "All Statuses", value: status }))}
-                     />
-         </div>
+                <CFormSelect
+                    style={{ width: '20%', minWidth: '200px' }} // Ensure a minimum width
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                     options={statusOptions.map(status => ({ label: status || "All Statuses", value: status }))}
+                />
+            </div>
+             {selectedRows.length > 0 && (
+                  <div className="mb-3 p-3 bg-light rounded d-flex justify-content-between align-items-center">
+                  <div>
+                      <span className="fw-bold">{selectedRows.length}</span> properties selected
+                  </div>
+                  <div className="d-flex gap-2">
+                      <CButton
+                          color="secondary"
+                          variant="outline"
+                          onClick={() => setSelectedRows([])}
+                      >
+                          Clear Selection
+                      </CButton>
+                      <CButton
+                          color="danger"
+                         onClick={handleMultiDelete}
+                          disabled={isDeleting}
+                      >
+                          {isDeleting ? 'Deleting...' : `Delete Selected (${selectedRows.length})`}
+                      </CButton>
+                  </div>
+              </div>
+            )}
+
+
+             {/* Delete Confirmation Modal */}
+            <CModal
+                visible={showMultiDeleteConfirm}
+                onClose={() => setShowMultiDeleteConfirm(false)}
+                alignment="center"
+            >
+                <CModalHeader closeButton>
+                    <CModalTitle>Confirm Delete</CModalTitle>
+                </CModalHeader>
+                <CModalBody>
+                    Are you sure you want to delete {selectedRows.length} selected properties?
+                    This action cannot be undone.
+                </CModalBody>
+                <CModalFooter>
+                    <CButton
+                        color="secondary"
+                        onClick={() => setShowMultiDeleteConfirm(false)}
+                    >
+                        Cancel
+                    </CButton>
+                    <CButton
+                        color="danger"
+                        onClick={handleMultiDeleteConfirm}
+                        disabled={isDeleting}
+                    >
+                        {isDeleting ? 'Deleting...' : 'Delete'}
+                    </CButton>
+                </CModalFooter>
+            </CModal>
             <CTable align="middle" className="mb-0 border" hover responsive>
                 <CTableHead className="text-nowrap">
                     <CTableRow>
-                        <CTableHeaderCell className="bg-body-tertiary text-center">
-                            <CIcon icon={cilPeople} />
+                         <CTableHeaderCell className="bg-body-tertiary text-center">
+                         <CFormCheck
+    onChange={handleSelectAllRows}
+    checked={selectedRows.length > 0 && selectedRows.length === totalProperties}
+    indeterminate={selectedRows.length > 0 && selectedRows.length < totalProperties}
+/>
+
                         </CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary text-center">
+                             <CIcon icon={cilPeople} />
+                         </CTableHeaderCell>
                         <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('title')} style={{ cursor: 'pointer' }}>
                             Title
                             {sortConfig.key === 'title' && (
@@ -301,7 +426,7 @@ const PropertyTable = ({
                                 />
                             )}
                         </CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary">
+                          <CTableHeaderCell className="bg-body-tertiary">
                             Property Type
                         </CTableHeaderCell>
                         <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('price')} style={{ cursor: 'pointer' }}>
@@ -312,143 +437,87 @@ const PropertyTable = ({
                                 />
                             )}
                         </CTableHeaderCell>
-                        {/* <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('address')} style={{ cursor: 'pointer' }}>
-                            Address
-                            {sortConfig.key === 'address' && (
-                                <CIcon
-                                    icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom}
-                                />
-                            )}
-                        </CTableHeaderCell> */}
-                        <CTableHeaderCell className="bg-body-tertiary">
+                         <CTableHeaderCell className="bg-body-tertiary">
                             Status
                         </CTableHeaderCell>
                         <CTableHeaderCell className="bg-body-tertiary">Actions</CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                    {filteredProperties.length > 0 ? (
-                        filteredProperties.map((property, index) => {
-                            const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
-                            const isRowBlurred = dropdownOpen !== null && dropdownOpen !== property.id;
-                            return (
-                                <CTableRow key={property.id || index} className={isRowBlurred ? 'blurred-row' : ''}>
-                                    <CTableDataCell className="text-center">{rowNumber}</CTableDataCell>
-                                    <CTableDataCell>
-                                    <div>{property.title || 'N/A'}</div>
-                                    <div className="small text-body-secondary text-nowrap">
-                                        <span>
-                                        <CIcon icon={cilLocationPin} size="sm" className="me-1" />
-                                        {property.address || 'N/A'}</span>
-                                    </div>
-                                        </CTableDataCell>
-                                    <CTableDataCell>
-                                        {property?.propertyType || 'N/A'}
-                                    </CTableDataCell>
-                                    <CTableDataCell>{formatCurrency(property.price)}</CTableDataCell>
-                                    {/* <CTableDataCell>{property.address || 'N/A'}</CTableDataCell> */}
-                                    <CTableDataCell>
-                                        {getStatusIcon(property.status)}
-                                    </CTableDataCell>
-                                    <CTableDataCell>
-                                        <CDropdown
-                                             variant="btn-group"
-                                              isOpen={dropdownOpen === property.id}
-                                               onToggle={() => toggleDropdown(property.id)}
-                                                onMouseLeave={closeDropdown}
-                                                 innerRef={ref => (dropdownRefs.current[property.id] = ref)}>
-                                            <CDropdownToggle color="light" caret={false} size="sm" title="Actions">
-                                                <CIcon icon={cilOptions} />
-                                            </CDropdownToggle>
-                                            <CDropdownMenu >
-                                                {userPermissions?.editProperty && (
-                                                  <CDropdownItem onClick={() => onEdit(property)} title="Edit Property">
-                                                      <CIcon icon={cilPencil} className="me-2"/>
-                                                       Edit
-                                                   </CDropdownItem>
-                                                )}
-                                                {userPermissions?.deleteProperty && (
-                                                    <CDropdownItem
-                                                        onClick={() => openDeleteModal(property)}
-                                                        style={{ color: 'red' }}
-                                                        title="Delete Property"
-                                                      >
-                                                         <CIcon icon={cilTrash} className="me-2"/>
-                                                         Delete
-                                                      </CDropdownItem>
-                                                )}
-                                                <CDropdownItem onClick={() => onView(property)} title="View Property">
-                                                  <CIcon icon={cilFullscreen}  className="me-2"/>
-                                                     Details
-                                                   </CDropdownItem>
-                                            </CDropdownMenu>
-                                        </CDropdown>
-                                    </CTableDataCell>
-                                </CTableRow>
-                            );
-                        })
-                    ) : (
-                        <CTableRow>
-                            <CTableDataCell colSpan="8" className="text-center">
-                                No properties available.
-                            </CTableDataCell>
-                        </CTableRow>
-                    )}
-                </CTableBody>
+                    {filteredProperties.map((property, index) => (
+                        <PropertyTableRow
+                            key={property._id}
+                            index={(currentPage - 1) * itemsPerPage + index + 1}
+                             property={property}
+                            onEdit={onEdit}
+                            onDelete={openDeleteModal}
+                            onView={onView} // Pass the property directly to the callback
+                            onPhotoDelete={onPhotoDelete}
+                            onPhotoUpdate={onPhotoUpdate}
+                            dropdownOpen={dropdownOpen}
+                            toggleDropdown={toggleDropdown}
+                            closeDropdown={closeDropdown}
+                             dropdownRefs={dropdownRefs}
+                            isRowSelected={isRowSelected}
+                            handleCheckboxChange={handleCheckboxChange}
+                        />
 
+
+                    ))}
+                </CTableBody>
             </CTable>
 
-            {totalPages > 1 && (
-                <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
-                    <span>Total Properties: {totalProperties}</span>
-                    <CPagination className="d-inline-flex">
-                        <CPaginationItem
-                            disabled={currentPage <= 1}
-                            onClick={() => handlePageChange(1)}
-                            aria-label="Go to first page"
-                        >
-                            «
-                        </CPaginationItem>
-                        <CPaginationItem
-                            disabled={currentPage <= 1}
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            aria-label="Go to previous page"
-                        >
-                            ‹
-                        </CPaginationItem>
+             {totalPagesComputed > 1 && (
+               <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
+                <span>Total Properties: {totalProperties}</span>
+                 <CPagination className="d-inline-flex">
+                     <CPaginationItem
+                         disabled={currentPage <= 1}
+                        onClick={() => handlePageChange(1)}
+                        aria-label="Go to first page"
+                     >
+                       «
+                    </CPaginationItem>
+                     <CPaginationItem
+                        disabled={currentPage <= 1}
+                         onClick={() => handlePageChange(currentPage - 1)}
+                        aria-label="Go to previous page"
+                   >
+                       ‹
+                    </CPaginationItem>
 
-                        {getPaginationRange(currentPage, totalPages).map((page, index) =>
-                            page === '...' ? (
-                                <CPaginationItem key={`dots-${index}`} disabled>
-                                    ...
-                                </CPaginationItem>
+                    {getPaginationRange(currentPage, totalPagesComputed).map((page, index) =>
+                        page === '...' ? (
+                            <CPaginationItem key={`dots-${index}`} disabled>
+                                 ...
+                           </CPaginationItem>
                             ) : (
                                 <CPaginationItem
                                     key={`page-${page}`}
                                     active={page === currentPage}
                                     onClick={() => handlePageChange(page)}
                                     aria-label={`Go to page ${page}`}
-                                >
-                                    {page}
-                                </CPaginationItem>
-                            )
-                        )}
+                               >
+                                 {page}
+                              </CPaginationItem>
+                          )
+                    )}
 
-                        <CPaginationItem
-                            disabled={currentPage >= totalPages}
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            aria-label="Go to next page"
-                        >
-                            ›
-                        </CPaginationItem>
-                        <CPaginationItem
-                            disabled={currentPage >= totalPages}
-                            onClick={() => handlePageChange(totalPages)}
-                            aria-label="Go to last page"
-                        >
-                            »
-                        </CPaginationItem>
-                    </CPagination>
+                     <CPaginationItem
+                        disabled={currentPage >= totalPagesComputed}
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        aria-label="Go to next page"
+                     >
+                       ›
+                     </CPaginationItem>
+                       <CPaginationItem
+                        disabled={currentPage >= totalPagesComputed}
+                       onClick={() => handlePageChange(totalPagesComputed)}
+                        aria-label="Go to last page"
+                       >
+                           »
+                      </CPaginationItem>
+                   </CPagination>
                 </div>
             )}
             <PropertyDeleteModal
@@ -467,6 +536,9 @@ PropertyTable.propTypes = {
     onEdit: PropTypes.func,
     onDelete: PropTypes.func,
     onView: PropTypes.func,
+    onPhotoDelete: PropTypes.func,
+    onPhotoUpdate: PropTypes.func,
+    onDeleteMultiple: PropTypes.func,
     currentPage: PropTypes.number,
     handlePageChange: PropTypes.func,
     totalPages: PropTypes.number,

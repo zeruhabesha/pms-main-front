@@ -11,9 +11,9 @@ const ClearanceTableActions = ({
     exportToPDF,
     searchTerm,
     setSearchTerm,
-     handleEditClick, // new
-    handleDeleteClick,//new
-    selectedClearance //new
+    handleEditClick,
+    handleDeleteClick,
+    selectedClearance
 }) => {
     return (
         <div className="d-flex mb-3 justify-content-between gap-2">
@@ -21,11 +21,11 @@ const ClearanceTableActions = ({
                  <div className="d-flex gap-2">
                      <CSVLink
                         data={csvData}
-                         headers={[
+                          headers={[
                                 { label: '#', key: 'index' },
                                 { label: 'Tenant Name', key: 'tenantName' },
-                                { label: 'Reason', key: 'reason' },
-                                 { label: 'Inspection Date', key: 'inspectionDate' },
+                                { label: 'Notes', key: 'notes' },
+                                 { label: 'Move Out Date', key: 'moveOutDate' },
                                  { label: 'Status', key: 'status' },
                             ]}
                         filename="clearance_data.csv"

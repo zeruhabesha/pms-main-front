@@ -19,6 +19,7 @@ import TenantDetailsModal from "./TenantDetailsModal";
 import { createSelector } from '@reduxjs/toolkit';
 import { Link } from 'react-router-dom'; // Import Link
 import { useNavigate } from 'react-router-dom';
+import AddClearance from '../Clearance/AddClearance'; // Adjust the path based on your folder structure
 
 const selectTenantState = createSelector(
   (state) => state.tenant,
@@ -45,6 +46,14 @@ const ViewTenant = () => {
   const [userPermissions, setUserPermissions] = useState(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [tenantDetails, setTenantDetails] = useState(null);
+
+  const [clearanceModalVisible, setClearanceModalVisible] = useState(false);
+  const [selectedTenantForClearance, setSelectedTenantForClearance] = useState(null);
+  
+  const handleClearance = (tenantId) => {
+    setSelectedTenantForClearance(tenantId); // Store the selected tenant's ID
+    setClearanceModalVisible(true);         // Open the modal
+  };
 
   const handleFetchTenants = ({ search }) => {
     dispatch(fetchTenants({ page: 1, limit: itemsPerPage, search }));
@@ -184,24 +193,29 @@ useEffect(() => {
               </CAlert>
             )}
             <TenantTable
-                tenants={tenants}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                handleEdit={handleEdit}
-                handleEditPhoto={handleEditPhoto}
-                handleDelete={handleDelete}
-                handlePageChange={handlePageChange}
-                handleViewDetails={handleViewDetails}
-                handleFetchTenants={handleFetchTenants}
-              />
+  tenants={tenants}
+  currentPage={currentPage}
+  totalPages={totalPages}
+  searchTerm={searchTerm}
+  setSearchTerm={setSearchTerm}
+  handleEdit={handleEdit}
+  handleEditPhoto={handleEditPhoto}
+  handleDelete={handleDelete}
+  handlePageChange={handlePageChange}
+  handleFetchTenants={handleFetchTenants}
+  handleClearance={handleClearance} // Pass the handler
+/>
 
           </CCardBody>
         </CCard>
       </CCol>
 
-     
+      <AddClearance
+  visible={clearanceModalVisible}
+  setVisible={setClearanceModalVisible}
+  tenantId={selectedTenantForClearance} // Pass the tenant ID to the modal
+/>
+
       <TenantDeleteModal
         visible={deleteModalVisible}
         setDeleteModalVisible={setDeleteModalVisible}

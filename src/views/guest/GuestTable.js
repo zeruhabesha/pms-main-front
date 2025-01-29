@@ -236,6 +236,11 @@ const GuestTable = ({ searchTerm, setSearchTerm, itemsPerPage = 10 }) => {
                 return {};
         }
     };
+
+    const handleEditClick = (guest) => {
+        handleEdit(guest); // Call the parent component's handleEdit function
+      };
+      
     return (
         <div>
             <div className="d-flex mb-3 gap-2">

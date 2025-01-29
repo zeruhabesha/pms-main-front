@@ -117,8 +117,8 @@ const ViewGuest = () => {
 
   const handleEdit = (guest) => {
     setEditingGuest(guest); // Set the guest to be edited
-    setAddGuestModalVisible(true); // Open the modal for editing
-};
+    setAddGuestModalVisible(true); // Open the AddGuest modal
+  };
 
 
   // const handleSave = async (updatedData) => {
@@ -211,19 +211,16 @@ const ViewGuest = () => {
                                  </div>
 
                                  <GuestTable
-    guests={guests}
-    currentPage={currentPage}
-    totalPages={totalPages}
-    searchTerm={searchTerm}
-    setSearchTerm={setSearchTerm}
-    handleEdit={handleEdit}
-    handleDelete={handleDelete}
-    handlePageChange={handlePageChange}
-    totalGuests={totalGuests}
-/>
-
-
-
+                                    guests={guests}
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    searchTerm={searchTerm}
+                                    setSearchTerm={setSearchTerm}
+                                    handleEdit={handleEdit} // Pass handleEdit to GuestTable
+                                    handleDelete={handleDelete}
+                                    handlePageChange={handlePageChange}
+                                    totalGuests={totalGuests}
+                                  />
 
                   </CCardBody>
               </CCard>
@@ -236,7 +233,7 @@ const ViewGuest = () => {
     setVisible={setAddGuestModalVisible}
     editingGuest={editingGuest}
     setEditingGuest={setEditingGuest}
-/>
+  />
           <GuestDeleteModal
             visible={deleteModalVisible}
             setDeleteModalVisible={setDeleteModalVisible}

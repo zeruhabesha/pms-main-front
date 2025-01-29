@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     CTable,
@@ -32,7 +31,7 @@ import {
     cilShare,
     cilPhone,
     cilEnvelopeOpen,
-    cilOptions, // Added cilOptions
+    cilOptions,
 } from '@coreui/icons';
 import { CIcon } from '@coreui/icons-react';
 import {
@@ -52,6 +51,7 @@ import { updateMaintenance } from '../../api/actions/MaintenanceActions';
 import { useDispatch } from 'react-redux';
 import MaintenanceInspectionModal from './MaintenanceInspectionModal';
 import MaintenanceCompletionModal from './MaintenanceCompletionModal';
+import { format } from 'date-fns';
 
 const MaintenanceTable = ({
     maintenanceList = [],
@@ -82,7 +82,6 @@ const MaintenanceTable = ({
      const [dropdownOpen, setDropdownOpen] = useState(null);
       const dropdownRefs = useRef({});
 
-    // Fetch user permissions and role on component mount
     useEffect(() => {
         try {
             const encryptedUser = localStorage.getItem('user');
@@ -97,7 +96,6 @@ const MaintenanceTable = ({
         }
     }, []);
 
-    // Sorting handler
     const handleSort = useCallback((key) => {
         setSortConfig((prevConfig) => ({
             key,
@@ -106,7 +104,6 @@ const MaintenanceTable = ({
         }));
     }, []);
 
-    // Approve handler
     const handleApprove = useCallback((maintenance) => {
         setMaintenanceToApprove(maintenance);
         setApproveModalVisible(true);
@@ -121,7 +118,7 @@ const MaintenanceTable = ({
                         maintenanceData: { status: 'Approved' },
                     }),
                 );
-                //Update the maintenanceList ( status )
+
                 setApproveModalVisible(false);
             } catch (error) {
                 console.error('Failed to approve maintenance:', error);
@@ -129,7 +126,6 @@ const MaintenanceTable = ({
         }
     }, [dispatch, maintenanceToApprove]);
 
-    // Reject handler
     const handleReject = useCallback((maintenance) => {
         setMaintenanceToReject(maintenance);
         setRejectModalVisible(true);
@@ -143,15 +139,14 @@ const MaintenanceTable = ({
                         id: maintenanceToReject._id,
                         maintenanceData: { status: 'Cancelled' },
                     }),
-                ).unwrap(); // Ensure we handle the async properly
-                setRejectModalVisible(false); // Close the modal after successful update
+                ).unwrap();
+                setRejectModalVisible(false);
             } catch (error) {
                 console.error('Failed to reject maintenance:', error);
             }
         }
     }, [dispatch, maintenanceToReject]);
 
-    //  Inspection handler
     const handleInspection = useCallback((maintenance) => {
         setMaintenanceToInspect(maintenance);
         setInspectionModalVisible(true);
@@ -179,7 +174,6 @@ const MaintenanceTable = ({
         [dispatch, maintenanceToInspect],
     );
 
-    //  Completion handler
     const handleDone = useCallback((maintenance) => {
         setMaintenanceToComplete(maintenance);
         setCompletionModalVisible(true);
@@ -204,7 +198,6 @@ const MaintenanceTable = ({
         [dispatch, maintenanceToComplete],
     );
 
-    //assign handler
     const handleAssign = useCallback(
         (maintenance) => {
             navigate(`/maintenance/assign/${maintenance._id}`);
@@ -223,7 +216,7 @@ const MaintenanceTable = ({
             Incomplete: 80,
         };
 
-        const value = status ? statusValues[status] || 0 : 0; // Default to 0 if status is not defined
+        const value = status ? statusValues[status] || 0 : 0;
         let color = 'success';
 
         if (value === 0) {
@@ -233,9 +226,9 @@ const MaintenanceTable = ({
         } else if (value <= 60) {
             color = 'info';
         } else if (value < 80) {
-            color = 'primary'; // Assign your preferred color here
+            color = 'primary';
         } else if (value < 100) {
-            color = 'secondary'; // Adjust if a specific color is required for 80 <= value < 100
+            color = 'secondary';
         }
 
         return {
@@ -245,7 +238,6 @@ const MaintenanceTable = ({
         };
     };
 
-    // Status color mapping
     const getStatusColor = useCallback((status) => {
         const statusColorMap = {
             pending: 'warning',
@@ -258,8 +250,7 @@ const MaintenanceTable = ({
         };
         return statusColorMap[status?.toLowerCase()] || 'secondary';
     }, []);
-    
-     // Status icon mapping
+
     const getStatusIcon = useCallback((status) => {
         const statusIconMap = {
             pending: cilTransfer,
@@ -273,7 +264,7 @@ const MaintenanceTable = ({
          return statusIconMap[status?.toLowerCase()] || null;
     }, []);
 
-    // Sorted maintenance list
+
     const sortedMaintenance = useMemo(() => {
         if (!sortConfig.key) return maintenanceList;
 
@@ -295,13 +286,13 @@ const MaintenanceTable = ({
         });
     }, [maintenanceList, sortConfig]);
 
-    // Filtered maintenance list
+
     const filteredMaintenance = useMemo(() => {
         if (!searchTerm) return sortedMaintenance;
 
         const lowerCaseSearchTerm = searchTerm.toLowerCase();
 
-        return sortedMaintenance.filter((maintenance) => {
+         return sortedMaintenance.filter((maintenance) => {
             const tenantName = maintenance.tenant?.name || '';
             const status = maintenance.status || '';
 
@@ -352,7 +343,6 @@ const MaintenanceTable = ({
                 confirmCompletion={confirmCompletion}
             />
 
-            {/* Maintenance Table */}
             <CTable align="middle" className="mb-0 border" hover responsive>
                 <CTableHead className="text-nowrap">
                     <CTableRow>
@@ -378,24 +368,22 @@ const MaintenanceTable = ({
                     </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                    {filteredMaintenance.map((maintenance, index) => {
+                     {filteredMaintenance.map((maintenance, index) => {
                         const rowNumber = (currentPage - 1) * 10 + index + 1;
                         const usage = generateUsage(maintenance.status);
                          const statusIcon = getStatusIcon(maintenance.status);
 
-                        // Define statuses for which the Assign button should be displayed
-                        const assignableStatuses = [
+                       const assignableStatuses = [
                             'In Progress',
                             'Completed',
                             'Inspected',
                             'Incomplete',
                             'Approved',
                         ];
-
                         return (
                             <CTableRow key={maintenance._id || index}>
                                 <CTableDataCell className="text-center">{rowNumber}</CTableDataCell>
-                                <CTableDataCell>
+                                 <CTableDataCell>
                                     <div>{maintenance.tenant?.name || 'N/A'}</div>
                                 </CTableDataCell>
                                 <CTableDataCell>
@@ -410,7 +398,7 @@ const MaintenanceTable = ({
                                 </CTableDataCell>
                                 <CTableDataCell>
                                     <CBadge color={getStatusColor(maintenance.status)}>
-                                        {statusIcon && <CIcon icon={statusIcon} size="sm" className="me-1" />}
+                                          {statusIcon && <CIcon icon={statusIcon} size="sm" className="me-1" />}
                                         {maintenance.status || 'N/A'}
                                     </CBadge>
                                 </CTableDataCell>
@@ -423,7 +411,7 @@ const MaintenanceTable = ({
                                     </div>
                                     <CProgress thin color={usage.color} value={usage.value} />
                                 </CTableDataCell>
-                                <CTableDataCell>
+                                 <CTableDataCell>
                                      <CDropdown
                                         variant="btn-group"
                                         isOpen={dropdownOpen === maintenance?._id}
@@ -462,7 +450,7 @@ const MaintenanceTable = ({
                                                     Edit
                                                   </CDropdownItem>
                                                 )}
-                                                {role === 'Tenant' && (
+                                                 {role === 'Tenant' && (
                                                      <CDropdownItem
                                                         onClick={() => handleDelete(maintenance)}
                                                         title="Delete"
@@ -472,7 +460,7 @@ const MaintenanceTable = ({
                                                        Delete
                                                     </CDropdownItem>
                                                 )}
-                                                {role === 'Admin' && (
+                                                 {role === 'Admin' && (
                                                       <CDropdownItem
                                                         onClick={() => handleApprove(maintenance)}
                                                          style={{ color: `green` }}
@@ -492,7 +480,7 @@ const MaintenanceTable = ({
                                                         Reject
                                                     </CDropdownItem>
                                                 )}
-                                                  {assignableStatuses.includes(maintenance.status) && role === 'Admin' && (
+                                               {assignableStatuses.includes(maintenance.status) && role === 'Admin' && (
                                                      <CDropdownItem
                                                         onClick={() => handleAssign(maintenance)}
                                                         title="Assign"
@@ -501,7 +489,7 @@ const MaintenanceTable = ({
                                                          Assign
                                                     </CDropdownItem>
                                                 )}
-                                                <CDropdownItem
+                                                  <CDropdownItem
                                                       onClick={() => handleViewDetails(maintenance)}
                                                     title="View Details"
                                                 >
@@ -517,7 +505,7 @@ const MaintenanceTable = ({
                 </CTableBody>
             </CTable>
 
-            <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
+             <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
                 <span>Total Requests: {totalRequests}</span>
                 <CPagination className="d-inline-flex">
                     <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
