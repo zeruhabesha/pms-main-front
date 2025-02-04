@@ -37,7 +37,6 @@ import {
     cilCalendar,
     cilDescription,
 } from '@coreui/icons';
-
 import { CSVLink } from 'react-csv';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import jsPDF from 'jspdf';
@@ -48,7 +47,7 @@ import { decryptData } from '../../api/utils/crypto';
 import ClearanceTableActions from "./ClearanceTableActions";
 import { formatDate } from "../../api/utils/dateFormatter";
 import { setSelectedClearance } from '../../api/slice/clearanceSlice';
-import { deleteClearance } from '../../api/actions/ClearanceAction';
+import { deleteClearance, updateClearance } from '../../api/actions/ClearanceAction';
 import debounce from 'lodash/debounce';
 
 const ClearanceTable = ({
@@ -71,7 +70,8 @@ const ClearanceTable = ({
         currentPage: state.clearance.currentPage || 1,
         totalClearances: state.clearance.totalClearances || 0,
     }));
-
+    const [approveModalVisible, setApproveModalVisible] = useState(false);
+    const [clearanceToApprove, setClearanceToApprove] = useState(null);
 
     const handleClickOutside = useCallback((event) => {
         if (dropdownOpen) {
@@ -79,7 +79,6 @@ const ClearanceTable = ({
             if (ref && !ref.contains(event.target)) {
                 setDropdownOpen(null)
             }
-
         }
     }, [dropdownOpen]);
 
@@ -190,6 +189,10 @@ const ClearanceTable = ({
         console.log(id);
         toast.error("Not implemented for now");
     };
+    const handleApprove = (clearance) => {
+        setClearanceToApprove(clearance);
+        setApproveModalVisible(true);
+    };
     const handleDelete = (id) => {
         if (window.confirm("Are you sure you want to delete this clearance request?")) {
             dispatch(deleteClearance(id));
@@ -226,6 +229,37 @@ const ClearanceTable = ({
             default:
                 return {};
         }
+    };
+    const confirmApprove = async () => {
+        if (!clearanceToApprove?._id) {
+            toast.error('No clearance request selected for approval');
+            return;
+        }
+        try {
+            await dispatch(updateClearance(clearanceToApprove._id, { ...clearanceToApprove, status: "Approved" })).unwrap();
+            toast.success('Clearance approved successfully');
+            setApproveModalVisible(false);
+        } catch (error) {
+            toast.error(error?.message || 'Failed to approve clearance request');
+        }
+    }
+    const confirmReject = async () => {
+         if (!clearanceToApprove?._id) {
+             toast.error('No clearance request selected for rejection');
+             return;
+         }
+        try {
+            await dispatch(updateClearance(clearanceToApprove._id, { ...clearanceToApprove, status: "Rejected" })).unwrap();
+            toast.success('Clearance rejected successfully');
+            setApproveModalVisible(false);
+        } catch (error) {
+             toast.error(error?.message || 'Failed to reject clearance request');
+        }
+     }
+
+    const handleCloseApproveModal = () => {
+        setApproveModalVisible(false);
+        setClearanceToApprove(null);
     };
 
     return (
@@ -322,7 +356,7 @@ const ClearanceTable = ({
                                 ) : null
                                 }
                             </CTableDataCell>
-                            <CTableDataCell>
+                             <CTableDataCell>
                                 <CDropdown
                                     variant="btn-group"
                                     isOpen={dropdownOpen === clearance?._id}
@@ -334,21 +368,25 @@ const ClearanceTable = ({
                                         <CIcon icon={cilOptions} />
                                     </CDropdownToggle>
                                     <CDropdownMenu>
-                                        {userPermissions?.editClearance && (
+                                        {/* {userPermissions?.editClearance && ( */}
                                             <CDropdownItem onClick={() => handleEdit(clearance?._id)} title="Edit">
                                                 <CIcon icon={cilPencil} className="me-2" />
                                                 Edit
                                             </CDropdownItem>
-                                        )}
-                                        {userPermissions?.deleteClearance && (
+                                        {/* )} */}
+                                        {/* {userPermissions?.deleteClearance && ( */}
                                             <CDropdownItem onClick={() => handleDelete(clearance?._id)} title="Delete" style={{ color: 'red' }}>
                                                 <CIcon icon={cilTrash} className="me-2" />
                                                 Delete
                                             </CDropdownItem>
-                                        )}
+                                        {/* )} */}
                                         <CDropdownItem onClick={() => handleModalOpen(clearance)} title="View Details">
                                             <CIcon icon={cilFullscreen} className="me-2" />
-                                            View Details
+                                            Details
+                                        </CDropdownItem>
+                                        <CDropdownItem onClick={() => handleApprove(clearance)} title="Approve/Reject">
+                                            <CIcon icon={cilFullscreen} className="me-2" />
+                                            Approve/Reject
                                         </CDropdownItem>
                                     </CDropdownMenu>
                                 </CDropdown>
@@ -393,7 +431,7 @@ const ClearanceTable = ({
                     </CPaginationItem>
                 </CPagination>
             </div>
-            {/* Clearance Details Modal */}
+             {/* Clearance Details Modal */}
             <CModal
                 size="lg"
                 visible={modalVisible}
@@ -422,6 +460,29 @@ const ClearanceTable = ({
                 <CModalFooter>
                     <CButton color="secondary" onClick={handleModalClose}>
                         Close
+                    </CButton>
+                </CModalFooter>
+            </CModal>
+             <CModal
+                visible={approveModalVisible}
+                onClose={handleCloseApproveModal}
+                size="sm"
+            >
+                <CModalHeader onClose={handleCloseApproveModal}>
+                    <CModalTitle>Approve or Reject Clearance Request</CModalTitle>
+                </CModalHeader>
+                 <CModalBody>
+                    Are you sure you want to proceed with this request?
+                </CModalBody>
+                <CModalFooter>
+                    <CButton color="secondary" onClick={handleCloseApproveModal}>
+                        Cancel
+                    </CButton>
+                      <CButton color="danger" onClick={confirmReject}>
+                        Reject
+                    </CButton>
+                    <CButton color="primary" onClick={confirmApprove}>
+                        Approve
                     </CButton>
                 </CModalFooter>
             </CModal>

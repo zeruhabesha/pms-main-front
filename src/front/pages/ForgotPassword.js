@@ -1,3 +1,4 @@
+// frontend/src/components/Auth/ForgotPassword.js
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -9,59 +10,43 @@ import {
     CAlert,
     CContainer,
     CCardBody,
-    CFormLabel  
+    CFormLabel
 } from '@coreui/react';
 import { useDispatch, useSelector } from 'react-redux';
-import { login } from '../../api/actions/authActions';
+import { forgotPassword } from '../../api/actions/userActions';
 import backgroundImage from '../../assets/images/hero-bg-abstract.jpg';
 import logo from '../../assets/images/logo-dark.png';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { clearError } from '../../api/slice/authSlice';
 
-const Login = () => {
+const ForgotPassword = () => {
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { loading } = useSelector((state) => state.auth);
+    const { loading, forgotPasswordSuccess, forgotPasswordError } = useSelector((state) => state.auth);
 
-    const handleLoginSubmit = async (e) => {
+    const handleForgotPasswordSubmit = async (e) => {
         e.preventDefault();
-        const validationErrors = {};
+        setErrors({});
 
-        if (!email) validationErrors.email = 'Email is required';
-        if (!password) validationErrors.password = 'Password is required';
-
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
+        if (!email) {
+            setErrors({ email: 'Email is required' });
             return;
         }
 
         try {
-            const result = await dispatch(login({ email, password })).unwrap();
-            
+            const result = await dispatch(forgotPassword({ email })).unwrap();
             if (result.success) {
-                toast.success('Login successful!', {
+                toast.success('Password reset link sent to your email!', {
                     position: "top-right",
-                    autoClose: 2000
+                    autoClose: 3000
                 });
-
-                if (result.user.status === 'pending') {
-                    navigate('/resetpassword', { replace: true });
-                } else if (result.user.status === 'active') {
-                    navigate('/dashboard', { replace: true });                   
-                    window.location.reload();
-                } else {
-                    toast.error('Your account is inactive. Please contact your admin.', {
-                        position: "top-right",
-                        autoClose: 3000
-                    });
-                }
+                // Optionally navigate to a confirmation page or clear the form
+                setEmail('');
             }
         } catch (error) {
-            const errorMessage = error.message || 'An error occurred during login';
+            const errorMessage = error.message || 'An error occurred while requesting password reset';
             toast.error(errorMessage, {
                 position: "top-right",
                 autoClose: 3000
@@ -138,14 +123,17 @@ const Login = () => {
                             fontWeight: 'bold',
                             color: '#333',
                             marginBottom: '1rem',
-                            fontSize: '3rem',
+                            fontSize: '2rem', // Reduced font size for Forgot Password
                         }}
                     >
-                        Login
+                        Forgot Password?
                     </motion.h1>
                     <CCardBody style={{ padding: '2rem' }}>
-                        <CForm onSubmit={handleLoginSubmit}>
-                            <div style={{ marginBottom: '1rem' }}>
+                        <CForm onSubmit={handleForgotPasswordSubmit}>
+                            <p style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#555' }}>
+                                Enter your email address and we will send you a link to reset your password.
+                            </p>
+                            <div style={{ marginBottom: '1.5rem' }}>
                                 <CFormLabel htmlFor="email">Email</CFormLabel>
                                 <CFormInput
                                     type="email"
@@ -159,31 +147,6 @@ const Login = () => {
                                     <CAlert color="danger">{errors.email}</CAlert>
                                 )}
                             </div>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <CFormLabel htmlFor="password">Password</CFormLabel>
-                                <CFormInput
-                                    type="password"
-                                    id="password"
-                                    placeholder="Enter your password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    invalid={!!errors.password}
-                                />
-                                {errors.password && (
-                                    <CAlert color="danger">{errors.password}</CAlert>
-                                )}
-                            </div>
-
-                            {/* 🔹 Added Forgot Password Link */}
-                            <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
-                                <CButton
-                                    color="link"
-                                    style={{ textDecoration: 'none', fontSize: '0.9rem' }}
-                                    onClick={() => navigate('/forgot-password')}
-                                >
-                                    Forgot Password?
-                                </CButton>
-                            </div>
 
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
                                 <CButton
@@ -192,7 +155,7 @@ const Login = () => {
                                     style={{ width: '100%', marginBottom: '1rem' }}
                                     disabled={loading}
                                 >
-                                    {loading ? 'Loading...' : 'Submit'}
+                                    {loading ? 'Sending...' : 'Send Reset Link'}
                                 </CButton>
                             </motion.div>
                         </CForm>
@@ -208,4 +171,4 @@ const Login = () => {
     );
 };
 
-export default Login;
+export default ForgotPassword;

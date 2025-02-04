@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+/* eslint-disable react/prop-types */
+import React, { useState, useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import {
   CModal,
   CModalHeader,
@@ -16,14 +17,18 @@ import {
   CCardBody,
   CAlert,
   CSpinner,
-} from '@coreui/react';
-import { addTenant, updateTenant } from '../../api/actions/TenantActions';
-import { getProperty } from '../../api/actions/PropertyAction'; // Add this import
+} from '@coreui/react'
+import { addTenant, updateTenant } from '../../api/actions/TenantActions'
+import { getProperty } from '../../api/actions/PropertyAction' // Add this import
 
 const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
-  const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.tenant);
-  const { properties, loading: propertiesLoading, error: propertiesError } = useSelector((state) => state.property);
+  const dispatch = useDispatch()
+  const { loading, error } = useSelector((state) => state.tenant)
+  const {
+    properties,
+    loading: propertiesLoading,
+    error: propertiesError,
+  } = useSelector((state) => state.property)
 
   const [tenantData, setTenantData] = useState({
     tenantName: '',
@@ -48,20 +53,20 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
     paymentMethod: '',
     moveInDate: '',
     emergencyContacts: [],
-  });
+  })
 
   // Fetch properties when component mounts
   useEffect(() => {
-    dispatch(getProperty());
-  }, [dispatch]);
+    dispatch(getProperty())
+  }, [dispatch])
 
   useEffect(() => {
     if (editingTenant) {
-      setTenantData(editingTenant);
+      setTenantData(editingTenant)
     } else {
-      resetForm();
+      resetForm()
     }
-  }, [editingTenant]);
+  }, [editingTenant])
 
   const resetForm = () => {
     setTenantData({
@@ -87,13 +92,13 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
       paymentMethod: '',
       moveInDate: '',
       emergencyContacts: [],
-    });
-  };
+    })
+  }
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setTenantData((prev) => ({ ...prev, [name]: value }));
-  };
+    const { name, value } = e.target
+    setTenantData((prev) => ({ ...prev, [name]: value }))
+  }
 
   const handleNestedChange = (section, field, value) => {
     setTenantData((prev) => ({
@@ -102,59 +107,53 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
         ...prev[section],
         [field]: value,
       },
-    }));
-  };
+    }))
+  }
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setTenantData((prev) => ({ ...prev, idProof: files }));
-  };
+    const files = Array.from(e.target.files)
+    setTenantData((prev) => ({ ...prev, idProof: files }))
+  }
 
   const validateForm = () => {
-    const requiredFields = ['tenantName', 'password', 'paymentMethod', 'moveInDate'];
+    const requiredFields = ['tenantName', 'password', 'paymentMethod', 'moveInDate']
     for (let field of requiredFields) {
       if (!tenantData[field]) {
-        return `${field.charAt(0).toUpperCase() + field.slice(1)} is required.`;
+        return `${field.charAt(0).toUpperCase() + field.slice(1)} is required.`
       }
     }
     if (!tenantData.contactInformation.email || !tenantData.contactInformation.phoneNumber) {
-      return 'Email and Phone Number are required.';
+      return 'Email and Phone Number are required.'
     }
     if (!tenantData.leaseAgreement.startDate || !tenantData.leaseAgreement.endDate) {
-      return 'Lease start and end dates are required.';
+      return 'Lease start and end dates are required.'
     }
-    return null;
-  };
+    return null
+  }
 
   const handleSubmit = () => {
-    const validationError = validateForm();
+    const validationError = validateForm()
     if (validationError) {
-      setErrorMessage(validationError);
-      return;
+      setErrorMessage(validationError)
+      return
     }
 
     if (editingTenant) {
-      dispatch(updateTenant(editingTenant._id, tenantData));
+      dispatch(updateTenant(editingTenant._id, tenantData))
     } else {
-      dispatch(addTenant(tenantData));
+      dispatch(addTenant(tenantData))
     }
 
-    handleClose();
-  };
+    handleClose()
+  }
 
   const handleClose = () => {
-    resetForm();
-    setVisible(false);
-  };
+    resetForm()
+    setVisible(false)
+  }
 
   return (
-    <CModal
-      visible={visible}
-      onClose={handleClose}
-      alignment="center"
-      backdrop="static"
-      size="lg"
-    >
+    <CModal visible={visible} onClose={handleClose} alignment="center" backdrop="static" size="lg">
       <CModalHeader className="bg-dark text-white">
         <CModalTitle>{editingTenant ? 'Edit Tenant' : 'Add Tenant'}</CModalTitle>
       </CModalHeader>
@@ -187,7 +186,9 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                   <CFormSelect
                     id="propertyId"
                     value={tenantData.propertyInformation.propertyId}
-                    onChange={(e) => handleNestedChange('propertyInformation', 'propertyId', e.target.value)}
+                    onChange={(e) =>
+                      handleNestedChange('propertyInformation', 'propertyId', e.target.value)
+                    }
                     disabled={propertiesLoading}
                   >
                     <option value="">Select Property</option>
@@ -206,7 +207,9 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                   type="text"
                   placeholder="Enter unit number"
                   value={tenantData.propertyInformation.unit}
-                  onChange={(e) => handleNestedChange('propertyInformation', 'unit', e.target.value)}
+                  onChange={(e) =>
+                    handleNestedChange('propertyInformation', 'unit', e.target.value)
+                  }
                 />
               </CCol>
               <CCol xs={12} md={6}>
@@ -216,7 +219,9 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                   type="email"
                   placeholder="Enter email"
                   value={tenantData.contactInformation.email}
-                  onChange={(e) => handleNestedChange('contactInformation', 'email', e.target.value)}
+                  onChange={(e) =>
+                    handleNestedChange('contactInformation', 'email', e.target.value)
+                  }
                   required
                 />
               </CCol>
@@ -227,7 +232,9 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                   type="text"
                   placeholder="Enter phone number"
                   value={tenantData.contactInformation.phoneNumber}
-                  onChange={(e) => handleNestedChange('contactInformation', 'phoneNumber', e.target.value)}
+                  onChange={(e) =>
+                    handleNestedChange('contactInformation', 'phoneNumber', e.target.value)
+                  }
                   required
                 />
               </CCol>
@@ -237,7 +244,9 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                   id="startDate"
                   type="date"
                   value={tenantData.leaseAgreement.startDate}
-                  onChange={(e) => handleNestedChange('leaseAgreement', 'startDate', e.target.value)}
+                  onChange={(e) =>
+                    handleNestedChange('leaseAgreement', 'startDate', e.target.value)
+                  }
                   required
                 />
               </CCol>
@@ -253,14 +262,9 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
               </CCol>
               <CCol xs={12}>
                 <CFormLabel htmlFor="idProof">Upload ID Proofs</CFormLabel>
-                <CFormInput
-                  id="idProof"
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                />
+                <CFormInput id="idProof" type="file" multiple onChange={handleFileChange} />
               </CCol>
-              </CRow>
+            </CRow>
           </CCardBody>
         </CCard>
       </CModalBody>
@@ -268,23 +272,21 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
         <CButton color="secondary" variant="ghost" onClick={handleClose} disabled={loading}>
           Cancel
         </CButton>
-        <CButton 
-          color="dark" 
-          onClick={handleSubmit} 
-          disabled={loading || propertiesLoading}
-        >
+        <CButton color="dark" onClick={handleSubmit} disabled={loading || propertiesLoading}>
           {loading ? (
             <>
               <CSpinner size="sm" className="me-2" />
               {editingTenant ? 'Updating...' : 'Adding...'}
             </>
+          ) : editingTenant ? (
+            'Update Tenant'
           ) : (
-            editingTenant ? 'Update Tenant' : 'Add Tenant'
+            'Add Tenant'
           )}
         </CButton>
       </CModalFooter>
     </CModal>
-  );
-};
+  )
+}
 
-export default AddTenant;
+export default AddTenant

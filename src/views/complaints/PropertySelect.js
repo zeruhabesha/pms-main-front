@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProperties } from '../../api/slice/PropertySlice';
+import { fetchProperties } from '../../api/actions/PropertyAction';
 import { CFormSelect, CSpinner } from '@coreui/react';
 
 const PropertySelect = ({ value, onChange, required }) => {

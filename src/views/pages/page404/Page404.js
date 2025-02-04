@@ -3,8 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import './Page404.css';
 
 // Import SVG Runner & Jump Line
-import { ReactComponent as RunnerSVG } from '../../../assets/images/runner.svg';
-import { ReactComponent as JumpLineSVG } from '../../../assets/images/jump_line.svg';
+// import { ReactComponent as RunnerSVG } from '../../../assets/images/runner.svg';
+// import JumpLineSVG from '../../../assets/images/jump_line.svg';
+// import RunnerSVG from '../../../assets/images/runner.svg';
+
+import JumpLineSVG from '../../../assets/images/jump_line.svg';
+import RunnerSVG from '../../../assets/images/runner.svg';
+
+
+
 
 const Page404 = () => {
   const [isJumping, setIsJumping] = useState(false);
@@ -91,10 +98,10 @@ const Page404 = () => {
       <p className="instruction-text">Press the spacebar to make the runner jump!</p>
        
       <div className={`dino ${isJumping ? 'dino-jump' : ''}`}>
-          <RunnerSVG />
-        </div>
+      <img src={RunnerSVG} alt="Runner" className="dino" />
+      </div>
       <div className="jump-line">
-          <JumpLineSVG />
+      <img src={JumpLineSVG} alt="Jump Line" className="jump-line" />
       </div>
         <div className="score">Score: {score}</div>
       

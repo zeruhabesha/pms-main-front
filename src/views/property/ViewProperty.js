@@ -30,9 +30,11 @@ import {
     batchDelete,
     deletePhoto,
     filterProperties,
-    getProperty,
+    getProperty, // Import getProperty
     updatePhoto,
-    deleteProperty
+    deleteProperty,
+    updateProperty,
+    importProperties // Import the new action
 } from '../../api/actions/PropertyAction';
 import { decryptData } from '../../api/utils/crypto';
 
@@ -45,6 +47,7 @@ import {
 import AddImage from './AddImage';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import ImportModal from './ImportModal'; // Import the new modal
+import PropertyTableRow from './PropertyTableRow';
 
 const ViewProperty = () => {
     // Define state for photo modals
@@ -60,12 +63,11 @@ const ViewProperty = () => {
     const navigate = useNavigate();  // Initialize useNavigate
 
     const {
-        properties,
-        loading,
-        error,
-        pagination
+        properties = [],
+        loading = false,
+        error = null,
+        pagination = { currentPage: 1, totalPages: 1 }
     } = useSelector((state) => state.property);
-
 
     const itemsPerPage = 10; // Items per page
 
@@ -88,26 +90,73 @@ const ViewProperty = () => {
         dispatch(filterProperties({ page: 1, limit: itemsPerPage, search: e.target.value }));
     };
 
-    const handleEditProperty = (property) => {
-         const propertyId =  property._id
-        dispatch(setSelectedProperty(property));
-        navigate(`/property/edit/${propertyId}`)
+    // Corrected handleEditProperty to accept propertyId
+    const handleEditProperty = async (propertyId) => {
+        console.log("Editing property ID:", propertyId);
+    
+        if (!propertyId) {
+            console.error("Property ID is missing");
+            toast.error("Property ID is missing");
+            return;
+        }
+    
+        try {
+            const propertyData = await dispatch(getProperty(propertyId)).unwrap();
+            console.log("Fetched property data for edit:", propertyData);
+            if (propertyData) {
+                // Use the same ID format that was passed in
+                const finalId = propertyData._id || propertyData.id || propertyId;
+                navigate(`/property/edit/${finalId}`, { state: { property: propertyData } });
+            } else {
+                throw new Error("Failed to fetch property data");
+            }
+        } catch (error) {
+            console.error("Error fetching property for edit:", error);
+            toast.error(error.message || "Failed to fetch property details for editing.");
+        }
     };
 
-   const handleViewProperty = (property) => {
-        const propertyId =  property._id;
-         navigate(`/property/${propertyId}`); // Navigate to details page with ID
 
+    const handleViewProperty = async (propertyId) => {
+        console.log("Viewing property:", propertyId);
+
+        if (!propertyId) {
+            console.error("Property ID is missing");
+            toast.error("Property ID is missing");
+            return;
+        }
+
+        try {
+            const propertyData = await dispatch(getProperty(propertyId)).unwrap();
+            console.log("Fetched property data:", propertyData);
+            if (propertyData) {
+                // Use the same ID format that was passed in
+                const finalId = propertyData._id || propertyData.id || propertyId;
+                navigate(`/property/${finalId}`, { state: { property: propertyData } });
+            } else {
+                throw new Error("Failed to fetch property data");
+            }
+        } catch (error) {
+            console.error("Error fetching property data:", error);
+            toast.error(error.message || "Failed to fetch property details.");
+        }
     };
 
-
-  const handleDeleteMultipleProperties = async (ids) => {
+    const handleDeleteMultipleProperties = async (ids) => {
         try {
             await dispatch(batchDelete(ids)).unwrap();
             toast.success('Properties deleted successfully.');
         } catch (err) {
             toast.error(err.message || 'Failed to delete the properties.');
         }
+    };
+
+    const handleOpenImportModal = () => {
+        setImportModalVisible(true);
+    };
+
+    const handleCloseImportModal = () => {
+        setImportModalVisible(false);
     };
 
     const handleDeleteProperty = async (id) => {
@@ -231,12 +280,14 @@ const ViewProperty = () => {
         dispatch(resetState())
     };
 
-     const handlePhotoDelete = (photo, propertyId) => {
-         if (!photo || !photo.id) {
-            toast.error("Photo ID is missing. Unable to delete photo.");
-            return;
-         }
-        openDeletePhotoModal(photo, propertyId)
+    const handlePhotoDelete = async (propertyId, photoId) => {
+        try {
+            await dispatch(deletePhoto({ propertyId, photoId })).unwrap();
+            toast.success('Photo deleted successfully.');
+            // Optionally refresh the property data here
+        } catch (error) {
+            toast.error(error.message || 'Failed to delete the photo.');
+        }
     };
 
     const handlePhotoUpdate = (photo, propertyId) => {
@@ -253,24 +304,17 @@ const ViewProperty = () => {
     };
 
 
-     const handleOpenImportModal = () => {
-        setImportModalVisible(true);
-    };
-
-    const handleCloseImportModal = () => {
-      setImportModalVisible(false);
-    };
-
-
 
     return (
         <CRow>
             <CCol xs={12}>
                 <CCard className="mb-4">
                     <CCardHeader className="d-flex justify-content-between align-items-center">
-                        <strong><CButton color="dark" onClick={handleOpenImportModal} title="Import Data">
-                                 Import Data
-                            </CButton></strong>
+                        <strong>
+                        <CButton color="dark" onClick={handleOpenImportModal} title="Import Data">
+                                Import Data
+                            </CButton>
+                            </strong>
                         <div className="d-flex gap-2">
                             {userPermissions?.addProperty && (
                                   <button
@@ -283,7 +327,7 @@ const ViewProperty = () => {
                                     <span className="button-text">Add Property</span>
                                 </button>
                             )}
-                           
+
                            {/* <CButton color="dark" onClick={handleResetView} title="Reset View">
                                   Reset
                                 </CButton> */}
@@ -329,20 +373,20 @@ const ViewProperty = () => {
                             <CSpinner color="dark" />
                         ) : (
                             <PropertyTable
-                                properties={properties}
-                                totalProperties={pagination.totalItems}
-                                onEdit={handleEditProperty}
-                                onDelete={handleDeleteProperty}
-                                onView={handleViewProperty}
-                                currentPage={pagination.currentPage}
-                                handlePageChange={handlePageChange}
-                                totalPages={pagination.totalPages}
-                                itemsPerPage={pagination.limit}
-                                onPhotoDelete={handlePhotoDelete}
-                                onPhotoUpdate={handlePhotoUpdate}
-                                onDeleteMultiple={handleDeleteMultipleProperties}
+                            properties={properties}
+                            totalProperties={pagination.totalItems}
+                            currentPage={pagination?.currentPage || 1}
+                            totalPages={pagination?.totalPages || 1}
+                            handlePageChange={handlePageChange}
+                            itemsPerPage={itemsPerPage}
+                            onEdit={handleEditProperty}  // Make sure this is correct
+                            onView={handleViewProperty}
+                            onDelete={handleDeleteProperty}
+                            onPhotoDelete={handlePhotoDelete} // Pass it here
+                            onDeleteMultiple={handleDeleteMultipleProperties}
                             />
                         )}
+
                     </CCardBody>
                 </CCard>
             </CCol>
@@ -374,9 +418,9 @@ const ViewProperty = () => {
                  confirmUpdatePhoto={handleConfirmUpdatePhoto}
             />
             <ImportModal
-                 visible={importModalVisible}
-                 onClose={handleCloseImportModal}
-                />
+                visible={importModalVisible}
+                onClose={handleCloseImportModal}
+            />
 
             <ToastContainer position="top-right" autoClose={3000} />
         </CRow>

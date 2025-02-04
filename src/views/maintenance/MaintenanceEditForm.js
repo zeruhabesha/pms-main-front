@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+/* eslint-disable react/prop-types */
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   CModal,
   CModalHeader,
@@ -14,29 +15,22 @@ import {
   CSpinner,
   CAlert,
   CFormFeedback,
-} from '@coreui/react';
+} from '@coreui/react'
 
-const MaintenanceEditForm = ({ 
-  visible, 
-  setVisible, 
-  maintenance, 
-  onSubmit 
-}) => {
-  // Initial form state with comprehensive validation
+const MaintenanceEditForm = ({ visible, setVisible, maintenance, onSubmit }) => {
   const [formData, setFormData] = useState({
     typeOfRequest: '',
     urgencyLevel: '',
     notes: '',
     status: '',
+    property: null,
     photosOrVideos: [],
-  });
+  })
+  const [filePreviews, setFilePreviews] = useState([])
+  const [validationErrors, setValidationErrors] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState(null)
 
-  // Validation state
-  const [validationErrors, setValidationErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(null);
-
-  // Reset form when maintenance prop changes
   useEffect(() => {
     if (maintenance) {
       setFormData({
@@ -44,138 +38,115 @@ const MaintenanceEditForm = ({
         urgencyLevel: maintenance?.urgencyLevel || '',
         notes: maintenance?.notes || '',
         status: maintenance?.status || 'Pending',
+        property: maintenance?.property || null,
         photosOrVideos: [],
-      });
-      // Clear previous validation errors
-      setValidationErrors({});
-      setErrorMessage(null);
-    }
-  }, [maintenance, visible]);
+      })
 
-  // Comprehensive form validation
+      // Ensure filePreviews are set to the existing URLs or object URLs
+      setFilePreviews(
+        (maintenance?.requestedFiles || []).map((file) =>
+          typeof file === 'string' ? file : URL.createObjectURL(file),
+        ),
+      )
+      setValidationErrors({})
+      setErrorMessage(null)
+    }
+  }, [maintenance, visible])
+
   const validateForm = useCallback(() => {
-    const errors = {};
+    const errors = {}
 
-    // Urgency Level Validation
-    if (!formData.urgencyLevel) {
-      errors.urgencyLevel = 'Urgency level is required.';
-    }
+    if (!formData.urgencyLevel) errors.urgencyLevel = 'Urgency level is required.'
+    if (!formData.status) errors.status = 'Status is required.'
+    if (formData.notes?.length > 500) errors.notes = 'Notes cannot exceed 500 characters.'
 
-    // Status Validation
-    if (!formData.status) {
-      errors.status = 'Status is required.';
-    }
-
-    // Notes Length Validation (optional)
-    if (formData.notes && formData.notes.length > 500) {
-      errors.notes = 'Notes cannot exceed 500 characters.';
-    }
-
-    // File Size and Type Validation
     if (formData.photosOrVideos.length > 0) {
-      const invalidFiles = formData.photosOrVideos.filter(file => {
-        // Max file size: 10MB
-        const isValidSize = file.size <= 10 * 1024 * 1024;
-        // Allowed file types
-        const isValidType = /^(image|video)\//i.test(file.type);
-        return !(isValidSize && isValidType);
-      });
+      const invalidFiles = formData.photosOrVideos.filter((file) => {
+        const isValidSize = file.size <= 10 * 1024 * 1024
+        const isValidType = /^(image|video)\//i.test(file.type)
+        return !(isValidSize && isValidType)
+      })
 
       if (invalidFiles.length > 0) {
-        errors.photosOrVideos = 'Some files are invalid. Max size is 10MB, and only images/videos are allowed.';
+        errors.photosOrVideos =
+          'Some files are invalid. Max size is 10MB, and only images/videos are allowed.'
       }
     }
 
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  }, [formData]);
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }, [formData])
 
-  // Input change handler with immediate validation
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear specific field error on change
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+
     if (validationErrors[name]) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[name]
+        return newErrors
+      })
     }
-  };
-
-  // File change handler with validation
+  }
+  // Updated handleFileChange to append new file previews
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setFormData(prev => ({ ...prev, photosOrVideos: files }));
-    
-    // Clear file validation error
+    const files = Array.from(e.target.files)
+    setFormData((prev) => ({ ...prev, photosOrVideos: files }))
+
+    // Create URLs for new files and append them to the previews
+    const newPreviews = files.map((file) => URL.createObjectURL(file))
+    setFilePreviews((prevPreviews) => [...prevPreviews, ...newPreviews])
+
     if (validationErrors.photosOrVideos) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.photosOrVideos;
-        return newErrors;
-      });
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors.photosOrVideos
+        return newErrors
+      })
     }
-  };
+  }
 
-  // Submit handler with comprehensive error management
   const handleSubmit = async () => {
-    // Validate form before submission
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return
 
-    setIsLoading(true);
-    setErrorMessage(null);
+    setIsLoading(true)
+    setErrorMessage(null)
 
     try {
-      const data = new FormData();
+      const data = new FormData()
       Object.entries(formData).forEach(([key, value]) => {
         if (key === 'photosOrVideos' && value.length) {
-          value.forEach((file) => data.append('photosOrVideos', file));
+          value.forEach((file) => data.append('photosOrVideos', file))
+        } else if (key === 'property' && value?._id) {
+          data.append(key, value._id)
         } else if (value !== null && value !== undefined) {
-          data.append(key, value);
+          data.append(key, value)
         }
-      });
-
-      await onSubmit(data);
-      setVisible(false);
+      })
+      // Clear the previews after submit
+      await onSubmit(data)
+      setFilePreviews([])
+      setVisible(false)
     } catch (error) {
-      console.error('Maintenance Update Error:', error);
-      
-      // Detailed error handling
-      const errorMsg = error.response?.data?.message || 
-                       error.message || 
-                       'Failed to update maintenance request';
-      
-      setErrorMessage(errorMsg);
+      console.error('Maintenance Update Error:', error)
+      setErrorMessage(
+        error.response?.data?.message || error.message || 'Failed to update maintenance request',
+      )
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <CModal 
-      visible={visible} 
-      onClose={() => setVisible(false)} 
-      alignment="center" 
-      size="lg"
-    >
+    <CModal visible={visible} onClose={() => setVisible(false)} alignment="center" size="lg">
       <CModalHeader className="bg-dark text-white">
         <CModalTitle>Edit Maintenance Request</CModalTitle>
       </CModalHeader>
       <CModalBody>
-        {/* Global Error Alert */}
-        {errorMessage && (
-          <CAlert color="danger" dismissible>
-            {errorMessage}
-          </CAlert>
-        )}
+        {errorMessage && <CAlert color="danger">{errorMessage}</CAlert>}
 
         <CRow className="g-3">
-          {/* Urgency Level with Validation */}
           <CCol xs={12}>
             <CFormLabel htmlFor="urgencyLevel">Urgency Level</CFormLabel>
             <CFormSelect
@@ -192,11 +163,10 @@ const MaintenanceEditForm = ({
               <option value="Non-Urgent">Non-Urgent</option>
             </CFormSelect>
             {validationErrors.urgencyLevel && (
-              <CFormFeedback invalid>
-                {validationErrors.urgencyLevel}
-              </CFormFeedback>
+              <CFormFeedback invalid>{validationErrors.urgencyLevel}</CFormFeedback>
             )}
           </CCol>
+
           <CCol xs={12}>
             <CFormLabel htmlFor="notes">Notes</CFormLabel>
             <CFormInput
@@ -208,6 +178,7 @@ const MaintenanceEditForm = ({
               onChange={handleChange}
             />
           </CCol>
+
           <CCol xs={12}>
             <CFormLabel htmlFor="status">Status</CFormLabel>
             <CFormSelect
@@ -223,6 +194,7 @@ const MaintenanceEditForm = ({
               <option value="Cancelled">Cancelled</option>
             </CFormSelect>
           </CCol>
+
           <CCol xs={12}>
             <CFormLabel htmlFor="photosOrVideos">Add Photos/Videos</CFormLabel>
             <CFormInput
@@ -233,26 +205,36 @@ const MaintenanceEditForm = ({
               accept="image/*,video/*"
             />
           </CCol>
-          </CRow>
+        </CRow>
+        {/* Image/Video previews below the form fields */}
+        {filePreviews.length > 0 && (
+          <CCol xs={12} className="d-flex flex-wrap gap-2 mt-3">
+            {filePreviews.map((file, index) => (
+              <div key={index} className="image-preview">
+                {/\.(jpg|jpeg|png|gif)$/i.test(file) ? (
+                  <img
+                    src={file}
+                    alt={`Preview ${index + 1}`}
+                    style={{ maxWidth: '100px', maxHeight: '100px', objectFit: 'cover' }}
+                  />
+                ) : /\.(mp4|mov|avi)$/i.test(file) ? (
+                  <video src={file} controls style={{ maxWidth: '100px', maxHeight: '100px' }} />
+                ) : null}
+              </div>
+            ))}
+          </CCol>
+        )}
       </CModalBody>
       <CModalFooter>
-        <CButton 
-          color="secondary" 
-          onClick={() => setVisible(false)} 
-          disabled={isLoading}
-        >
+        <CButton color="secondary" onClick={() => setVisible(false)} disabled={isLoading}>
           Cancel
         </CButton>
-        <CButton 
-          color="dark" 
-          onClick={handleSubmit} 
-          disabled={isLoading}
-        >
+        <CButton color="dark" onClick={handleSubmit} disabled={isLoading}>
           {isLoading ? <CSpinner size="sm" /> : 'Save Changes'}
         </CButton>
       </CModalFooter>
     </CModal>
-  );
-};
+  )
+}
 
-export default React.memo(MaintenanceEditForm);
+export default React.memo(MaintenanceEditForm)

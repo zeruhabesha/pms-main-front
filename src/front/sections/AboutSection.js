@@ -2,6 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import { CContainer, CRow, CCol } from '@coreui/react';
 import { motion } from 'framer-motion';
+import propertyManagement from '../image/2.jpg';
+import propertyManagement2 from '../image/3.jpg';
 
 const Section = styled(motion.section)`
   padding-top: 40px;
@@ -171,7 +173,14 @@ const AboutSection = () => {
               </CCol>
             </ContentWrapper>
           </ContentCol>
+          <CCol lg={6}>
+            <img src={propertyManagement} alt="Property Management" className="img-fluid" />
+          </CCol>
+          <CCol lg={6}>
+            <img src={propertyManagement2} alt="Property Management" className="img-fluid" />
+          </CCol>
           <ContentCol>
+          
             <ContentWrapper className="p-3 text-justify" variants={contentWrapperVariants}>
               <SubTitle>
                 <b>Core Values: </b>

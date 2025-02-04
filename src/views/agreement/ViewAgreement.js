@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import {
-  CRow,
-  CCol,
-  CCard,
-  CCardBody,
-  CCardHeader,
-  CFormInput,
-  CSpinner,
-  CAlert,
-  CButton,
+    CRow,
+    CCol,
+    CCard,
+    CCardBody,
+    CCardHeader,
+    CFormInput,
+    CSpinner,
+    CAlert,
+    CButton,
 } from "@coreui/react";
 import AgreementTable from "./AgreementTable";
 import { ToastContainer, toast } from "react-toastify";
@@ -22,14 +22,13 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchAgreements,
-  deleteAgreement,
+    fetchAgreements,
+    deleteAgreement,
 } from "../../api/actions/AgreementActions";
 import { decryptData } from '../../api/utils/crypto';
 
 import {
-  setSelectedAgreement,
-  clearSelectedAgreement,
+    setSelectedAgreement,
 } from "../../api/slice/AgreementSlice";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -53,7 +52,8 @@ const ViewAgreement = () => {
     }, [dispatch, currentPage, itemsPerPage]);
 
     const handleSearch = (e) => {
-        dispatch(fetchAgreements({ page: 1, limit: itemsPerPage, searchTerm: e.target.value }));
+      const searchTerm = e.target.value;
+        dispatch(fetchAgreements({ page: 1, limit: itemsPerPage, searchTerm: searchTerm }));
     };
 
     const handleEdit = (agreement) => {
@@ -62,14 +62,16 @@ const ViewAgreement = () => {
     };
 
 
-    const handleDelete = async (id) => {
+     const handleDelete = async (id) => {
         try {
-            await dispatch(deleteAgreement(id)).unwrap();
-            toast.success("Agreement deleted successfully.");
+          await dispatch(deleteAgreement(id)).unwrap();
+          dispatch(fetchAgreements({ page: currentPage, limit: itemsPerPage })); // Refresh data
+          toast.success("Agreement deleted successfully.");
         } catch (err) {
-            toast.error(err.message || "Failed to delete the agreement.");
+          toast.error(err.message || "Failed to delete the agreement.");
         }
-    };
+      };
+
 
     const [userPermissions, setUserPermissions] = useState(null);
     useEffect(() => {
@@ -176,7 +178,10 @@ const ViewAgreement = () => {
                             />
                         </div>
                         {loading ? (
+                            <div className="text-center">
                             <CSpinner color="dark" />
+                            <p className="mt-2">Loading agreements...</p>
+                            </div>
                         ) : (
                             <AgreementTable
                                 agreements={agreements}

@@ -1,31 +1,24 @@
 import { css } from 'styled-components';
 
-export const generateBarChartSVG = (data, maxValue, color = 'white') => {
-    const barHeight = 8;
-    const chartWidth = 50;
-    const maxBarWidth = chartWidth;
-    const barData = data.map((value) => {
-        return  (value/maxValue) * maxBarWidth
-    })
+export const generateBarChartSVG = (data, barHeight, color) => {
+    if (!data || data.length === 0) {
+        return '';
+    }
 
-
-    return (
-        <svg width={chartWidth} height={barHeight * data.length} viewBox={`0 0 ${chartWidth} ${barHeight * data.length}`}>
-
-            {barData.map((width, index) => (
-                <rect
-                    key={index}
-                    x="0"
-                    y={index * barHeight}
-                    width={width}
-                    height={barHeight -1}
-                    fill={color}
-                />
-            ))}
-
-        </svg>
-    );
-};
+      const maxVal = Math.max(...data);
+      const width = 50;
+        const barWidth = width / data.length;
+       const bars = data.map((value, index) => {
+            const height = (value / maxVal) * barHeight; // Scale the height
+          const x = index * barWidth;
+             const y = barHeight - height; // position from the bottom
+          return `<rect x="${x}" y="${y}" width="${barWidth -2}" height="${height}" fill="${color}" />`;
+         }).join('');
+  
+      return `<svg width="${width}" height="${barHeight}" >
+         ${bars}
+      </svg>`
+  };
 
 export const generateSparkLineSVG = (data, width = 60, height = 20, color = 'white') => {
     if (!data || data.length < 2) {

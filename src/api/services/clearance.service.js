@@ -44,6 +44,7 @@ class ClearanceService {
     async addClearance(clearanceData) {
         try {
             const response = await httpCommon.post(this.baseURL, clearanceData, { headers: await this.getAuthHeader()});
+            console.log('Responseservice:', response);
             return response.data;
         } catch (error) {
              throw this.handleError(error);

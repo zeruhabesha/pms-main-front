@@ -302,7 +302,7 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                                         className="form-control-animation"
                                     />
                                 </CCol> */}
-                                <CCol xs={12}>
+                                {/* <CCol xs={12}>
                                     <CFormLabel htmlFor="supportingFiles"><CIcon icon={cilPaperclip} className="me-1" />Upload Files</CFormLabel>
                                     <CFormInput
                                         id="supportingFiles"
@@ -312,7 +312,7 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                                         onChange={handleChange}
                                         accept="image/*,video/*"
                                     />
-                                </CCol>
+                                </CCol> */}
                             </CRow>
                         </CCardBody>
                     </CCard>

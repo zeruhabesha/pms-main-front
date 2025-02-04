@@ -7,6 +7,7 @@ export const fetchAgreements = createAsyncThunk(
     async ({ page = 1, limit = 10, searchTerm = "" }, { rejectWithValue }) => {
         try {
             const response = await AgreementService.fetchAgreements(page, limit, searchTerm);
+             // Directly return the data expected by the slice
             return response;
         } catch (error) {
             return rejectWithValue(error.message);
@@ -33,7 +34,8 @@ export const addAgreement = createAsyncThunk(
     async (agreementData, { rejectWithValue }) => {
         try {
             const response = await AgreementService.addAgreement(agreementData);
-            return response;
+            console.log('ffjhgsjhgfjhgds',response);
+           return response;
         } catch (error) {
             return rejectWithValue(error.message);
         }
@@ -59,7 +61,7 @@ export const deleteAgreement = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             await AgreementService.deleteAgreement(id);
-            return id;
+             return id; // Return the id to the state so that we can update the ui
         } catch (error) {
             return rejectWithValue(error.message);
         }
@@ -72,7 +74,7 @@ export const downloadAgreementFile = createAsyncThunk(
     async (fileName, { rejectWithValue }) => {
         try {
             await AgreementService.downloadAgreementFile(fileName);
-             return  fileName;
+             return  fileName; // Return the file name so that we can update the state
         } catch (error) {
             return rejectWithValue(error.message);
         }
@@ -82,12 +84,12 @@ export const downloadAgreementFile = createAsyncThunk(
 //upload agreement file
 export const uploadAgreementFile = createAsyncThunk(
     "agreement/uploadAgreementFile",
-    async ({ id, file }, { rejectWithValue }) => {
+     async ({ id, file }, { rejectWithValue }) => {
         try {
-             const response = await AgreementService.uploadAgreementFile(id, file)
-             return response;
+            const response =  await AgreementService.uploadAgreementFile(id, file);
+            return response;
         } catch (error) {
-            return rejectWithValue(error.message);
+           return rejectWithValue(error.message);
         }
     }
 );

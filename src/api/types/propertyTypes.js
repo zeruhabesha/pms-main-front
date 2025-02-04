@@ -4,7 +4,7 @@ export const PropertyTypes = {
   ADD_PROPERTY: 'property/addProperty',
   UPDATE_PROPERTY: 'property/updateProperty',
   DELETE_PROPERTY: 'property/deleteProperty',
-  UPLOAD_PHOTOS: 'property/uploadPhotos',
+  UPLOAD_PHOTOS: 'property/uploadPhotos', // Kept, may be used later or remove if confirmed unused
   UPDATE_PHOTOS: 'property/updatePhotos',
   UPDATE_PROPERTY_PHOTOS: 'property/updatePropertyPhotos',
   DELETE_PHOTO: 'property/deletePhoto',
@@ -15,4 +15,5 @@ export const PropertyTypes = {
   DOWNLOAD_PHOTO: 'property/downloadPhoto',
   UPDATE_PHOTO: 'property/updatePhoto',
   ADD_PROPERTY_IMAGE: 'property/addPropertyImage',
+  IMPORT_PROPERTIES: 'property/importProperties', // Added for excel import
 };

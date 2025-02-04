@@ -1,6 +1,7 @@
+// src/components/property/AddProperty.tsx
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addProperty, updateProperty } from '../../api/actions/PropertyAction';
+import { addProperty, updateProperty, getProperty } from '../../api/actions/PropertyAction';
 import {
     CForm,
     CFormLabel,
@@ -89,17 +90,27 @@ const AddProperty = () => {
     const [isEditMode, setIsEditMode] = useState(false);
 
     useEffect(() => {
-        if (editingProperty && (editingProperty.id || editingProperty._id)) {
+        if (id) { // Check if ID exists, indicating edit mode
             setIsEditMode(true);
+            dispatch(getProperty(id)); // Fetch property data by ID
+        } else {
+            setIsEditMode(false);
+            setFormData(initialState);
+            // dispatch(clearSelectedProperty()); // Clear selected property when not in edit mode
+        }
+    }, [id, dispatch]);
+
+    useEffect(() => {
+        if (editingProperty) {
             const {
-                amenities = '',
+                amenities = [], // Ensure amenities is initialized as an array
                 description = '',
                 rentPrice = '',
                 numberOfUnits = '',
                 floorPlan = '',
                 ...property
             } = editingProperty;
-            const normalizedAmenities = Array.isArray(amenities) ? amenities.join(', ') : amenities;
+             const normalizedAmenities = Array.isArray(amenities) ? amenities.join(', ') : amenities;
             setFormData({
                 ...initialState,
                 ...property,
@@ -109,13 +120,10 @@ const AddProperty = () => {
                 numberOfUnits,
                 floorPlan,
             });
-            setSelectedPhotos([]); // Clear selected photos in edit mode
-
-        } else {
-            setIsEditMode(false);
-            setFormData(initialState);
+            setSelectedPhotos([]); // Optionally clear selected photos in edit mode if needed, or handle existing photos display
         }
-    }, [editingProperty, id]);
+    }, [editingProperty]);
+
 
     useEffect(() => {
         if (error) {
@@ -219,10 +227,10 @@ const AddProperty = () => {
             // Debug log
             console.log('Submission data:', submissionData);
 
-            if (editingProperty && (editingProperty._id || editingProperty.id)) {
+            if (isEditMode && id) { // Use isEditMode and id
                 await dispatch(
                     updateProperty({
-                        id: editingProperty._id || editingProperty.id,
+                        id: id, // Use id from useParams
                         payload: submissionData,
                     }),
                 ).unwrap();
@@ -231,7 +239,7 @@ const AddProperty = () => {
             }
 
             toast.success(
-                editingProperty?._id || editingProperty?.id
+                isEditMode && id
                     ? 'Property updated successfully'
                     : 'Property added successfully',
             );
@@ -434,10 +442,10 @@ const AddProperty = () => {
                                     </CButton>
                                     <CButton color="dark" type="submit" disabled={isSubmitting || loading}>
                                         {isSubmitting || loading
-                                            ? editingProperty?._id || editingProperty?.id
+                                            ? isEditMode && id
                                                 ? 'Updating...'
                                                 : 'Adding...'
-                                            : editingProperty?._id || editingProperty?.id
+                                            : isEditMode && id
                                                 ? 'Update Property'
                                                 : 'Add Property'}
                                     </CButton>

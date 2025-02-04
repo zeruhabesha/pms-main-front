@@ -6,14 +6,11 @@ import {
     CTableHeaderCell,
     CTableRow,
     CTableDataCell,
-    CButton,
-    CPagination,
-    CPaginationItem,
+    CBadge,
     CDropdown,
     CDropdownToggle,
     CDropdownMenu,
     CDropdownItem,
-    CBadge,
 } from '@coreui/react';
 import { CIcon } from '@coreui/icons-react';
 import {
@@ -38,7 +35,7 @@ const ClearanceTableData = ({
     toggleDropdown,
     closeDropdown,
     dropdownRefs,
-    handleModalOpen,
+    handleViewDetails, // Add this prop
 }) => {
     return (
         <CTable align="middle" className="mb-0 border" hover responsive>
@@ -86,7 +83,7 @@ const ClearanceTableData = ({
                         <CTableDataCell>
                             {clearance?.notes || 'N/A'}
                         </CTableDataCell>
-                        <CTableDataCell>
+                         <CTableDataCell>
                             {formatDate(clearance?.moveOutDate) || 'N/A'}
                         </CTableDataCell>
                         <CTableDataCell>
@@ -101,7 +98,7 @@ const ClearanceTableData = ({
                             ) : null
                             }
                         </CTableDataCell>
-                        <CTableDataCell>
+                         <CTableDataCell>
                             <CDropdown
                                 variant="btn-group"
                                 isOpen={dropdownOpen === clearance?._id}
@@ -125,9 +122,13 @@ const ClearanceTableData = ({
                                         Delete
                                     </CDropdownItem>
                                     {/* )} */}
-                                    <CDropdownItem onClick={() => handleModalOpen(clearance)} title="View Details">
+                                    <CDropdownItem onClick={() => handleViewDetails(clearance?.tenant?._id)} title="View Details">
                                         <CIcon icon={cilFullscreen} className="me-2" />
-                                        View Details
+                                        Details
+                                    </CDropdownItem>
+                                    <CDropdownItem onClick={() => handleApprove(clearance?.tenant?._id)} title="View Details">
+                                        <CIcon icon={cilFullscreen} className="me-2" />
+                                        Details
                                     </CDropdownItem>
                                 </CDropdownMenu>
                             </CDropdown>

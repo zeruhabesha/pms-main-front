@@ -1,43 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import {
-    CButton,
-    CForm,
-    CFormInput,
-    CRow,
-    CCol,
-    CInputGroup,
-    CFormSelect,
-    CAlert,
-    CSpinner,
-    CCard,
-    CCardHeader,
-    CCardBody,
+  CButton,
+  CForm,
+  CFormInput,
+  CRow,
+  CCol,
+  CInputGroup,
+  CFormSelect,
+  CAlert,
+  CSpinner,
+  CCard,
+  CCardHeader,
+  CCardBody,
 } from '@coreui/react';
 import {
-    cilTrash,
-    cilPlus,
-    cilUser,
-    cilEnvelopeOpen,
-    cilPhone,
-    cilHome,
-    cilCalendar,
+  cilTrash,
+  cilPlus,
+  cilUser,
+  cilEnvelopeOpen,
+  cilPhone,
     cilMoney,
     cilCreditCard,
     cilDescription,
-    cilContact
+    cilContact,
+  cilCalendar
 } from '@coreui/icons';
 import { CIcon } from '@coreui/icons-react';
 import { useDispatch } from 'react-redux';
 import {
-    addTenant,
-    updateTenant,
-    fetchTenantById,
-    uploadTenantPhoto,
+  addTenant,
+  updateTenant,
+  fetchTenantById,
+  uploadTenantPhoto,
     fetchTenants,
 } from '../../api/actions/TenantActions';
 import { toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
-
+import './TenantTable.scss'; // Import the dedicated CSS file
 
 const AddTenant = () => {
     const dispatch = useDispatch();
@@ -52,23 +51,20 @@ const AddTenant = () => {
             phoneNumber: '',
             emergencyContact: '',
         },
-        leaseAgreement: {
-            startDate: '',
-            endDate: '',
-            rentAmount: '',
-            securityDeposit: '',
-            specialTerms: '',
-        },
+        startDate: '',
+        endDate: '',
+        rentAmount: '',
+        securityDeposit: '',
+        specialTerms: '',
         paymentMethod: '',
         moveInDate: '',
         emergencyContacts: [''],
     });
 
     const [idProofFiles, setIdProofFiles] = useState([]);
-
     const isEditing = !!id;
 
-     const formatDateForInput = (dateString) => {
+      const formatDateForInput = (dateString) => {
         if (!dateString) return '';
         try {
             const date = new Date(dateString);
@@ -99,13 +95,11 @@ const AddTenant = () => {
                                 phoneNumber: tenant.contactInformation?.phoneNumber || '',
                                 emergencyContact: tenant.contactInformation?.emergencyContact || '',
                             },
-                            leaseAgreement: {
-                                startDate: formatDateForInput(tenant.leaseAgreement?.startDate),
-                                endDate: formatDateForInput(tenant.leaseAgreement?.endDate),
-                                rentAmount: tenant.leaseAgreement?.rentAmount || '',
-                                securityDeposit: tenant.leaseAgreement?.securityDeposit || '',
-                                specialTerms: tenant.leaseAgreement?.specialTerms || '',
-                            },
+                            startDate: formatDateForInput(tenant.startDate),
+                            endDate: formatDateForInput(tenant.endDate),
+                            rentAmount: tenant.rentAmount || '',
+                            securityDeposit: tenant.securityDeposit || '',
+                            specialTerms: tenant.specialTerms || '',
                             paymentMethod: tenant.paymentMethod || '',
                             moveInDate: formatDateForInput(tenant.moveInDate),
                             emergencyContacts: tenant.emergencyContacts || [''],
@@ -131,6 +125,7 @@ const AddTenant = () => {
         };
     }, [dispatch, navigate, id, isEditing]);
 
+
     const resetForm = () => {
         setTenantData({
             tenantName: '',
@@ -139,16 +134,11 @@ const AddTenant = () => {
                 phoneNumber: '',
                 emergencyContact: '',
             },
-            leaseAgreement: {
-                startDate: '',
-                endDate: '',
-                rentAmount: '',
-                securityDeposit: '',
-                specialTerms: '',
-            },
-
-
-            idProof: [],
+            startDate: '',
+            endDate: '',
+            rentAmount: '',
+            securityDeposit: '',
+            specialTerms: '',
             paymentMethod: '',
             moveInDate: '',
             emergencyContacts: [''],
@@ -158,7 +148,7 @@ const AddTenant = () => {
     };
 
     const validateForm = () => {
-        const errors = [];
+      const errors = [];
 
         if (!tenantData.tenantName.trim()) {
             errors.push('Tenant name is required');
@@ -168,20 +158,22 @@ const AddTenant = () => {
             errors.push('Email is required');
         }
 
-        if (!tenantData.leaseAgreement.startDate) {
+        if (!tenantData.startDate) {
             errors.push('Lease start date is required');
         }
 
-        if (!tenantData.leaseAgreement.endDate) {
+        if (!tenantData.endDate) {
             errors.push('Lease end date is required');
         }
-
-        if (errors.length > 0) {
-            setErrorMessage(errors.join(', '));
-            return false;
+        if (!tenantData.moveInDate) {
+          errors.push('Move In Date is required');
         }
 
-        return true;
+      if (errors.length > 0) {
+        setErrorMessage(errors.join(', '));
+        return false;
+      }
+      return true;
     };
 
     const handleSubmit = async (e) => {
@@ -193,25 +185,25 @@ const AddTenant = () => {
 
         setIsLoading(true);
         try {
-            console.log("Sending tenant data:", tenantData); // Log data here!
+            console.log("Sending tenant data:", tenantData);
             const { idProof, ...jsonTenantData } = tenantData;
             if (isEditing) {
                 await dispatch(updateTenant({ id, tenantData: jsonTenantData })).unwrap();
                 toast.success("Tenant updated successfully");
             } else {
-                await dispatch(addTenant(jsonTenantData)).unwrap();
+                 await dispatch(addTenant(jsonTenantData)).unwrap();
                 toast.success("Tenant added successfully");
             }
-            if (idProofFiles.length > 0) {
-                const formData = new FormData();
-                idProofFiles.forEach((file, index) => {
-                    formData.append('idProof', file);
-                });
-                await dispatch(uploadTenantPhoto({
-                    id: isEditing ? id : (await dispatch(fetchTenants()).unwrap()).tenants[(await dispatch(fetchTenants()).unwrap()).tenants.length - 1]?._id,
-                    photo: formData
-                })).unwrap()
-            }
+               if (idProofFiles.length > 0) {
+                   const formData = new FormData();
+                   idProofFiles.forEach((file, index) => {
+                       formData.append('idProof', file);
+                   });
+                 await dispatch(uploadTenantPhoto({
+                     id: isEditing ? id : (await dispatch(fetchTenants()).unwrap()).tenants[(await dispatch(fetchTenants()).unwrap()).tenants.length - 1]?._id,
+                       photo: formData
+                 })).unwrap()
+                }
             navigate("/tenant");
         } catch (error) {
             console.error("Error:", error);
@@ -222,9 +214,8 @@ const AddTenant = () => {
         }
     };
 
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-
-    const handleFileChange = (e) => {
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
 
         if (files.length > 3) {
@@ -245,15 +236,15 @@ const AddTenant = () => {
         const updatedFiles = [...idProofFiles];
         updatedFiles.splice(index, 1);
         setIdProofFiles(updatedFiles);
-        setTenantData((prev) => ({...prev, idProof: updatedFiles.map(f => f.name)}));
+      setTenantData((prev) => ({...prev, idProof: updatedFiles.map(f => f.name)}));
     };
 
     const handleArrayChange = (index, value, arrayName) => {
-        setTenantData(prevState => {
+      setTenantData(prevState => {
             const updatedArray = [...prevState[arrayName]];
-            updatedArray[index] = value;
-            return {...prevState, [arrayName]: updatedArray};
-        });
+        updatedArray[index] = value;
+        return {...prevState, [arrayName]: updatedArray};
+      });
     };
 
     const handleAddArrayItem = (arrayName) => {
@@ -263,283 +254,253 @@ const AddTenant = () => {
     };
 
     const handleRemoveArrayItem = (index, arrayName) => {
-        setTenantData(prevState => {
+          setTenantData(prevState => {
             const updatedArray = [...prevState[arrayName]];
-            updatedArray.splice(index, 1);
-            return {...prevState, [arrayName]: updatedArray};
+        updatedArray.splice(index, 1);
+        return {...prevState, [arrayName]: updatedArray};
         });
     };
-
-    return (
-        <CRow>
-            <CCol xs={12}>
-                <CCard className="mb-4">
-                    <CCardHeader className="d-flex justify-content-between align-items-center">
-                        <strong>{isEditing ? 'Edit Tenant' : 'Add Tenant'}</strong>
-                    </CCardHeader>
-                    <CCardBody>
-                        {errorMessage && <CAlert color="danger">{errorMessage}</CAlert>}
-                        <CForm onSubmit={handleSubmit}>
-                            <CRow className="g-3">
-                            <CCol md={6}>
-                                 <CFormInput
-                                     label={<><CIcon icon={cilUser} className="me-1" /> Tenant Name</>}
-                                    name="tenantName"
-                                    value={tenantData.tenantName}
-                                    onChange={(e) => setTenantData({...tenantData, tenantName: e.target.value})}
-                                    required
-                                    // invalid={!tenantData.tenantName.trim()}
-                                    style={{backgroundColor: 'aliceblue'}}
-                                /> </CCol>
-                                <CCol md={6}>
-                                <CFormInput
-                                     label={<><CIcon icon={cilEnvelopeOpen} className="me-1" />Email</>}
-                                    type="email"
-                                    name="email"
-                                    style={{backgroundColor: 'aliceblue'}}
-                                    value={tenantData.contactInformation.email}
-                                    onChange={(e) =>
-                                        setTenantData({
-                                            ...tenantData,
-                                            contactInformation: {
-                                                ...tenantData.contactInformation,
-                                                email: e.target.value,
-                                            },
-                                        })
-                                    }
-                                    required
-                                    // invalid={!tenantData.contactInformation.email.trim()}
-                                /> </CCol>
-                                <CCol md={6}>
-                                    <CFormInput
-                                        label={<><CIcon icon={cilPhone} className="me-1" />Phone Number</>}
-                                        name="phoneNumber"
-                                        value={tenantData.contactInformation.phoneNumber}
-                                        onChange={(e) =>
-                                            setTenantData({
-                                                ...tenantData,
-                                                contactInformation: {
-                                                    ...tenantData.contactInformation,
-                                                    phoneNumber: e.target.value,
-                                                },
-                                            })
-                                        }
-                                        required
-                                        style={{backgroundColor: 'aliceblue'}}
-                                    />
-                                </CCol>
-
-                                <CCol md={6}>
-                                    <CFormInput
-                                        label={<><CIcon icon={cilContact} className="me-1" />Emergency Contact</>}
-                                        name="emergencyContact"
-                                        style={{backgroundColor: 'aliceblue'}}
-                                        value={tenantData.contactInformation.emergencyContact}
-                                        onChange={(e) =>
-                                            setTenantData({
-                                                ...tenantData,
-                                                contactInformation: {
-                                                    ...tenantData.contactInformation,
-                                                    emergencyContact: e.target.value,
-                                                },
-                                            })
-                                        }
-                                    />
-                                </CCol>
-
-                                <CCol md={6}>
-                                    <CFormInput
-                                         label={<><CIcon icon={cilCalendar} className="me-1" />Lease Start Date</>}
-                                        type="date"
-                                        name="leaseStartDate"
-                                        value={tenantData.leaseAgreement.startDate}
-                                        style={{backgroundColor: 'aliceblue'}}
-                                        onChange={(e) =>
-                                            setTenantData({
-                                                ...tenantData,
-                                                leaseAgreement: {
-                                                    ...tenantData.leaseAgreement,
-                                                    startDate: e.target.value,
-                                                },
-                                            })
-                                        }
-                                        required
-                                    />
-                                </CCol>
-
-                                <CCol md={6}>
-                                    <CFormInput
-                                       label={<><CIcon icon={cilCalendar} className="me-1" />Lease End Date</>}
-                                        type="date"
-                                        name="leaseEndDate"
-                                        style={{backgroundColor: 'aliceblue'}}
-                                        value={tenantData.leaseAgreement.endDate}
-                                        onChange={(e) =>
-                                            setTenantData({
-                                                ...tenantData,
-                                                leaseAgreement: {
-                                                    ...tenantData.leaseAgreement,
-                                                    endDate: e.target.value,
-                                                },
-                                            })
-                                        }
-                                        required
-                                    />
-                                </CCol>
-
-                                <CCol md={6}>
-                                    <CFormInput
-                                       label={<><CIcon icon={cilMoney} className="me-1" />Rent Amount</>}
-                                        type="number"
-                                        name="rentAmount"
-                                        style={{backgroundColor: 'aliceblue'}}
-                                        value={tenantData.leaseAgreement.rentAmount}
-                                        onChange={(e) =>
-                                            setTenantData({
-                                                ...tenantData,
-                                                leaseAgreement: {
-                                                    ...tenantData.leaseAgreement,
-                                                    rentAmount: e.target.value,
-                                                },
-                                            })
-                                        }
-                                        required
-                                    />
-                                </CCol>
-
-                                <CCol md={6}>
-                                    <CFormInput
-                                          label={<><CIcon icon={cilMoney} className="me-1" />Security Deposit</>}
-                                        type="number"
-                                        name="securityDeposit"
-                                        style={{backgroundColor: 'aliceblue'}}
-                                        value={tenantData.leaseAgreement.securityDeposit}
-                                        onChange={(e) =>
-                                            setTenantData({
-                                                ...tenantData,
-                                                leaseAgreement: {
-                                                    ...tenantData.leaseAgreement,
-                                                    securityDeposit: e.target.value,
-                                                },
-                                            })
-                                        }
-                                        required
-                                    />
-                                </CCol>
-
-                                <CCol md={12}>
-                                    <CFormInput
-                                        label={<><CIcon icon={cilDescription} className="me-1" />Special Terms</>}
-                                        name="specialTerms"
-                                        value={tenantData.leaseAgreement.specialTerms}
-                                        style={{backgroundColor: 'aliceblue'}}
-                                        onChange={(e) =>
-                                            setTenantData({
-                                                ...tenantData,
-                                                leaseAgreement: {
-                                                    ...tenantData.leaseAgreement,
-                                                    specialTerms: e.target.value,
-                                                },
-                                            })
-                                        }
-                                    />
-                                </CCol>
-
-
-                                <CCol md={6}>
-                                    <CFormSelect
-                                         label={<><CIcon icon={cilCreditCard} className="me-1" />Payment Method</>}
-                                        name="paymentMethod"
-                                        value={tenantData.paymentMethod}
-                                        onChange={(e) => setTenantData({...tenantData, paymentMethod: e.target.value})}
-                                        required
-                                    >
-                                        <option value="">Select Payment Method</option>
-                                        <option value="Credit Card">Credit Card</option>
-                                        <option value="Bank Transfer">Bank Transfer</option>
-                                        <option value="Cash">Cash</option>
-                                    </CFormSelect>
-                                </CCol>
-
-                                <CCol md={6}>
-                                    <CFormInput
-                                       label={<><CIcon icon={cilCalendar} className="me-1" />Move-in Date</>}
-                                        type="date"
-                                        name="moveInDate"
-                                        value={tenantData.moveInDate}
-                                        onChange={(e) => setTenantData({...tenantData, moveInDate: e.target.value})}
-                                        required
-                                    />
-                                </CCol>
-
-                                <CCol md={12}>
-                                    <label><CIcon icon={cilContact} className="me-1" />Emergency Contacts</label>
-                                    {tenantData.emergencyContacts.map((contact, index) => (
-                                        <CRow key={index} className="align-items-center mb-2">
-                                            <CCol xs={10}>
-                                                <CFormInput
-                                                    value={contact}
-                                                    placeholder={`Emergency Contact ${index + 1}`}
-                                                    onChange={(e) => handleArrayChange(index, e.target.value, 'emergencyContacts')}
-                                                />
-                                            </CCol>
-                                            <CCol xs={2}>
-                                                <CButton
-                                                    size="sm"
-                                                    color="light"
-                                                    style={{color: 'red'}}
-                                                    onClick={() => handleRemoveArrayItem(index, 'emergencyContacts')}
-                                                >
-                                                    <CIcon icon={cilTrash}/>
-                                                </CButton>
-                                            </CCol>
-                                        </CRow>
-                                    ))}
-                                    <CButton size="sm" color="dark" onClick={() => handleAddArrayItem('emergencyContacts')}>
-                                        <CIcon icon={cilPlus} className=""/>
-                                    </CButton>
-                                </CCol>
-                                <CCol md={6}>
-                                    <label>ID Proof (Max: 3)</label>
-                                    <CInputGroup>
-                                        <CFormInput
-                                            type="file"
-                                            name="idProof"
-                                            multiple
-                                            accept=".jpg,.jpeg,.png,.pdf"
-                                            onChange={handleFileChange}
-                                        />
-                                    </CInputGroup>
-                                    <CRow className="mt-2">
-                                        {idProofFiles.map((file, idx) => (
-                                            <CCol key={idx} xs={12}
-                                                  className="d-flex align-items-center justify-content-between">
-                                              <span>{file.name}</span>
-                                              <CButton size="sm" color="light" onClick={() => handleRemoveFile(idx)}>
-                                                  <CIcon icon={cilTrash}/>
-                                              </CButton>
-                                            </CCol>
-                                        ))}
-                                    </CRow>
-                                </CCol>
-                            </CRow>
-                            <div className="d-flex justify-content-end mt-3">
-                                <CButton
-                                    color="secondary"
-                                    onClick={() => navigate('/tenant')}
-                                    disabled={isLoading}>
-                                    Cancel
-                                </CButton>
-                                <CButton color="dark" type="submit" disabled={isLoading} className="ms-2">
-                                    {isLoading ? <CSpinner size="sm"/> : isEditing ? 'Update Tenant' : 'Add Tenant'}
-                                </CButton>
-                            </div>
-                        </CForm>
-                    </CCardBody>
-                </CCard>
+  return (
+    <div className="add-tenant-container">
+          <CCard className="mb-4">
+            <CCardHeader className="d-flex justify-content-between align-items-center">
+                <strong>{isEditing ? 'Edit Tenant' : 'Add Tenant'}</strong>
+            </CCardHeader>
+        <CCardBody>
+        {errorMessage && <CAlert color="danger">{errorMessage}</CAlert>}
+        <CForm onSubmit={handleSubmit}>
+          <CRow className="mb-3">
+            <CCol md={6} className="mb-3">
+              <CFormInput
+                label={<><CIcon icon={cilUser} className="me-1" /> Tenant Name</>}
+                name="tenantName"
+                  style={{backgroundColor: 'aliceblue'}}
+                value={tenantData.tenantName}
+                onChange={(e) => setTenantData({...tenantData, tenantName: e.target.value})}
+                required
+              />
             </CCol>
-        </CRow>
-    );
+            <CCol md={6} className="mb-3">
+              <CFormInput
+                   label={<><CIcon icon={cilEnvelopeOpen} className="me-1" />Email</>}
+                type="email"
+                name="email"
+                  style={{backgroundColor: 'aliceblue'}}
+                value={tenantData.contactInformation.email}
+                onChange={(e) =>
+                  setTenantData({
+                    ...tenantData,
+                    contactInformation: {
+                      ...tenantData.contactInformation,
+                      email: e.target.value,
+                    },
+                  })
+                }
+                required
+              />
+            </CCol>
+          </CRow>
+          <CRow className="mb-3">
+                <CCol md={6} className="mb-3">
+                    <CFormInput
+                        label={<><CIcon icon={cilPhone} className="me-1" />Phone Number</>}
+                        name="phoneNumber"
+                        style={{backgroundColor: 'aliceblue'}}
+                        value={tenantData.contactInformation.phoneNumber}
+                        onChange={(e) =>
+                            setTenantData({
+                                ...tenantData,
+                                contactInformation: {
+                                    ...tenantData.contactInformation,
+                                    phoneNumber: e.target.value,
+                                },
+                            })
+                        }
+                        required
+                    />
+                </CCol>
+            <CCol md={6} className="mb-3">
+              <CFormInput
+                  label={<><CIcon icon={cilContact} className="me-1" />Emergency Contact</>}
+                name="emergencyContact"
+                  style={{backgroundColor: 'aliceblue'}}
+                value={tenantData.contactInformation.emergencyContact}
+                onChange={(e) =>
+                  setTenantData({
+                    ...tenantData,
+                    contactInformation: {
+                      ...tenantData.contactInformation,
+                      emergencyContact: e.target.value,
+                    },
+                  })
+                }
+              />
+            </CCol>
+
+          </CRow>
+          <CRow className="mb-3">
+            <CCol md={6} className="mb-3">
+              <CFormInput
+                  label={<><CIcon icon={cilCalendar} className="me-1" />Lease Start Date</>}
+                type="date"
+                name="leaseStartDate"
+                  style={{backgroundColor: 'aliceblue'}}
+                value={tenantData.startDate}
+                onChange={(e) => setTenantData({...tenantData, startDate: e.target.value})}
+                required
+              />
+            </CCol>
+            <CCol md={6} className="mb-3">
+              <CFormInput
+                  label={<><CIcon icon={cilCalendar} className="me-1" />Lease End Date</>}
+                type="date"
+                  style={{backgroundColor: 'aliceblue'}}
+                name="leaseEndDate"
+                value={tenantData.endDate}
+                onChange={(e) => setTenantData({...tenantData, endDate: e.target.value})}
+                required
+              />
+            </CCol>
+
+          </CRow>
+          <CRow className="mb-3">
+            <CCol md={6} className="mb-3">
+              <CFormInput
+                 label={<><CIcon icon={cilMoney} className="me-1" />Rent Amount</>}
+                type="number"
+                name="rentAmount"
+                  style={{backgroundColor: 'aliceblue'}}
+                value={tenantData.rentAmount}
+                onChange={(e) => setTenantData({...tenantData, rentAmount: e.target.value})}
+                  required
+              />
+            </CCol>
+            <CCol md={6} className="mb-3">
+                <CFormInput
+                   label={<><CIcon icon={cilMoney} className="me-1" />Security Deposit</>}
+                    type="number"
+                    name="securityDeposit"
+                    style={{backgroundColor: 'aliceblue'}}
+                    value={tenantData.securityDeposit}
+                    onChange={(e) => setTenantData({...tenantData, securityDeposit: e.target.value})}
+                    required
+                />
+            </CCol>
+
+          </CRow>
+          <CRow className="mb-3">
+
+               <CCol md={12} className="mb-3">
+              <CFormInput
+                   label={<><CIcon icon={cilDescription} className="me-1" />Special Terms</>}
+                name="specialTerms"
+                  style={{backgroundColor: 'aliceblue'}}
+                value={tenantData.specialTerms}
+                onChange={(e) => setTenantData({...tenantData, specialTerms: e.target.value})}
+              />
+            </CCol>
+          </CRow>
+          <CRow className="mb-3">
+               <CCol md={6} className="mb-3">
+              <CFormSelect
+                   label={<><CIcon icon={cilCreditCard} className="me-1" />Payment Method</>}
+                name="paymentMethod"
+                  style={{backgroundColor: 'aliceblue'}}
+                value={tenantData.paymentMethod}
+                onChange={(e) => setTenantData({...tenantData, paymentMethod: e.target.value})}
+                  required
+              >
+                  <option value="">Select Payment Method</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cash">Cash</option>
+              </CFormSelect>
+            </CCol>
+               <CCol md={6} className="mb-3">
+              <CFormInput
+                 label={<><CIcon icon={cilCalendar} className="me-1" />Move-in Date</>}
+                type="date"
+                name="moveInDate"
+                  style={{backgroundColor: 'aliceblue'}}
+                value={tenantData.moveInDate}
+                onChange={(e) => setTenantData({...tenantData, moveInDate: e.target.value})}
+                  required
+              />
+            </CCol>
+
+          </CRow>
+          <CRow className="mb-3">
+            <CCol md={12} className="mb-3">
+                 <label><CIcon icon={cilContact} className="me-1" />Emergency Contacts</label>
+                {tenantData.emergencyContacts.map((contact, index) => (
+                    <CRow key={index} className="align-items-center mb-2">
+                        <CCol xs={10}>
+                            <CFormInput
+                                value={contact}
+                                placeholder={`Emergency Contact ${index + 1}`}
+                                onChange={(e) => handleArrayChange(index, e.target.value, 'emergencyContacts')}
+                            />
+                        </CCol>
+                        <CCol xs={2}>
+                            <CButton
+                                size="sm"
+                                color="light"
+                                style={{color: 'red'}}
+                                onClick={() => handleRemoveArrayItem(index, 'emergencyContacts')}
+                            >
+                                <CIcon icon={cilTrash}/>
+                            </CButton>
+                        </CCol>
+                    </CRow>
+                ))}
+                <CButton size="sm" color="dark" onClick={() => handleAddArrayItem('emergencyContacts')}>
+                    <CIcon icon={cilPlus} className=""/>
+                </CButton>
+            </CCol>
+
+          </CRow>
+           <CRow>
+            <CCol md={6} className="mb-3">
+                 <label>ID Proof (Max: 3)</label>
+              <CInputGroup>
+                <CFormInput
+                  type="file"
+                  name="idProof"
+                  multiple
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  onChange={handleFileChange}
+                />
+              </CInputGroup>
+                <CRow className="mt-2">
+                    {idProofFiles.map((file, idx) => (
+                        <CCol key={idx} xs={12}
+                              className="d-flex align-items-center justify-content-between">
+                            <span>{file.name}</span>
+                            <CButton size="sm" color="light" onClick={() => handleRemoveFile(idx)}>
+                                <CIcon icon={cilTrash}/>
+                            </CButton>
+                        </CCol>
+                    ))}
+                </CRow>
+            </CCol>
+           </CRow>
+          <div className="d-flex justify-content-end mt-3">
+            <CButton
+              color="secondary"
+              onClick={() => navigate('/tenant')}
+              disabled={isLoading}
+            >
+              Cancel
+            </CButton>
+            <CButton color="dark" type="submit" disabled={isLoading} className="ms-2">
+                {isLoading ? <CSpinner size="sm"/> : isEditing ? 'Update Tenant' : 'Add Tenant'}
+            </CButton>
+          </div>
+        </CForm>
+      </CCardBody>
+      </CCard>
+    </div>
+  );
 };
 
 export default AddTenant;

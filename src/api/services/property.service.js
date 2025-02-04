@@ -34,38 +34,50 @@ class PropertyService {
     }
 
     async filterProperties(filterCriteria = {}) {
-        try {
-            const { page = 1, limit = 10, ...otherCriteria } = filterCriteria;
+      try {
+          const { page = 1, limit = 10, ...otherCriteria } = filterCriteria;
 
-            const response = await httpCommon.get(this.baseURL, {
-                headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
-                params: {
-                    page,
-                    limit,
-                    ...otherCriteria,
-                },
-            });
+          const response = await httpCommon.get(this.baseURL, {
+              headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
+              params: {
+                  page,
+                  limit,
+                  ...otherCriteria,
+              },
+          });
 
-            const totalItems = response.data?.data?.totalProperties || 0;
-            const totalPages = Math.ceil(totalItems / limit);
-            const currentPage = Math.min(page, totalPages || 1);
+          const totalItems = response.data?.data?.totalProperties || 0;
+          const totalPages = Math.ceil(totalItems / limit);
+          const currentPage = Math.min(page, totalPages || 1);
 
-            return {
-                properties: (response.data?.data?.properties || []).map(PropertyAdapter.toDTO),
-                pagination: {
-                    totalPages,
-                    totalItems,
-                    currentPage,
-                    limit,
-                    hasNextPage: currentPage < totalPages,
-                    hasPreviousPage: currentPage > 1,
-                },
-            };
-        } catch (error) {
-            throw this.handleError(error);
-        }
+          return {
+              properties: (response.data?.data?.properties || []).map(PropertyAdapter.toDTO),
+              pagination: {
+                  totalPages,
+                  totalItems,
+                  currentPage,
+                  limit,
+                  hasNextPage: currentPage < totalPages,
+                  hasPreviousPage: currentPage > 1,
+              },
+          };
+      } catch (error) {
+          throw this.handleError(error);
+      }
+  }
+
+  async filterProperties1(filterCriteria = {}) {
+    try {
+        const response = await httpCommon.get(this.baseURL, {
+            headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
+        });
+        return {
+            properties: (response.data?.data?.properties || []).map(PropertyAdapter.toDTO),
+        };
+    } catch (error) {
+        throw this.handleError(error);
     }
-
+}
 
     async getProperties() {
           try {
@@ -129,25 +141,26 @@ class PropertyService {
 
 
     async batchDelete(propertyIds) {
-        try {
-            await httpCommon.post(
-                `${this.baseURL}/delete/multiple`,
-                { ids:propertyIds }, // Changed to match backend
-                {
-                    headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
-                },
-            );
-            return propertyIds;
-        } catch (error) {
-             throw this.handleError(error);
-         }
-     }
+      try {
+          await httpCommon.post(
+              `${this.baseURL}/delete/multiple`,
+              { ids: propertyIds }, // Send IDs in the request body as an object
+              {
+                  headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
+              },
+          );
+          return propertyIds; // Backend returns the deleted IDs
+      } catch (error) {
+          throw this.handleError(error, 'Failed to delete properties');
+      }
+  }
 
-     async toggleFeatured(propertyId, featured) {
+
+     async toggleFeatured(id, featured) {
          try {
             //  FEATURED IS NOT A FIELD ON THE BACKEND
              const response = await httpCommon.patch(
-                 `${this.baseURL}/${propertyId}`, // Remove `/featured`
+                 `${this.baseURL}/${id}`, // Remove `/featured`
                  { featured },  // Remove featured from here
                  { headers: { ...this.defaultHeaders, ...this.getAuthHeader() } },
              );
@@ -170,6 +183,7 @@ class PropertyService {
                      'Content-Type': 'multipart/form-data',
                  },
              });
+             console.log('service',response.data?.data);
             return PropertyAdapter.toDTO(response.data?.data);
         } catch (error) {
            throw this.handleError(error);
@@ -203,10 +217,10 @@ class PropertyService {
              throw this.handleError(error);
          }
      }
-    async updatePhotos(propertyId, photos) {
+    async updatePhotos(id, photos) {
           try {
              const formData = this.createFormData({ photos }, 'photos');
-             const response = await httpCommon.put(`${this.baseURL}/${propertyId}`, formData, {
+             const response = await httpCommon.put(`${this.baseURL}/${id}`, formData, {
                  headers: {
                      ...this.getAuthHeader(),
                      'Content-Type': 'multipart/form-data',
@@ -223,7 +237,7 @@ class PropertyService {
             await httpCommon.delete(`${this.baseURL}/${propertyId}/photos/${photoId}`, {
                 headers: this.getAuthHeader(),
             });
-            return { success: true, photoId };
+            return { success: true, photoId, propertyId };
         } catch (error) {
             throw this.handleError(error);
         }
@@ -253,10 +267,10 @@ class PropertyService {
         }
     }
 
-    async updateStatus(propertyId, status) {
+    async updateStatus(id, status) {
         try {
             const response = await httpCommon.patch(
-                `${this.baseURL}/${propertyId}`, // Removed `/status` from URL
+                `${this.baseURL}/${id}`, // Removed `/status` from URL
                 { status },
                 {
                     headers: this.getAuthHeader(),
@@ -268,22 +282,35 @@ class PropertyService {
          }
      }
 
-    async getProperty(id) {
-          try {
-              if (!id) {
-                  throw new Error('Property ID is required');
-              }
-             const response = await httpCommon.get(`${this.baseURL}/${id}`, {
-              headers: this.getAuthHeader(),
-          })
-             console.log('sssssssssssssssss',response.data.data); 
-             return PropertyAdapter.toDTO(response.data?.data);
-         } catch (error) {
-              throw this.handleError(error);
-         }
+     async getProperty(id) {
+      try {
+          if (!id) {
+              throw new Error('Property ID is required');
+          }
+         const response = await httpCommon.get(`${this.baseURL}/${id}`, {
+          headers: this.getAuthHeader(),
+      })
+         console.log('sssssssssssssssss',response.data.data);
+         return PropertyAdapter.toDTO(response.data?.data);
+     } catch (error) {
+          throw this.handleError(error);
      }
+ }
 
- 
+async importProperties(formData) {
+  try {
+      const response = await httpCommon.post(`${this.baseURL}/upload/excel`, formData, {
+          headers: {
+              ...this.getAuthHeader(),
+              'Content-Type': 'multipart/form-data', // Important for file uploads
+          },
+      });
+      return response.data;
+  } catch (error) {
+      throw this.handleError(error, 'Failed to import properties from Excel');
+  }
+}
+
 
    async downloadPhoto(propertyId, photoId) {
         try {

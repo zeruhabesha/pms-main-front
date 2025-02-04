@@ -1,10 +1,11 @@
+// ViewTenant.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { CRow, CCol, CCard, CCardHeader, CCardBody, CAlert } from '@coreui/react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   fetchTenants, 
   deleteTenant, 
-  fetchTenantById  // Changed from getTenantById to fetchTenantById
+  fetchTenantById  
 } from '../../api/actions/TenantActions';
 import TenantTable from './TenantTable';
 import TenantDeleteModal from './TenantDeleteModal';
@@ -19,7 +20,8 @@ import TenantDetailsModal from "./TenantDetailsModal";
 import { createSelector } from '@reduxjs/toolkit';
 import { Link } from 'react-router-dom'; // Import Link
 import { useNavigate } from 'react-router-dom';
-import AddClearance from '../Clearance/AddClearance'; // Adjust the path based on your folder structure
+import ClearanceDetailsModal from '../Clearance/ClearanceDetailsModal'; // Import the modal
+
 
 const selectTenantState = createSelector(
   (state) => state.tenant,
@@ -51,8 +53,8 @@ const ViewTenant = () => {
   const [selectedTenantForClearance, setSelectedTenantForClearance] = useState(null);
   
   const handleClearance = (tenantId) => {
-    setSelectedTenantForClearance(tenantId); // Store the selected tenant's ID
-    setClearanceModalVisible(true);         // Open the modal
+    setSelectedTenantForClearance(tenantId);
+    setClearanceModalVisible(true);
   };
 
   const handleFetchTenants = ({ search }) => {
@@ -108,6 +110,8 @@ useEffect(() => {
       dispatch(fetchTenants({ page, limit: itemsPerPage, search: searchTerm }));
     }
   };
+
+
   const handleAddTenant = () => {
      navigate('/tenant/add')
    };
@@ -210,11 +214,11 @@ useEffect(() => {
         </CCard>
       </CCol>
 
-      <AddClearance
-  visible={clearanceModalVisible}
-  setVisible={setClearanceModalVisible}
-  tenantId={selectedTenantForClearance} // Pass the tenant ID to the modal
-/>
+      <ClearanceDetailsModal
+        visible={clearanceModalVisible}
+        setVisible={setClearanceModalVisible}
+        tenantId={selectedTenantForClearance} // Pass the tenant ID to the modal
+      />
 
       <TenantDeleteModal
         visible={deleteModalVisible}

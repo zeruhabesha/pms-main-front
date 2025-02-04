@@ -20,6 +20,7 @@ export const addClearance = createAsyncThunk(
     async (clearanceData, { rejectWithValue }) => {
         try {
             const response = await ClearanceService.addClearance(clearanceData);
+            console.log('Response:', response);
             return response.data;
         } catch (error) {
              return rejectWithValue(error);

@@ -1,79 +1,57 @@
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { importProperties } from '../../api/actions/PropertyAction';
+import { toast } from 'react-toastify';
 import {
     CModal,
     CModalHeader,
     CModalTitle,
     CModalBody,
     CButton,
-    CForm,
     CFormInput,
+    CForm,
     CAlert
 } from '@coreui/react';
-import { useDispatch } from 'react-redux';
-import { importProperties } from '../../api/actions/PropertyAction'; // Import your new action
-import { toast } from 'react-toastify';
-import Papa from 'papaparse';
 
 const ImportModal = ({ visible, onClose }) => {
-    const [file, setFile] = useState(null);
+    const [file, setFile] = useState(null); // Keep the file state
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
-     const dispatch = useDispatch();
+    const dispatch = useDispatch();
 
-
-     const handleFileChange = (e) => {
-          setFile(e.target.files[0]);
-     };
-
+    const handleFileChange = (e) => {
+        setFile(e.target.files[0]); // Store the File object directly
+    };
 
     const handleImport = async () => {
         if (!file) {
             setError('Please select a file to import.');
-             return;
+            return;
         }
-         setLoading(true)
-         setError(null)
-       try {
-             const reader = new FileReader();
-
-          reader.onload = async (e) => {
-             const csvData = e.target.result;
-
-               Papa.parse(csvData, {
-                    header: true,
-                   complete: async (results) => {
-                     if(results.data){
-                          try {
-                            const response = await dispatch(importProperties(results.data)).unwrap();
-                              if(response.success){
-                                toast.success('Properties imported successfully!');
-                                 onClose()
-                              } else {
-                                  setError(response.message || 'Failed to import properties.')
-                              }
-                        } catch (err) {
-                            setError(err.message || 'Failed to import properties.');
-                             } finally {
-                             setLoading(false);
-                         }
-                     } else {
-                       setError("error parsing CSV file")
-                    }
-                   }
-             });
-          };
-          reader.onerror = () => {
-            setError('Error reading file.');
+        
+        setLoading(true);
+        setError(null);
+        
+        try {
+            const formData = new FormData();
+            formData.append('file', file); // Append actual file
+    
+            console.log("Uploading file:", file.name);
+    
+            const response = await dispatch(importProperties(formData)).unwrap();
+    
+            if (response.success) {
+                toast.success('Properties imported successfully!');
+                setImportModalVisible(false);
+                onClose(); // Close the modal on success
+            } else {
+                setError(response.message || 'Failed to import properties.');
+            }
+        } catch (err) {
+            setError(err.message || 'Failed to import properties.');
+        } finally {
             setLoading(false);
-          };
-
-          reader.readAsText(file)
-
-         }  catch (err) {
-               setError(err.message || 'Failed to import properties.');
-            } finally {
-                 setLoading(false);
-          }
+        }
     };
 
     return (
@@ -86,14 +64,13 @@ const ImportModal = ({ visible, onClose }) => {
                 <CForm>
                     <CFormInput
                         type="file"
-                        accept=".csv"
-                        label="Choose CSV File"
-                         onChange={handleFileChange}
+                        accept=".xlsx, .xls"
+                        label="Choose Excel File"
+                        onChange={handleFileChange}
                     />
-                     <CButton  className="mt-3" color="primary" onClick={handleImport} disabled={loading}>
+                    <CButton className="mt-3" color="primary" onClick={handleImport} disabled={loading}>
                         {loading ? 'Importing...' : 'Import'}
-                      </CButton>
-                    {/* You might add loading indicators and/or feedback messages here */}
+                    </CButton>
                 </CForm>
             </CModalBody>
         </CModal>

@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
 import autoprefixer from 'autoprefixer'
+import svgr from 'vite-plugin-svgr';
 
 export default defineConfig(() => {
   return {
@@ -44,6 +45,7 @@ export default defineConfig(() => {
       ],
       extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.scss'],
     },
+    plugins: [svgr()],
     server: {
       port: 3000,
       proxy: {

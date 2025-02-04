@@ -1,3 +1,4 @@
+// frontend/src/api/services/user.service.js
 import axios from 'axios';
 import httpCommon from '../http-common';
 import { decryptData } from '../utils/crypto';
@@ -32,24 +33,24 @@ class UserService {
               console.warn("No user found in local storage");
               return null;
           }
-          
+
           const decryptedUser = decryptData(encryptedUser);
-          
+
           // Check if decryptedUser is already an object
           const user = typeof decryptedUser === 'string' ? JSON.parse(decryptedUser) : decryptedUser;
-          
+
           if (!user || !user._id) {
               console.warn("No registeredBy found in user data");
               return null;
           }
-          
+
           return user._id;
       } catch (error) {
           console.error("Error fetching registeredBy:", error);
           return null;
       }
   }
-  
+
 
     async fetchUsers(page = 1, limit = 10, searchTerm = '') {
         const registeredBy = this.getRegisteredBy();
@@ -138,7 +139,7 @@ class UserService {
         throw this.handleError(error);
     }
 }
-  
+
 async addUser(userData) {
   try {
       // Ensure role is capitalized to match enum values
@@ -148,12 +149,12 @@ async addUser(userData) {
       };
 
       const response = await httpCommon.post('/users', formattedUserData, {
-          headers: { 
-              ...this.getAuthHeader(), 
-              'Content-Type': 'application/json' 
+          headers: {
+              ...this.getAuthHeader(),
+              'Content-Type': 'application/json'
           },
       });
-      
+
       if (response.data?.status === 'error') {
           throw new Error(response.data.message || 'Failed to add user');
       }
@@ -177,7 +178,7 @@ async addUser(userData) {
           phoneNumber: userData.phoneNumber,
           status: userData.status || 'active',
         };
-        
+
         const response = await httpCommon.put(`/users/${id}`, payload, {
           headers: {
             ...this.getAuthHeader(),
@@ -230,7 +231,7 @@ async addUser(userData) {
         throw this.handleError(error);
       }
     }
-  
+
     async deleteUser(id) {
         try {
           await httpCommon.delete(`/users/${id}`, {
@@ -239,6 +240,15 @@ async addUser(userData) {
           return id;
         } catch (error) {
           throw this.handleError(error);
+        }
+    }
+
+    async forgotPassword(email) { // Updated forgotPassword service method
+        try {
+            const response = await httpCommon.post('/users/forgot-password', { email }); // Correct endpoint
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
         }
     }
 

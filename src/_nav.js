@@ -117,12 +117,19 @@ const _nav = [
       
     },
   
+   {
+      component: CNavItem,
+      name: 'Clearance',
+      to: '/clearance',
+      icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
+    },  
     {
       component: CNavItem,
       name: 'Report',
       to: '/report',
       icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
     },
+    
   ] : []),
 
   ...(userRole === 'Tenant' ? [

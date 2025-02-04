@@ -31,73 +31,74 @@ const agreementSlice = createSlice({
         clearError: (state) => {
             state.error = null;
         },
+        setCurrentPage: (state, action) => {
+            state.currentPage = action.payload;
+        },
         toggleExpandedRow: (state, action) => {
             const id = action.payload;
             state.expandedRows[id] = !state.expandedRows[id];
         },
     },
     extraReducers: (builder) => {
-        const commonActions = [
-            fetchAgreements,
-            addAgreement,
-            updateAgreement,
-            deleteAgreement,
-            uploadAgreementFile,
-            fetchAgreement,
-        ];
-    
-        commonActions.forEach((action) => {
-            builder.addCase(action.pending, (state) => {
+        builder
+            .addCase(fetchAgreements.fulfilled, (state, action) => {
+                state.loading = false;
+                state.agreements = action.payload.agreements;
+                state.totalPages = action.payload.totalPages;
+                state.currentPage = action.payload.currentPage;
+            })
+            .addCase(fetchAgreement.fulfilled, (state, action) => {
+                state.loading = false;
+                state.selectedAgreement = action.payload;
+            })
+            .addCase(addAgreement.fulfilled, (state, action) => {
+                state.loading = false;
+                state.agreements.unshift(action.payload);
+            })
+            .addCase(updateAgreement.fulfilled, (state, action) => {
+                state.loading = false;
+                const index = state.agreements.findIndex(
+                    (agreement) => agreement._id === action.payload._id
+                );
+                if (index !== -1) {
+                    state.agreements[index] = action.payload;
+                }
+            })
+            .addCase(deleteAgreement.fulfilled, (state, action) => {
+                state.loading = false;
+                state.agreements = state.agreements.filter(
+                    (agreement) => agreement._id !== action.payload
+                );
+            })
+            .addCase(uploadAgreementFile.fulfilled, (state, action) => {
+                state.loading = false;
+                const index = state.agreements.findIndex(
+                    (agreement) => agreement._id === action.payload._id
+                );
+                if (index !== -1) {
+                    state.agreements[index] = {
+                        ...state.agreements[index],
+                        documents: action.payload.documents,
+                    };
+                }
+            });
+
+        // Common `pending` handler for all async actions
+        builder.addMatcher(
+            (action) => action.type.endsWith("/pending"),
+            (state) => {
                 state.loading = true;
                 state.error = null;
-            }).addCase(action.rejected, (state, action) => {
+            }
+        );
+
+        builder.addMatcher(
+            (action) => action.type.endsWith("/rejected"),
+            (state, action) => {
                 state.loading = false;
-                state.error = action.payload || "An unexpected error occurred";
-            });
-        });
-    
-        builder
-        .addCase(fetchAgreements.fulfilled, (state, action) => {
-            state.loading = false;
-            state.agreements = action.payload.agreements;
-            state.totalPages = action.payload.totalPages;
-            state.currentPage = action.payload.currentPage;
-        })
-        .addCase(fetchAgreement.fulfilled, (state, action) => {
-            state.loading = false;
-            state.selectedAgreement = action.payload;
-        })
-        .addCase(addAgreement.fulfilled, (state, action) => {
-            state.loading = false;
-            state.agreements.unshift(action.payload);
-        })
-        .addCase(updateAgreement.fulfilled, (state, action) => {
-            state.loading = false;
-            const index = state.agreements.findIndex(
-                (agreement) => agreement._id === action.payload._id
-            );
-            if (index !== -1) {
-                state.agreements[index] = action.payload;
+                state.error = action.error?.message || "An unexpected error occurred";
             }
-        })
-        .addCase(deleteAgreement.fulfilled, (state, action) => {
-            state.loading = false;
-            state.agreements = state.agreements.filter(
-                (agreement) => agreement._id !== action.payload
-            );
-        })
-        .addCase(uploadAgreementFile.fulfilled, (state, action) => {
-            state.loading = false;
-            const index = state.agreements.findIndex(
-                (agreement) => agreement._id === action.payload._id
-            );
-            if (index !== -1) {
-                state.agreements[index] = {
-                    ...state.agreements[index],
-                    documents: action.payload.documents,
-                };
-            }
-        });
+        );
     },
 });
 
@@ -106,6 +107,7 @@ export const {
     clearSelectedAgreement,
     clearError,
     toggleExpandedRow,
+    setCurrentPage,
 } = agreementSlice.actions;
 
 export const selectExpandedRows = (state) => state.agreement.expandedRows;

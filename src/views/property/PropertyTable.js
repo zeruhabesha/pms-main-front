@@ -72,6 +72,8 @@ const PropertyTable = ({
     handlePageChange = () => {},
     totalPages = 1,
     itemsPerPage = 10,
+    selectedRows = [],
+    setSelectedRows = () => {},
 }) => {
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
     const [userPermissions, setUserPermissions] = useState(null);
@@ -81,7 +83,7 @@ const PropertyTable = ({
      const [selectedStatus, setSelectedStatus] = useState('');
     const [priceRange, setPriceRange] = useState([0, 1000000]); // Initial price range
     const [sliderMax, setSliderMax] = useState(1000000) // Initial max value of price
-      const [selectedRows, setSelectedRows] = useState([]); // To track selected rows
+    //   const [selectedRows, setSelectedRows] = useState([]); // To track selected rows
 
     const [isDeleting, setIsDeleting] = useState(false);
     const [showMultiDeleteConfirm, setShowMultiDeleteConfirm] = useState(false);
@@ -178,7 +180,7 @@ const PropertyTable = ({
             currency,
         }).format(amount);
     };
-    
+
       const generatePDFTableData = () => {
         return filteredProperties.map((property, index) => [
             (currentPage - 1) * itemsPerPage + index + 1,
@@ -255,9 +257,9 @@ const PropertyTable = ({
 
     const handlePriceSliderChange = debounce((value) => {
         setPriceRange(value);
-    }, 300); // Delay updates by 300ms
+    }, 10); // Delay updates by 300ms
 
-const handleCheckboxChange = useCallback((propertyId) => {
+    const handleCheckboxChange = (propertyId) => {
         setSelectedRows(prevSelected => {
             const isCurrentlySelected = prevSelected.includes(propertyId);
             if (isCurrentlySelected) {
@@ -266,16 +268,17 @@ const handleCheckboxChange = useCallback((propertyId) => {
                 return [...prevSelected, propertyId];
             }
         });
-    }, []);
-
-
-     // Fixed handleSelectAllRows to only select/deselect current page items
-     const handleSelectAllRows = useCallback(() => {
-        const allPropertyIds = filteredProperties.map(property => property._id);
-        const allSelected = allPropertyIds.every(id => selectedRows.includes(id));
+    };
     
-        setSelectedRows(prevSelected => allSelected ? [] : [...new Set([...prevSelected, ...allPropertyIds])]);
-    }, [filteredProperties, selectedRows]);
+
+
+    const handleSelectAllRows = () => {
+        const allPropertyIds = properties.map(property => property._id);
+        const allSelected = selectedRows.length === allPropertyIds.length;
+
+        setSelectedRows(allSelected ? [] : allPropertyIds);
+    };
+    
     
 
 
@@ -294,13 +297,13 @@ const handleMultiDeleteConfirm = async () => {
     }
 };
 
-     const handleMultiDelete = () => {
-        if (selectedRows.length > 0) {
-            setShowMultiDeleteConfirm(true);
-         }
-     };
+const handleMultiDelete = () => {
+    if (selectedRows.length > 0) {
+        onDeleteMultiple(selectedRows);
+    }
+};
 
-  const isRowSelected = useCallback((propertyId) => {
+const isRowSelected = useCallback((propertyId) => {
     return selectedRows.includes(propertyId);
 }, [selectedRows]);
 
@@ -363,13 +366,9 @@ const handleMultiDeleteConfirm = async () => {
                       >
                           Clear Selection
                       </CButton>
-                      <CButton
-                          color="danger"
-                         onClick={handleMultiDelete}
-                          disabled={isDeleting}
-                      >
-                          {isDeleting ? 'Deleting...' : `Delete Selected (${selectedRows.length})`}
-                      </CButton>
+                      <CButton color="danger" onClick={handleMultiDelete} disabled={selectedRows.length === 0}>
+                Delete Selected
+            </CButton>
                   </div>
               </div>
             )}
@@ -407,14 +406,14 @@ const handleMultiDeleteConfirm = async () => {
             <CTable align="middle" className="mb-0 border" hover responsive>
                 <CTableHead className="text-nowrap">
                     <CTableRow>
-                         <CTableHeaderCell className="bg-body-tertiary text-center">
-                         <CFormCheck
-    onChange={handleSelectAllRows}
-    checked={selectedRows.length > 0 && selectedRows.length === totalProperties}
-    indeterminate={selectedRows.length > 0 && selectedRows.length < totalProperties}
-/>
+                    <CTableHeaderCell className="bg-body-tertiary text-center">
+                    <CFormCheck
+                            onChange={handleSelectAllRows}
+                            checked={selectedRows.length > 0 && selectedRows.length === properties.length}
+                            indeterminate={selectedRows.length > 0 && selectedRows.length < properties.length}
+                        />
+                    </CTableHeaderCell>
 
-                        </CTableHeaderCell>
                         <CTableHeaderCell className="bg-body-tertiary text-center">
                              <CIcon icon={cilPeople} />
                          </CTableHeaderCell>
@@ -445,23 +444,26 @@ const handleMultiDeleteConfirm = async () => {
                 </CTableHead>
                 <CTableBody>
                     {filteredProperties.map((property, index) => (
-                        <PropertyTableRow
-                            key={property._id}
-                            index={(currentPage - 1) * itemsPerPage + index + 1}
-                             property={property}
-                            onEdit={onEdit}
-                            onDelete={openDeleteModal}
-                            onView={onView} // Pass the property directly to the callback
-                            onPhotoDelete={onPhotoDelete}
-                            onPhotoUpdate={onPhotoUpdate}
-                            dropdownOpen={dropdownOpen}
-                            toggleDropdown={toggleDropdown}
-                            closeDropdown={closeDropdown}
-                             dropdownRefs={dropdownRefs}
-                            isRowSelected={isRowSelected}
-                            handleCheckboxChange={handleCheckboxChange}
-                        />
-
+                 <PropertyTableRow
+                 key={property._id}
+                 index={(currentPage - 1) * itemsPerPage + index + 1}
+                 property={property}
+                 onEdit={onEdit}  // Keep this as is, just pass through the onEdit function
+                 onDelete={onDelete}
+                 onView={onView}
+                 onPhotoDelete={onPhotoDelete} // Make sure to pass onPhotoDelete
+                 onPhotoUpdate={onPhotoUpdate} // Make sure to pass onPhotoUpdate
+                 dropdownOpen={dropdownOpen}
+                 toggleDropdown={toggleDropdown}
+                 closeDropdown={closeDropdown}
+                 dropdownRefs={dropdownRefs}
+                 isRowSelected={isRowSelected(property._id)} // Pass the selection state
+                 handleCheckboxChange={() => {
+                    const isSelected = isRowSelected(property._id);
+                    setSelectedRows(isSelected ? selectedRows.filter(id => id !== property._id) : [...selectedRows, property._id]);
+                }}
+             />
+            
 
                     ))}
                 </CTableBody>
@@ -536,13 +538,15 @@ PropertyTable.propTypes = {
     onEdit: PropTypes.func,
     onDelete: PropTypes.func,
     onView: PropTypes.func,
-    onPhotoDelete: PropTypes.func,
-    onPhotoUpdate: PropTypes.func,
+    onPhotoDelete: PropTypes.func, // Add onPhotoDelete to propTypes
+    onPhotoUpdate: PropTypes.func, // Add onPhotoUpdate to propTypes
     onDeleteMultiple: PropTypes.func,
     currentPage: PropTypes.number,
     handlePageChange: PropTypes.func,
     totalPages: PropTypes.number,
     itemsPerPage: PropTypes.number,
+    selectedRows: PropTypes.array,
+    setSelectedRows: PropTypes.func,
 };
 
 export default PropertyTable;

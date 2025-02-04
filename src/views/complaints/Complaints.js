@@ -4,7 +4,7 @@ import ViewComplaints from './ViewComplaints'
 const Complaints = () => {
   return (
     <div>
-        <ViewComplaints/>
+      <ViewComplaints />
     </div>
   )
 }

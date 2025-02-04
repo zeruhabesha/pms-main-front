@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
     CCard,
     CCardBody,
@@ -17,165 +17,177 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { decryptData } from "../../api/utils/crypto";
-import { addClearance } from "../../api/actions/ClearanceAction";
-import PropertySelect from "../guest/PropertySelect";
-import { reset } from "../../api/slice/clearanceSlice";
-import { clearError } from "../../api/slice/clearanceSlice"; // Correct Import
-// import "./AddClearance.css"
+import { addAgreement } from "../../api/actions/AgreementActions";
+import { clearError } from "../../api/slice/AgreementSlice";
+import TenantPropertySelect from "./TenantPropertySelect";
+import { fetchTenants } from "../../api/actions/TenantActions";
+import { fetchProperties } from "../../api/actions/PropertyAction";
+import { Upload } from 'lucide-react';
 
-const AddClearance = ({ visible, setVisible }) => {
+
+const AddAgreement = ({ visible, setVisible }) => {
     const dispatch = useDispatch();
-    const { properties, loading: propertiesLoading, error: propertiesError } =
-        useSelector((state) => state.property);
-    const { isLoading, error } = useSelector((state) => state.clearance);
-       const [loadingUser, setLoadingUser] = useState(true);
+    const { properties, error: propertiesError } = useSelector((state) => state.property);
+    const { tenants, error: tenantsError } = useSelector((state) => state.tenant);
+    const { isLoading, error: agreementError } = useSelector((state) => state.agreement);
+
 
     const [formError, setFormError] = useState("");
+    // const [loading, setLoading] = useState(false);
+
+
+    const paymentMethods = ['cash', 'cheque', 'bank transfer', 'credit card'];
     const [formData, setFormData] = useState({
         user: "",
         property: "",
         tenant: "",
-        reason: "",
-        notes: "",
-        inspectionDate: null, // Set to null as default
-        status: "pending",
+        leaseStart: "",
+        leaseEnd: "",
+        rentAmount: "",
+        securityDeposit: "",
+        paymentTerms: { dueDate: "", paymentMethod: "" },
+        rulesAndConditions: "",
+        additionalOccupants: "",
+        utilitiesAndServices: "",
+        documents: null,
     });
 
+
+
     useEffect(() => {
-        const fetchUser = async() => {
-            setLoadingUser(true);
-            const encryptedUser = localStorage.getItem("user");
-             if (encryptedUser) {
-                try {
+        dispatch(fetchProperties());
+        dispatch(fetchTenants());
+
+        const fetchUser = async () => {
+            try {
+                const encryptedUser = localStorage.getItem("user");
+                if (encryptedUser) {
                     const decryptedUser = decryptData(encryptedUser);
                     if (decryptedUser && decryptedUser._id) {
-                        setFormData((prev) => ({
-                            ...prev,
-                            user: decryptedUser._id,
-                        }));
-                        setLoadingUser(false);
+                        setFormData(prev => ({ ...prev, user: decryptedUser._id }));
                     } else {
-                        setFormError("Invalid user data, try to log in again.");
-                        setLoadingUser(false);
+                        toast.error("Invalid user data, please log in again.");
                     }
-                } catch (error) {
-                    setFormError("Error decoding token, try to log in again.");
-                    setLoadingUser(false);
+                } else {
+                    toast.error("No user found, please log in again.");
                 }
-            } else{
-               setLoadingUser(false)
+            } catch (error) {
+                toast.error("Error decoding token, please log in again.");
             }
         };
-      fetchUser()
+        fetchUser();
+    }, [dispatch]);
+
+
+    const handlePropertyChange = useCallback((e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
     }, []);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        const { name, value, type, files } = e.target;
+        if (type === "file") {
+            setFormData(prev => ({ ...prev, documents: files[0] }));
+        } else if (name.startsWith("paymentTerms.")) {
+            const term = name.split(".")[1];
+            setFormData(prev => ({ ...prev, paymentTerms: { ...prev.paymentTerms, [term]: value } }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
-
-      const handleDismissError = () => {
-          dispatch(clearError());
-      };
-
 
     const validateForm = () => {
         if (!formData.property) return "Please select a property.";
         if (!formData.tenant) return "Please select a tenant.";
-        if (!formData.inspectionDate) return "Please select the inspection date.";
-        if (!formData.reason) return "Please enter the reason for clearance.";
+        if (!formData.leaseStart) return "Please select the lease start date.";
+        if (!formData.leaseEnd) return "Please select the lease end date.";
+        if (!formData.rentAmount || formData.rentAmount <= 0) return "Please enter a valid rent amount.";
+        if (!formData.securityDeposit) return "Please enter a security deposit amount.";
+        if (!formData.paymentTerms.dueDate) return "Please provide the payment due date.";
+        if (!formData.paymentTerms.paymentMethod) return "Please select the payment method.";
         return null;
     };
 
-    const handleFormSubmit = async () => {
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         const validationError = validateForm();
         if (validationError) {
-            setFormError(validationError);
             toast.error(validationError);
             return;
         }
 
         try {
-            setFormError("");
-            const response = await dispatch(addClearance(formData)).unwrap();
-           if(response.success){
-                toast.success("Clearance request submitted successfully!");
-                dispatch(reset());
+            const response = await dispatch(addAgreement({ ...formData, rentAmount: Number(formData.rentAmount) })).unwrap();
+            if (response) {
+                toast.success("Agreement submitted successfully!");
                 handleClose();
-           }else{
-                const errorMsg =
-                    response.message ||
-                    "Failed to add clearance request.";
-                setFormError(errorMsg);
-                toast.error(errorMsg);
-           }
-
+            }
         } catch (error) {
-            const errorMsg =
-                error.message ||
-                error.response?.data?.message ||
-                "Failed to add clearance request.";
-             setFormError(errorMsg);
-            toast.error(errorMsg);
+            toast.error(error.message || "Failed to add agreement.");
         }
     };
 
-    const handleClose = () => {
+      const renderLoadingState = () => (
+          <div className="text-center p-4">
+              <CSpinner color="dark" />
+              <p>Loading data...</p>
+          </div>
+      );
+
+      const renderErrorState = (error) => {
+          if (!error) return null;
+          return (
+              <CAlert color="danger" dismissible onClose={() => dispatch(clearError())}>
+                  {typeof error === "object"
+                      ? error.message || JSON.stringify(error)
+                      : error}
+              </CAlert>
+          );
+      };
+
+      const tenantOptions = tenants?.map(tenant => ({
+           _id: tenant._id,
+           tenantName: tenant.tenantName
+      }))
+       const propertyOptions = properties?.map(property => ({
+           _id: property._id,
+           name: property.title
+       }))
+
+       const handleClose = () => {
         setVisible(false);
         setFormData({
             user: "",
             property: "",
             tenant: "",
-            reason: "",
-            notes: "",
-            inspectionDate: null,
-            status: "pending",
+            leaseStart: "",
+            leaseEnd: "",
+            rentAmount: "",
+            securityDeposit: "",
+            paymentTerms: { dueDate: "", paymentMethod: "" },
+            rulesAndConditions: "",
+            additionalOccupants: "",
+            utilitiesAndServices: "",
+            documents: null,
         });
-        setFormError("");
+        dispatch(clearError());
     };
-
-    const renderLoadingState = () => (
-        <div className="text-center p-4">
-            <CSpinner color="dark" />
-            <p>Loading data...</p>
-        </div>
-    );
-
-    const renderErrorState = (error) => {
-        if (!error) return null;
-         return (
-            <CAlert color="danger" dismissible onClose={handleDismissError}>
-                {typeof error === "object"
-                    ? error.message || JSON.stringify(error)
-                    : error}
-            </CAlert>
-        );
-    };
-
-     const renderUserLoadingState = () => (
-          <div className="text-center p-4">
-              <CSpinner color="dark" />
-              <p>Loading User data...</p>
-          </div>
-      );
-
 
     return (
         <CCard>
             <CCardHeader className="d-flex justify-content-between align-items-center">
-                <strong>Add Clearance</strong>
+                <strong>Add Agreement</strong>
             </CCardHeader>
             <CCardBody>
-               {renderErrorState(error)}
-                {renderErrorState(formError)}
-                {renderErrorState(propertiesError)}
-                 {loadingUser ? (
-                        renderUserLoadingState()
-                    ) :(
-                         propertiesLoading ? (
-                            renderLoadingState()
+                {renderErrorState(agreementError)}
+                 {renderErrorState(formError)}
+                 {renderErrorState(propertiesError)}
+                 {renderErrorState(tenantsError)}
+                   {isLoading ? (
+                         renderLoadingState()
                         ) : (
-                            <CForm>
+                            <CForm onSubmit={handleSubmit}>
                                 <CRow className="g-3">
                                     <CCol md={6}>
                                         <CFormLabel htmlFor="user">User ID</CFormLabel>
@@ -187,106 +199,138 @@ const AddClearance = ({ visible, setVisible }) => {
                                             className="input-background"
                                         />
                                     </CCol>
+                                    <TenantPropertySelect tenantOptions={tenants} propertyOptions={properties} formData={formData} setFormData={setFormData} />
                                     <CCol md={6}>
-                                        <CFormLabel htmlFor="property">Property</CFormLabel>
-                                        <PropertySelect
-                                            value={formData.property}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    property: e.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </CCol>
-                                    <CCol md={6}>
-                                        <CFormLabel htmlFor="tenant">Tenant</CFormLabel>
-                                        <CFormSelect
-                                            name="tenant"
-                                            value={formData.tenant}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    tenant: e.target.value,
-                                                }))
-                                            }
-                                        >
-                                            <option value="">Select Tenant</option>
-                                            {properties
-                                                ?.filter(
-                                                    (property) =>
-                                                        property._id === formData.property
-                                                )?.[0]
-                                                ?.tenants?.map((tenant, index) => (
-                                                    <option key={index} value={tenant?._id}>
-                                                        {tenant?.name}
+                                            <CFormLabel htmlFor="property">Property</CFormLabel>
+                                            <CFormSelect
+                                                name="property"
+                                                // value={formData.property}
+                                                // onChange={handlePropertyChange}
+                                                value={formData.property}
+                                                onChange={handleChange}
+                                                required
+                                                label="Property"
+                                                className="form-control-animation"
+                                            >
+                                                <option value="">Select Property</option>
+                                                {propertyOptions?.map((property) => (
+                                                    <option key={property._id} value={property._id}>
+                                                        {property.name}
                                                     </option>
                                                 ))}
-                                        </CFormSelect>
-                                    </CCol>
+                                            </CFormSelect>
+                                        </CCol>
                                      <CCol md={6}>
-                                        <CFormLabel htmlFor="inspectionDate">
-                                            Inspection Date
+                                        <CFormLabel htmlFor="leaseStart">
+                                           Lease Start Date
+                                        </CFormLabel>
+                                        <CFormInput type="date" name="leaseStart" value={formData.leaseStart} onChange={handleChange} />
+
+                                     </CCol>
+                                        <CCol md={6}>
+                                            <CFormLabel htmlFor="leaseEnd">
+                                                Lease End Date
+                                            </CFormLabel>
+                                            <CFormInput type="date" name="leaseEnd" value={formData.leaseEnd} onChange={handleChange} />
+                                        </CCol>
+                                     <CCol md={6}>
+                                        <CFormLabel htmlFor="rentAmount">
+                                             Rent Amount
                                         </CFormLabel>
                                          <CFormInput
-                                            type="date"
-                                            name="inspectionDate"
-                                            value={formData.inspectionDate || ""}
-                                             onChange={handleChange}
+                                            type="number"
+                                            name="rentAmount"
+                                            value={formData.rentAmount || ""}
+                                            onChange={handleChange}
                                             className="input-background"
                                         />
                                      </CCol>
+                                      <CCol md={6}>
+                                        <CFormLabel htmlFor="securityDeposit">
+                                            Security Deposit
+                                        </CFormLabel>
+                                         <CFormInput
+                                            type="number"
+                                            name="securityDeposit"
+                                            value={formData.securityDeposit || ""}
+                                            onChange={handleChange}
+                                            className="input-background"
+                                        />
+                                     </CCol>
+                                        <CCol md={6}>
+                                            <CFormLabel htmlFor="paymentTerms.dueDate">
+                                                Due Date
+                                            </CFormLabel>
+                                            <CFormInput
+                                                 type="date"
+                                                name="paymentTerms.dueDate"
+                                                 value={formData.paymentTerms.dueDate || ""}
+                                                 onChange={handleChange}
+                                                className="input-background"
+                                            />
+                                        </CCol>
+                                        <CCol md={6}>
+                                            <CFormLabel htmlFor="paymentTerms.paymentMethod">
+                                                Payment Method
+                                            </CFormLabel>
+                                            <CFormSelect
+                                               name="paymentTerms.paymentMethod"
+                                               value={formData.paymentTerms.paymentMethod}
+                                               onChange={handleChange}
+                                            >
+                                                  <option value="">Select Method</option>
+                                                {paymentMethods?.map((method, index) => (
+                                                    <option key={index} value={method}>
+                                                        {method}
+                                                    </option>
+                                                ))}
+                                            </CFormSelect>
+                                        </CCol>
                                     <CCol md={6}>
-                                        <CFormLabel htmlFor="reason">Reason</CFormLabel>
+                                        <CFormLabel htmlFor="rulesAndConditions">Rules & Conditions</CFormLabel>
                                         <CFormInput
                                             type="text"
-                                            name="reason"
-                                            value={formData.reason}
+                                            name="rulesAndConditions"
+                                            value={formData.rulesAndConditions}
                                             onChange={handleChange}
                                             className="input-background"
                                         />
                                     </CCol>
-                                    <CCol md={6}>
-                                        <CFormLabel htmlFor="notes">Notes</CFormLabel>
-                                        <CFormTextarea
-                                            name="notes"
-                                            value={formData.notes}
+                                       <CCol md={6}>
+                                        <CFormLabel htmlFor="additionalOccupants">Additional Occupants</CFormLabel>
+                                        <CFormInput
+                                            type="text"
+                                            name="additionalOccupants"
+                                            value={formData.additionalOccupants}
                                             onChange={handleChange}
-                                             className="input-background"
+                                            className="input-background"
                                         />
                                     </CCol>
+                                     <CCol md={6}>
+                                        <CFormLabel htmlFor="utilitiesAndServices">Utilities & Services</CFormLabel>
+                                        <CFormTextarea
+                                            name="utilitiesAndServices"
+                                            value={formData.utilitiesAndServices}
+                                            onChange={handleChange}
+                                            className="input-background"
+                                        />
+                                    </CCol>
+
+                                <CCol md={6}>
+                                    <CFormLabel>Documents</CFormLabel>
+                                    <input type="file" name="documents" onChange={handleChange} />
+                                </CCol>
+
                                 </CRow>
-                                <div className="d-flex justify-content-end mt-4">
-                                    <CButton
-                                        color="secondary"
-                                        variant="ghost"
-                                        onClick={handleClose}
-                                        disabled={isLoading}
-                                        className="me-2"
-                                    >
-                                        Cancel
-                                    </CButton>
-                                    <CButton
-                                        color="dark"
-                                        onClick={handleFormSubmit}
-                                        disabled={isLoading}
-                                    >
-                                        {isLoading ? (
-                                            <>
-                                                <CSpinner size="sm" className="me-2" />
-                                                Submitting...
-                                            </>
-                                        ) : (
-                                            "Submit"
-                                        )}
-                                    </CButton>
-                                </div>
+                     <div className="d-flex justify-content-end mt-4">
+                        <CButton color="secondary" variant="ghost" onClick={handleClose} disabled={isLoading} className="me-2">Cancel</CButton>
+                        <CButton color="dark" type="submit" disabled={isLoading}>{isLoading ? "Submitting..." : "Submit"}</CButton>
+                    </div>
                             </CForm>
-                        )
-                    )}
+                      )}
             </CCardBody>
         </CCard>
     );
 };
 
-export default AddClearance;
+export default AddAgreement;

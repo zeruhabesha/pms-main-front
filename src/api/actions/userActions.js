@@ -1,3 +1,4 @@
+// frontend/src/api/actions/userActions.js
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import UserService from '../services/user.service';
 
@@ -49,7 +50,7 @@ export const addUser = createAsyncThunk(
             // Validate role before sending
             const validRoles = ['Admin', 'Inspector', 'Maintainer', 'User'];
             const formattedRole = userData.role.charAt(0).toUpperCase() + userData.role.slice(1);
-            
+
             if (!validRoles.includes(formattedRole)) {
                 throw new Error(`Invalid role. Must be one of: ${validRoles.join(', ')}`);
             }
@@ -117,6 +118,23 @@ export const deleteUser = createAsyncThunk(
             return id;
         } catch (error) {
             return rejectWithValue(error.message);
+        }
+    }
+);
+
+// Forgot Password Action
+export const forgotPassword = createAsyncThunk( // Add forgotPassword async thunk action in userActions
+    'user/forgotPassword',
+    async ({ email }, { rejectWithValue }) => {
+        try {
+            const response = await UserService.forgotPassword(email); // Use UserService for forgotPassword
+            if (response?.status === 'success') {
+                return response; // Return the successful response data
+            } else {
+                return rejectWithValue({ message: response?.message || 'Failed to send reset password link.' });
+            }
+        } catch (error) {
+            return rejectWithValue({ message: error.message || 'An error occurred while requesting password reset' });
         }
     }
 );

@@ -21,6 +21,7 @@ const UserTableRow = ({
         <CTableRow key={user._id || `row-${index}`}>
             <CTableDataCell>{(currentPage - 1) * itemsPerPage + index + 1}</CTableDataCell>
             <CTableDataCell>
+              
                 <img
                     src={user?.photo ? `http://localhost:4000/api/v1/uploads/profile/${user._id}/${user.photo}` : placeholder}
                     alt="User"

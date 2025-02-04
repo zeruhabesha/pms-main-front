@@ -15,6 +15,7 @@ import {
     CDropdownToggle,
     CDropdownMenu,
     CDropdownItem,
+    CSpinner,
 } from '@coreui/react';
 import "../paggination.scss";
 import { CIcon } from '@coreui/icons-react';
@@ -36,6 +37,7 @@ import {
     cilCheckCircle,
     cilWarning,
     cilXCircle,
+    cilSearch
 } from '@coreui/icons';
 import { CSVLink } from 'react-csv';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
@@ -45,7 +47,9 @@ import placeholder from '../image/placeholder.png';
 import { decryptData } from '../../api/utils/crypto';
 import TenantDetailsModal from './TenantDetailsModal'
 import { setSelectedTenant, clearError } from '../../api/slice/TenantSlice';
-import { useNavigate } from 'react-router-dom';
+import './TenantTable.scss'; // Import the dedicated CSS file
+import ClearanceDetailsModal from '../Clearance/ClearanceDetailsModal' // Import the ClearanceDetailsModal
+import clearanceService from '../../api/services/clearance.service'; // Import the clearance service
 
 
 const TenantTable = ({
@@ -60,17 +64,23 @@ const TenantTable = ({
     handlePageChange,
     handleFetchTenants,
     itemsPerPage = 10,
-  }) => {
-    
+    loading,
+}) => {
+
     const dispatch = useDispatch();
-    const navigate = useNavigate();
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
     const [userPermissions, setUserPermissions] = useState(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const selectedTenant = useSelector(state => state.tenant.selectedTenant);
     const tenantDetails = useSelector(state => state.tenant.tenantDetails)
-      const [dropdownOpen, setDropdownOpen] = useState(null);
-      const dropdownRefs = useRef({});
+    const [dropdownOpen, setDropdownOpen] = useState(null);
+    const dropdownRefs = useRef({});
+
+    // New state for clearance modal
+    const [isClearanceModalVisible, setIsClearanceModalVisible] = useState(false);
+    const [clearanceTenantId, setClearanceTenantId] = useState(null);
+     const [clearanceStatuses, setClearanceStatuses] = useState({});
+
 
     useEffect(() => {
         const encryptedUser = localStorage.getItem('user');
@@ -121,26 +131,26 @@ const TenantTable = ({
     };
 
     const calculateDaysUntilEnd = (endDate) => {
-      if (!endDate) return null;
-      try {
-        const end = new Date(endDate).getTime();
-          const now = new Date().getTime();
-          const diffInTime = end - now;
-          const diffInDays = Math.ceil(diffInTime / (1000 * 3600 * 24));
-        return diffInDays;
-      } catch (e) {
-          return null
-      }
+        if (!endDate) return null;
+        try {
+            const end = new Date(endDate).getTime();
+            const now = new Date().getTime();
+            const diffInTime = end - now;
+            const diffInDays = Math.ceil(diffInTime / (1000 * 3600 * 24));
+            return diffInDays;
+        } catch (e) {
+            return null
+        }
     };
 
-  const getStatusDetails = (endDate) => {
+    const getStatusDetails = (endDate) => {
         const days = calculateDaysUntilEnd(endDate);
         if (days === null) {
-          return {
-            text: "N/A",
-            color: "text-secondary",
-            icon: null
-          };
+            return {
+                text: "N/A",
+                color: "text-secondary",
+                icon: null
+            };
         } else if (days > 30) {
             return {
                 text: `${days} days`,
@@ -154,16 +164,51 @@ const TenantTable = ({
                 icon: cilWarning
             };
         } else if (days < 0) {
-             return {
+            return {
                 text: `${days} days`,
                 color: 'text-danger',
                 icon: cilXCircle
             };
         }
-       return {
+        return {
             text: `${days} days`,
             color: 'text-secondary',
             icon: null
+        };
+    };
+
+    const getClearanceStatusDetails = (tenantId) => {
+        const status = clearanceStatuses[tenantId];
+        if (!status) {
+            return {
+                text: "N/A",
+                color: "text-secondary",
+                icon: null
+            };
+        }
+         if (status === 'Approved') {
+            return {
+                text: `Approved`,
+                color: 'text-success',
+                icon: cilCheckCircle
+            };
+        } else if (status === 'Pending') {
+            return {
+                text: `Pending`,
+                color: 'text-warning',
+                icon: cilWarning
+            };
+        }  else if(status === 'Rejected'){
+              return {
+                text: `Rejected`,
+                 color: 'text-danger',
+                icon: cilXCircle
+            };
+        }
+        return {
+          text: 'N/A',
+          color: "text-secondary",
+           icon: null
         };
     };
 
@@ -173,7 +218,7 @@ const TenantTable = ({
         email: tenant.contactInformation?.email || 'N/A',
         startDate: formatDate(tenant.leaseAgreement?.startDate),
         endDate: formatDate(tenant.leaseAgreement?.endDate),
-         status: getStatusDetails(tenant.leaseAgreement?.endDate)?.text || 'N/A'
+        status: getStatusDetails(tenant.leaseAgreement?.endDate)?.text || 'N/A'
     }));
 
     const clipboardData = tenants
@@ -195,7 +240,7 @@ const TenantTable = ({
             tenant.contactInformation?.email || 'N/A',
             formatDate(tenant.leaseAgreement?.startDate) || 'N/A',
             formatDate(tenant.leaseAgreement?.endDate) || 'N/A',
-             getStatusDetails(tenant.leaseAgreement?.endDate)?.text || 'N/A',
+            getStatusDetails(tenant.leaseAgreement?.endDate)?.text || 'N/A',
         ]);
 
         doc.autoTable({
@@ -217,6 +262,29 @@ const TenantTable = ({
         return () => clearTimeout(delayDebounceFn);
     }, [searchTerm, handleFetchTenants]);
 
+     useEffect(() => {
+        const fetchClearanceStatuses = async () => {
+           const statuses = {};
+            if(tenants && tenants.length > 0){
+                 for(const tenant of tenants){
+                     try {
+                         const clearance = await clearanceService.fetchClearances(1, 1, '', '', tenant._id);
+                            if (clearance?.clearances && clearance.clearances.length > 0) {
+                             statuses[tenant._id] = clearance.clearances[0].status;
+                            }
+
+                         } catch (error) {
+                              console.error(`Error fetching clearance status for tenant ${tenant._id}:`, error);
+                         }
+                    }
+                setClearanceStatuses(statuses);
+            }
+        };
+
+        fetchClearanceStatuses();
+    }, [tenants]);
+
+
     const toggleDropdown = (tenantId) => {
         setDropdownOpen(prevState => prevState === tenantId ? null : tenantId);
     };
@@ -232,26 +300,27 @@ const TenantTable = ({
             dispatch(clearError());
         }
     };
+    
+     // Modified handleClearance to show modal
+    const handleClearance = (tenantId) => {
+         setClearanceTenantId(tenantId);
+         setIsClearanceModalVisible(true);
+    };
 
-//   const handleClearance = (tenantId) => {
-//          navigate(`/clearance/add?tenantId=${tenantId}`)
-//     };
-const handleClearance = (tenantId) => {
-    if (tenantId) {
-      navigate(`/clearance/add?tenantId=${tenantId}`); // Navigate to the clearance page with the tenant ID
-    }
-  };
-    // const handleClearance = (tenantId) => {
-    //     if (typeof props.handleClearance === 'function') {
-    //       props.handleClearance(tenantId); // Call the parent's handler with the tenant ID
-    //     }
-    //   };
+    //  handleClearanceAdded
+       const handleClearanceAdded = () => {
+        // Refresh data to reflect changes after adding a clearance
+        if(handleFetchTenants) {
+          handleFetchTenants({search : searchTerm});
+        }
+
+    };
 
     return (
-        <div>
-            <div className="d-flex mb-3 gap-2">
+        <div className="tenant-table-container">
+            <div className="table-toolbar d-flex justify-content-between mb-3">
 
-                <div className="d-flex gap-2">
+                <div className="export-buttons d-flex gap-2">
                     <CSVLink
                         data={csvData}
                         headers={[
@@ -260,100 +329,118 @@ const handleClearance = (tenantId) => {
                             { label: 'Email', key: 'email' },
                             { label: 'Start Date', key: 'startDate' },
                             { label: 'End Date', key: 'endDate' },
-                                { label: 'Status', key: 'status' },
+                            { label: 'Status', key: 'status' },
                         ]}
                         filename="tenant_data.csv"
-                        className="btn btn-dark"
+                        className="btn btn-dark btn-sm"
                     >
                         <CIcon icon={cilFile} title="Export CSV" />
                     </CSVLink>
                     <CopyToClipboard text={clipboardData}>
-                        <CButton color="dark" title="Copy to Clipboard">
+                        <CButton color="dark" size="sm" title="Copy to Clipboard">
                             <CIcon icon={cilClipboard} />
                         </CButton>
                     </CopyToClipboard>
-                    <CButton color="dark" onClick={exportToPDF} title="Export PDF">
+                    <CButton color="dark" size="sm" onClick={exportToPDF} title="Export PDF">
                         <CIcon icon={cilCloudDownload} />
                     </CButton>
                 </div>
-                <CFormInput
-                    type="text"
-                    placeholder="Search by name or email"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+
+                <div className="search-bar">
+                    <CIcon icon={cilSearch} className="search-icon" />
+                    <CFormInput
+                        type="text"
+                        placeholder="Search by name or email"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
             </div>
 
-            <CTable align="middle" className="mb-0 border" hover responsive>
-                <CTableHead className="text-nowrap">
+            <CTable align="middle" className="mb-0 border table-responsive" hover >
+                <CTableHead className="text-nowrap table-header">
                     <CTableRow>
-                        <CTableHeaderCell className="bg-body-tertiary text-center">
+                        <CTableHeaderCell className="text-center">
                             <CIcon icon={cilPeople} />
                         </CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary">Photo</CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('tenantName')} style={{ cursor: 'pointer' }}>
+                        <CTableHeaderCell>Photo</CTableHeaderCell>
+                        <CTableHeaderCell onClick={() => handleSort('tenantName')} className="sortable-header" style={{ cursor: 'pointer' }}>
                             Tenant
                             {sortConfig.key === 'tenantName' && (
-                                <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
+                                <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} className="sort-icon"/>
                             )}
                         </CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary">Contact</CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary">Lease</CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary">Status</CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary">Actions</CTableHeaderCell>
+                        <CTableHeaderCell>Contact</CTableHeaderCell>
+                        <CTableHeaderCell>Lease</CTableHeaderCell>
+                        <CTableHeaderCell>Lease Status</CTableHeaderCell>
+                          <CTableHeaderCell>Clearance Status</CTableHeaderCell>
+                        <CTableHeaderCell>Actions</CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
                 <CTableBody>
-      {tenants?.map((tenant, index) => (
-                    // {sortedTenants?.map((tenant, index) => (
+                {loading ? (
+                    <CTableRow>
+                        <CTableDataCell colSpan={7} className="text-center">
+                         <CSpinner color="primary" />
+                        </CTableDataCell>
+                    </CTableRow>
+                     ) : tenants.length === 0 ? (
+                        <CTableRow>
+                            <CTableDataCell colSpan={7} className="text-center">
+                                No tenants found.
+                            </CTableDataCell>
+                        </CTableRow>
+                      ) :(
+                        tenants?.map((tenant, index) => (
                         <CTableRow key={tenant?._id || index}>
-                            <CTableDataCell className="text-center">
-                                {(currentPage - 1) * itemsPerPage + index + 1}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                                <img
-                                    src={placeholder}
-                                    alt="Tenant"
-                                    style={{ width: '50px', height: '50px', borderRadius: '50%' }}
-                                />
-                                 
-                                {userPermissions?.editTenantPhotos && (
-                                    <CButton
-                                        color="light"
-                                        size="sm"
-                                        onClick={() => handleEditPhoto(tenant)}
-                                        title="Edit photo"
-                                        className="ms-2"
-                                    >
-                                        <CIcon icon={cilPencil} />
-                                    </CButton>
-                                )}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                                <div>{tenant?.tenantName || 'N/A'}</div>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                                <div className="small text-body-secondary text-nowrap">
-                                    <CIcon icon={cilEnvelopeOpen} size="sm" className="me-1" />
-                                    {tenant.contactInformation?.email || 'N/A'}
-                                </div>
-                                <div className="small text-body-secondary text-nowrap">
-                                    <CIcon icon={cilUser} size="sm" className="me-1" />
-                                    {tenant.contactInformation?.phoneNumber || 'N/A'}
-                                </div>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                                <div className="small text-body-secondary text-nowrap">
-                                    <CIcon icon={cilCalendar} size="sm" className="me-1" />
-                                    Start: {formatDate(tenant.leaseAgreement?.startDate) || 'N/A'}
-                                </div>
-                                <div className="small text-body-secondary text-nowrap">
-                                    <CIcon icon={cilCalendar} size="sm" className="me-1" />
-                                    End:{formatDate(tenant.leaseAgreement?.endDate) || 'N/A'}
-                                </div>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                                <div className={`d-flex align-items-center ${getStatusDetails(tenant.leaseAgreement?.endDate)?.color || ''}`}>
+                                <CTableDataCell className="text-center">
+                                    {(currentPage - 1) * itemsPerPage + index + 1}
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <div className="tenant-photo-container">
+                                      <img
+                                         src={placeholder}
+                                          alt="Tenant"
+                                         className="tenant-photo"
+                                          />
+                                        {userPermissions?.editTenantPhotos && (
+                                            <CButton
+                                                color="light"
+                                                size="sm"
+                                                onClick={() => handleEditPhoto(tenant)}
+                                                title="Edit photo"
+                                                className="edit-photo-btn"
+                                            >
+                                                <CIcon icon={cilPencil} />
+                                            </CButton>
+                                        )}
+                                    </div>
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <div>{tenant?.tenantName || 'N/A'}</div>
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <CIcon icon={cilEnvelopeOpen} size="sm" className="me-1" />
+                                        {tenant.contactInformation?.email || 'N/A'}
+                                    </div>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <CIcon icon={cilUser} size="sm" className="me-1" />
+                                        {tenant.contactInformation?.phoneNumber || 'N/A'}
+                                    </div>
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <CIcon icon={cilCalendar} size="sm" className="me-1" />
+                                        Start: {formatDate(tenant.leaseAgreement?.startDate) || 'N/A'}
+                                    </div>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <CIcon icon={cilCalendar} size="sm" className="me-1" />
+                                        End:{formatDate(tenant.leaseAgreement?.endDate) || 'N/A'}
+                                    </div>
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                      <div className={`status-badge ${getStatusDetails(tenant.leaseAgreement?.endDate)?.color}`}>
                                      {getStatusDetails(tenant.leaseAgreement?.endDate)?.text}
                                     {
                                     getStatusDetails(tenant.leaseAgreement?.endDate)?.icon && (
@@ -362,64 +449,70 @@ const handleClearance = (tenantId) => {
                                                  className="ms-1"
                                              />
                                         )}
-                                </div>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                                 <CDropdown
-                                          variant="btn-group"
-                                          isOpen={dropdownOpen === tenant?._id}
-                                          onToggle={() => toggleDropdown(tenant?._id)}
-                                          onMouseLeave={closeDropdown}
-                                          innerRef={ref => (dropdownRefs.current[tenant?._id] = ref)}
-                                        >
-                                    <CDropdownToggle color="light" caret={false} size="sm" title="Actions">
-                                        <CIcon icon={cilOptions} />
-                                    </CDropdownToggle>
+                                    </div>
+                                </CTableDataCell>
+                                    <CTableDataCell>
+                                        <div className={`status-badge ${getClearanceStatusDetails(tenant?._id)?.color}`}>
+                                              {getClearanceStatusDetails(tenant?._id)?.text}
+                                             {
+                                                getClearanceStatusDetails(tenant?._id)?.icon && (
+                                                        <CIcon
+                                                            icon={getClearanceStatusDetails(tenant?._id)?.icon}
+                                                            className="ms-1"
+                                                         />
+                                                    )}
+                                        </div>
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <CDropdown
+                                        variant="btn-group"
+                                        isOpen={dropdownOpen === tenant?._id}
+                                        onToggle={() => toggleDropdown(tenant?._id)}
+                                        onMouseLeave={closeDropdown}
+                                        innerRef={ref => (dropdownRefs.current[tenant?._id] = ref)}
+                                    >
+                                        <CDropdownToggle color="light"  size="sm"  caret={false} title="Actions" className="action-dropdown-btn">
+                                            <CIcon icon={cilOptions} />
+                                        </CDropdownToggle>
                                         <CDropdownMenu>
-                                             {userPermissions?.editTenant && (
-                                                    <CDropdownItem
-                                                        onClick={() => handleEdit(tenant?._id)}
-                                                        title="Edit"
-                                                    >
-                                                       <CIcon icon={cilPencil} className="me-2"/>
-                                                        Edit
-                                                    </CDropdownItem>
-                                                )}
-                                                {userPermissions?.deleteTenant && (
-                                                    <CDropdownItem
-                                                        onClick={() => handleDelete(tenant?._id)}
-                                                        title="Delete"
-                                                         style={{ color: 'red' }}
-                                                    >
-                                                      <CIcon icon={cilTrash} className="me-2"/>
-                                                      Delete
-                                                    </CDropdownItem>
-                                                )}
-                                                  <CDropdownItem  onClick={() => handleViewDetails(tenant?._id)}
-                                                      title="View Details"
+                                            {userPermissions?.editTenant && (
+                                                <CDropdownItem
+                                                    onClick={() => handleEdit(tenant?._id)}
+                                                    title="Edit"
                                                 >
-                                                    <CIcon icon={cilFullscreen} className="me-2"/>
-                                                         Details
+                                                    <CIcon icon={cilPencil} className="me-2"/>
+                                                    Edit
                                                 </CDropdownItem>
-                                                {/* <CDropdownItem
-                                                    onClick={() => handleClearance(tenant?._id)}
-                                                    title="Clearance"
-                                                    >
-                                                    <CIcon icon={cilClipboard} className="me-2" />
-                                                    Clearance
-                                                    </CDropdownItem> */}
-                                                    <CDropdownItem
-                                                        onClick={() => handleClearance(tenant?._id)} // Navigate to clearance
-                                                        title="Clearance"
-                                                        >
-                                                        <CIcon icon={cilClipboard} className="me-2" />
-                                                        Clearance
-                                                        </CDropdownItem>
+                                            )}
+                                            {userPermissions?.deleteTenant && (
+                                                <CDropdownItem
+                                                    onClick={() => handleDelete(tenant?._id)}
+                                                    title="Delete"
+                                                    style={{ color: 'red' }}
+                                                >
+                                                    <CIcon icon={cilTrash} className="me-2"/>
+                                                    Delete
+                                                </CDropdownItem>
+                                            )}
+                                            <CDropdownItem onClick={() => handleViewDetails(tenant?._id)}
+                                                          title="View Details">
+                                                <CIcon icon={cilFullscreen} className="me-2"/>
+                                                Details
+                                            </CDropdownItem>
+
+                                            <CDropdownItem
+                                                 onClick={() => handleClearance(tenant?._id)}
+                                                title="Clearance"
+                                            >
+                                                <CIcon icon={cilClipboard} className="me-2" />
+                                                Clearance
+                                            </CDropdownItem>
                                         </CDropdownMenu>
-                                </CDropdown>
-                            </CTableDataCell>
-                        </CTableRow>
-                    ))}
+                                    </CDropdown>
+                                </CTableDataCell>
+                            </CTableRow>
+                    ))
+            )}
                 </CTableBody>
             </CTable>
             <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
@@ -464,6 +557,15 @@ const handleClearance = (tenantId) => {
                     tenantDetails={tenantDetails}
                 />
             </div>
+           {/* Conditionally render ClearanceDetailsModal */}
+            {isClearanceModalVisible && (
+                <ClearanceDetailsModal
+                    visible={isClearanceModalVisible}
+                    setVisible={setIsClearanceModalVisible}
+                     tenantId={clearanceTenantId}
+                    onClearanceAdded={handleClearanceAdded}
+                />
+            )}
         </div>
     );
 };

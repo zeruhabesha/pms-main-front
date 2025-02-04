@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import MaintenanceAssign from './MaintenanceAssign';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchMaintenances, updateMaintenance } from '../../api/actions/MaintenanceActions';
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import MaintenanceAssign from './MaintenanceAssign'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchMaintenances, updateMaintenance } from '../../api/actions/MaintenanceActions'
 
 const MaintenanceAssignPage = () => {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const dispatch = useDispatch();
-  const [maintenance, setMaintenance] = useState(null);
+  const navigate = useNavigate()
+  const { id } = useParams()
+  const dispatch = useDispatch()
+  const [maintenance, setMaintenance] = useState(null)
 
-  const { maintenances = [] } = useSelector((state) => state.maintenance);
-
-  useEffect(() => {
-    dispatch(fetchMaintenances({})); // Fetch all maintenances
-  }, [dispatch]);
+  const { maintenances = [] } = useSelector((state) => state.maintenance)
 
   useEffect(() => {
-    const foundMaintenance = maintenances?.find((m) => m._id === id);
-    setMaintenance(foundMaintenance);
-  }, [id, maintenances]);
+    dispatch(fetchMaintenances({})) // Fetch all maintenances
+  }, [dispatch])
+
+  useEffect(() => {
+    const foundMaintenance = maintenances?.find((m) => m._id === id)
+    setMaintenance(foundMaintenance)
+  }, [id, maintenances])
 
   const handleAssign = async (maintenanceId, updatedData) => {
     try {
@@ -27,21 +27,19 @@ const MaintenanceAssignPage = () => {
         updateMaintenance({
           id: maintenanceId,
           maintenanceData: updatedData,
-        })
-      );
-      navigate('/maintenance');
+        }),
+      )
+      navigate('/maintenance')
     } catch (error) {
-      console.error('Assign Error', error);
+      console.error('Assign Error', error)
     }
-  };
+  }
 
   return (
     <div>
-      {maintenance && (
-        <MaintenanceAssign maintenance={maintenance} onAssign={handleAssign} />
-      )}
+      {maintenance && <MaintenanceAssign maintenance={maintenance} onAssign={handleAssign} />}
     </div>
-  );
-};
+  )
+}
 
-export default MaintenanceAssignPage;
+export default MaintenanceAssignPage

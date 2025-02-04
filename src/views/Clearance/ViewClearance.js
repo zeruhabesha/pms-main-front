@@ -21,6 +21,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { createSelector } from 'reselect';
 import { decryptData } from '../../api/utils/crypto';
 import AddClearance from './AddClearance';
+import ClearanceDetailsModal from './ClearanceDetailsModal';
 
 const selectClearanceState = (state) => state.clearance || {
     clearances: [],
@@ -54,6 +55,9 @@ const ViewClearance = () => {
     const [clearanceToDelete, setClearanceToDelete] = useState(null);
     const [errorMessage, setErrorMessage] = useState('');
     const [userPermissions, setUserPermissions] = useState(null);
+     const [detailModalVisible, setDetailModalVisible] = useState(false);
+    const [selectedTenantId, setSelectedTenantId] = useState(null);
+
 
     const itemsPerPage = 10;
 
@@ -108,6 +112,13 @@ const ViewClearance = () => {
     const handleCancelAddClearance = () => {
         setAddClearanceModalVisible(false);
     };
+    const handleViewDetails = (tenantId) => {
+      setSelectedTenantId(tenantId);
+      setDetailModalVisible(true);
+  };
+    const handleClearanceUpdated = () => {
+         dispatch(fetchClearances({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
+     }
 
     return (
         <CRow>
@@ -150,12 +161,11 @@ const ViewClearance = () => {
                                 <option value="pending">Pending</option>
                                 <option value="approved">Approved</option>
                                 <option value="rejected">Rejected</option>
-                                <option value="inspected">Inspected</option>
+                                 <option value="inspected">Inspected</option>
                             </CFormSelect>
-
                         </div>
                         <ClearanceTable
-                            clearances={clearances}
+                           clearances={clearances}
                             currentPage={currentPage}
                             totalPages={totalPages}
                             searchTerm={searchTerm}
@@ -163,13 +173,21 @@ const ViewClearance = () => {
                             handleDelete={handleDelete}
                             handlePageChange={handlePageChange}
                             totalClearances={totalClearances}
-                        />
+                            itemsPerPage={itemsPerPage}
+                            handleViewDetails={handleViewDetails}
+                           />
                     </CCardBody>
                 </CCard>
             </CCol>
             <AddClearance
                 visible={addClearanceModalVisible}
                 setVisible={setAddClearanceModalVisible}
+            />
+             <ClearanceDetailsModal
+                visible={detailModalVisible}
+                setVisible={setDetailModalVisible}
+                 tenantId={selectedTenantId}
+                 onClearanceAdded={handleClearanceUpdated}
             />
             <ClearanceDeleteModal
                 visible={deleteModalVisible}

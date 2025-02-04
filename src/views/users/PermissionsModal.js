@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     CModal,
     CModalBody,
@@ -15,6 +15,8 @@ import httpCommon from "../../api/http-common";
 const PermissionsModal = ({ visible, user, onClose, handleSavePermissions }) => {
     const [permissions, setPermissions] = useState({});
     const [isSaving, setIsSaving] = useState(false);
+    const modalRef = useRef(null); // Ref for the modal container
+
 
     useEffect(() => {
         if (user) {
@@ -77,6 +79,14 @@ const PermissionsModal = ({ visible, user, onClose, handleSavePermissions }) => 
         }
     };
 
+   // Custom onClose handler that only triggers when the backdrop is clicked.
+    const handleModalClose = (e) => {
+      // Check if the click occurred on the modal backdrop itself (the area outside the modal content).
+      if (modalRef.current && e.target === modalRef.current) {
+        onClose(); // Only close if the backdrop was clicked.
+      }
+    };
+
     const permissionGroups = {
         properties: {
             title: 'Properties Management',
@@ -121,7 +131,13 @@ const PermissionsModal = ({ visible, user, onClose, handleSavePermissions }) => 
     };
 
     return (
-        <CModal visible={visible} onClose={onClose} size="lg">
+       <CModal
+          visible={visible}
+          onClose={onClose}
+          size="lg"
+          backdrop="static" // Prevent closing when clicking outside the modal
+          keyboard={false} // Prevent closing with the Escape key
+        >
             <CModalHeader>
                 <CModalTitle>Permissions for {user?.name}</CModalTitle>
             </CModalHeader>

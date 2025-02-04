@@ -1,8 +1,9 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchProperties } from '../../api/slice/PropertySlice'
+
 import { CFormSelect, CSpinner } from '@coreui/react'
+import { fetchProperties } from '../../api/actions/PropertyAction'
 
 const PropertySelect = ({ value, onChange, required }) => {
   const dispatch = useDispatch()
