@@ -66,6 +66,37 @@ class PropertyService {
       }
   }
 
+  async filterPropertiess(filterCriteria = {}) {
+    try {
+        const { ...otherCriteria } = filterCriteria;
+
+        const response = await httpCommon.get(this.baseURL, {
+            headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
+            params: {
+                ...otherCriteria,
+            },
+        });
+
+        // const totalItems = response.data?.data?.totalProperties || 0;
+        // const totalPages = Math.ceil(totalItems / limit);
+        // const currentPage = Math.min(page, totalPages || 1);
+
+        return {
+            properties: (response.data?.data?.properties || []).map(PropertyAdapter.toDTO),
+            // pagination: {
+            //     totalPages,
+            //     totalItems,
+            //     currentPage,
+            //     limit,
+            //     hasNextPage: currentPage < totalPages,
+            //     hasPreviousPage: currentPage > 1,
+            // },
+        };
+    } catch (error) {
+        throw this.handleError(error);
+    }
+}
+
   async filterProperties1(filterCriteria = {}) {
     try {
         const response = await httpCommon.get(this.baseURL, {

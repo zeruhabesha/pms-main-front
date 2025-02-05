@@ -224,20 +224,22 @@ if (loading) {
         </div>
     );
 }
-     const parseAmenities = (amenities) => {
-        if (!amenities || !Array.isArray(amenities)) return 'N/A';
-         return amenities.map((amenity) => {
-            try {
-               if(typeof amenity === 'string') {
-                 return JSON.parse(amenity)
-               }
-                 return amenity
-            }catch(e){
-                return amenity
-            }
 
-          }).flat().join(', ')
-     }
+const parseAmenities = (amenities) => {
+    if (!amenities || !Array.isArray(amenities) || amenities.length === 0) return 'N/A';
+    
+    return amenities
+      .filter(amenity => amenity.trim().length > 0) // Remove empty strings
+      .map(amenity => {
+        try {
+          const parsed = JSON.parse(amenity);
+          return Array.isArray(parsed) ? parsed.join(', ') : parsed;
+        } catch {
+          return amenity;
+        }
+      })
+      .join(', ');
+  };
 
 
     return (
@@ -288,25 +290,29 @@ if (loading) {
                                     <CIcon icon={cilMoney} className="me-1" /> Rent Price:
                                 </CTableDataCell>
                                 <CTableDataCell>
-                                    {property.rentPrice ? `$${property.rentPrice}` : 'N/A'}
-                                </CTableDataCell>
+                            {typeof property.rentPrice === 'number' ? `$${property.rentPrice}` : 'N/A'}
+                            </CTableDataCell>
                             </CTableRow>
-                            <CTableRow>
+                             <CTableRow>
                                 <CTableDataCell className="fw-bold">
                                     <CIcon icon={cilBuilding} className="me-1" /> Number of Units:
-                                </CTableDataCell>
-                                <CTableDataCell>{property.numberOfUnits || 'N/A'}</CTableDataCell>
+                                    </CTableDataCell>
+                                    <CTableDataCell>
+                            {property.numberOfUnits !== undefined ? property.numberOfUnits : 'N/A'}
+                            </CTableDataCell>
                             </CTableRow>
                             <CTableRow>
                                 <CTableDataCell className="fw-bold">Floor Plan:</CTableDataCell>
-                                <CTableDataCell>{property.floorPlan || 'N/A'}</CTableDataCell>
+                                <CTableDataCell>
+                                {property.floorPlan ? property.floorPlan : 'N/A'}
+                                </CTableDataCell>
                             </CTableRow>
                             <CTableRow>
                                 <CTableDataCell className="fw-bold">
                                     <CIcon icon={cilList} className="me-1" /> Amenities:
                                 </CTableDataCell>
                                 <CTableDataCell>
-                                   {parseAmenities(property.amenities)}
+                                    {parseAmenities(property.amenities)} {/* Call the function here */}
                                 </CTableDataCell>
                             </CTableRow>
                         </CTableBody>

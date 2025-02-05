@@ -22,6 +22,7 @@ import { clearError } from "../../api/slice/AgreementSlice";
 import TenantPropertySelect from "./TenantPropertySelect";
 import { fetchTenants } from "../../api/actions/TenantActions";
 import { fetchProperties } from "../../api/actions/PropertyAction";
+import { fetchPropertiess } from "../../api/actions/PropertyAction";
 import { Upload } from 'lucide-react';
 
 
@@ -55,7 +56,8 @@ const AddAgreement = ({ visible, setVisible }) => {
 
 
     useEffect(() => {
-        dispatch(fetchProperties());
+        // dispatch(fetchProperties());
+        dispatch(fetchPropertiess());
         dispatch(fetchTenants());
 
         const fetchUser = async () => {

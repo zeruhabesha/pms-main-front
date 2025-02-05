@@ -47,6 +47,7 @@ class AgreementService {
 }
 
 
+
     async fetchAgreement(id) {
         try {
              const response = await httpCommon.get(`${this.baseURL}/${id}`, {

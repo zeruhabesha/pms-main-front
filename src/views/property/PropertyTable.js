@@ -74,6 +74,7 @@ const PropertyTable = ({
     itemsPerPage = 10,
     selectedRows = [],
     setSelectedRows = () => {},
+
 }) => {
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
     const [userPermissions, setUserPermissions] = useState(null);
@@ -85,8 +86,8 @@ const PropertyTable = ({
     const [sliderMax, setSliderMax] = useState(1000000) // Initial max value of price
     //   const [selectedRows, setSelectedRows] = useState([]); // To track selected rows
 
-    const [isDeleting, setIsDeleting] = useState(false);
     const [showMultiDeleteConfirm, setShowMultiDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const totalPagesComputed = useMemo(() => Math.ceil(totalProperties / itemsPerPage), [totalProperties, itemsPerPage]);
 
@@ -259,49 +260,60 @@ const PropertyTable = ({
         setPriceRange(value);
     }, 10); // Delay updates by 300ms
 
-    const handleCheckboxChange = (propertyId) => {
+    // const handleCheckboxChange = (propertyId) => {
+    //     setSelectedRows((prevSelected) => {
+    //         if (prevSelected.includes(propertyId)) {
+    //             return prevSelected.filter((id) => id !== propertyId); // Remove from selected list
+    //         } else {
+    //             return [...prevSelected, propertyId]; // Add to selected list
+    //         }
+    //     });
+    // };
+    
+    const handleCheckboxChange = useCallback((propertyId, checked) => {
         setSelectedRows(prevSelected => {
-            const isCurrentlySelected = prevSelected.includes(propertyId);
-            if (isCurrentlySelected) {
-                return prevSelected.filter(id => id !== propertyId);
-            } else {
+            if (checked) {
                 return [...prevSelected, propertyId];
+            } else {
+                return prevSelected.filter(id => id !== propertyId);
             }
         });
-    };
-    
-
+    }, [setSelectedRows]);
 
     const handleSelectAllRows = () => {
-        const allPropertyIds = properties.map(property => property._id);
-        const allSelected = selectedRows.length === allPropertyIds.length;
-
-        setSelectedRows(allSelected ? [] : allPropertyIds);
+        if (selectedRows.length === properties.length) {
+            setSelectedRows([]); // Deselect all
+        } else {
+            setSelectedRows(properties.map((property) => property._id)); // Select all
+        }
     };
     
-    
 
+    const handleMultiDeleteConfirm = async () => {
+        if (selectedRows.length === 0) return; 
 
-const handleMultiDeleteConfirm = async () => {
-    if (selectedRows.length === 0) return;
-
-    setIsDeleting(true);
-    try {
-        await onDeleteMultiple(selectedRows);
-        setSelectedRows([]);
-        setShowMultiDeleteConfirm(false);
-    } catch (error) {
-        console.error('Error deleting properties:', error);
+        try {
+            setIsDeleting(true);
+            await onDeleteMultiple(selectedRows);
+            // Refresh your property list after successful deletion:
+            // 1.  If you are using a state management library (like Redux, Context API), dispatch an action to fetch the updated list.
+            // 2.  If you are managing the state locally, call a function to refetch the data from your API  
+            setSelectedRows([]); 
+        } catch (error) {
+            console.error('Error deleting properties:', error);
+        // Handle error, maybe display a notification to the user
     } finally {
         setIsDeleting(false);
+        setShowMultiDeleteConfirm(false);
     }
 };
 
-const handleMultiDelete = () => {
-    if (selectedRows.length > 0) {
-        onDeleteMultiple(selectedRows);
-    }
-};
+    const handleMultiDelete = () => {
+        if (selectedRows.length > 0) {
+            setShowMultiDeleteConfirm(true);
+        }
+    };
+
 
 const isRowSelected = useCallback((propertyId) => {
     return selectedRows.includes(propertyId);
@@ -353,29 +365,30 @@ const isRowSelected = useCallback((propertyId) => {
                      options={statusOptions.map(status => ({ label: status || "All Statuses", value: status }))}
                 />
             </div>
-             {selectedRows.length > 0 && (
-                  <div className="mb-3 p-3 bg-light rounded d-flex justify-content-between align-items-center">
-                  <div>
-                      <span className="fw-bold">{selectedRows.length}</span> properties selected
-                  </div>
-                  <div className="d-flex gap-2">
-                      <CButton
-                          color="secondary"
-                          variant="outline"
-                          onClick={() => setSelectedRows([])}
-                      >
-                          Clear Selection
-                      </CButton>
-                      <CButton color="danger" onClick={handleMultiDelete} disabled={selectedRows.length === 0}>
-                Delete Selected
-            </CButton>
-                  </div>
-              </div>
+
+            {selectedRows.length > 0 && (
+                <div className="mb-3 p-3 bg-light rounded d-flex justify-content-between align-items-center">
+                    <div>
+                        <span className="fw-bold">{selectedRows.length}</span> properties selected
+                    </div>
+                    <div className="d-flex gap-2">
+                        <CButton
+                            color="secondary"
+                            variant="outline"
+                            onClick={() => setSelectedRows([])}
+                        >
+                            Clear Selection
+                        </CButton>
+                        <CButton color="danger" onClick={handleMultiDelete} disabled={selectedRows.length === 0}>
+                        Delete Selected
+                        </CButton>
+                    </div>
+                </div>
             )}
 
 
              {/* Delete Confirmation Modal */}
-            <CModal
+             <CModal
                 visible={showMultiDeleteConfirm}
                 onClose={() => setShowMultiDeleteConfirm(false)}
                 alignment="center"
@@ -384,25 +397,18 @@ const isRowSelected = useCallback((propertyId) => {
                     <CModalTitle>Confirm Delete</CModalTitle>
                 </CModalHeader>
                 <CModalBody>
-                    Are you sure you want to delete {selectedRows.length} selected properties?
-                    This action cannot be undone.
+                    Are you sure you want to delete {selectedRows.length} selected properties? This action cannot be undone.
                 </CModalBody>
                 <CModalFooter>
-                    <CButton
-                        color="secondary"
-                        onClick={() => setShowMultiDeleteConfirm(false)}
-                    >
+                    <CButton color="secondary" onClick={() => setShowMultiDeleteConfirm(false)}>
                         Cancel
                     </CButton>
-                    <CButton
-                        color="danger"
-                        onClick={handleMultiDeleteConfirm}
-                        disabled={isDeleting}
-                    >
+                    <CButton color="danger" onClick={handleMultiDeleteConfirm} disabled={isDeleting}>
                         {isDeleting ? 'Deleting...' : 'Delete'}
                     </CButton>
                 </CModalFooter>
             </CModal>
+
             <CTable align="middle" className="mb-0 border" hover responsive>
                 <CTableHead className="text-nowrap">
                     <CTableRow>
@@ -443,30 +449,23 @@ const isRowSelected = useCallback((propertyId) => {
                     </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                    {filteredProperties.map((property, index) => (
-                 <PropertyTableRow
-                 key={property._id}
-                 index={(currentPage - 1) * itemsPerPage + index + 1}
-                 property={property}
-                 onEdit={onEdit}  // Keep this as is, just pass through the onEdit function
-                 onDelete={onDelete}
-                 onView={onView}
-                 onPhotoDelete={onPhotoDelete} // Make sure to pass onPhotoDelete
-                 onPhotoUpdate={onPhotoUpdate} // Make sure to pass onPhotoUpdate
-                 dropdownOpen={dropdownOpen}
-                 toggleDropdown={toggleDropdown}
-                 closeDropdown={closeDropdown}
-                 dropdownRefs={dropdownRefs}
-                 isRowSelected={isRowSelected(property._id)} // Pass the selection state
-                 handleCheckboxChange={() => {
-                    const isSelected = isRowSelected(property._id);
-                    setSelectedRows(isSelected ? selectedRows.filter(id => id !== property._id) : [...selectedRows, property._id]);
-                }}
-             />
-            
-
-                    ))}
-                </CTableBody>
+                {filteredProperties.map((property, index) => (
+                    <PropertyTableRow
+                        key={property._id}
+                        index={(currentPage - 1) * itemsPerPage + index + 1}
+                        property={property}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onView={onView}
+                        dropdownOpen={dropdownOpen}
+                        toggleDropdown={toggleDropdown}
+                        closeDropdown={closeDropdown}
+                        dropdownRefs={dropdownRefs}
+                        isRowSelected={selectedRows.includes(property._id)} // Check if the row is selected
+                        handleCheckboxChange={handleCheckboxChange}
+                        />
+                ))}
+            </CTableBody>
             </CTable>
 
              {totalPagesComputed > 1 && (

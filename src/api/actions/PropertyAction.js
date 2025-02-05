@@ -17,6 +17,18 @@ export const fetchProperties = createAsyncThunk(
   },
 )
 
+export const fetchPropertiess = createAsyncThunk(
+    PropertyTypes.FETCH_PROPERTIES,
+    async (_, { rejectWithValue }) => {
+      try {
+        const response = await propertyService.filterPropertiess()
+        return response
+      } catch (error) {
+        return rejectWithValue(error.message)
+      }
+    },
+  )
+
 export const filterProperties = createAsyncThunk(
   PropertyTypes.FILTER_PROPERTIES,
   async (filterCriteria = {}, { rejectWithValue }) => {
