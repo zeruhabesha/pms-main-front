@@ -1,3 +1,4 @@
+// src/views/agreement/AgreementModal.js
 import React from "react";
 import { CModal, CModalHeader, CModalBody, CModalFooter, CButton } from "@coreui/react";
 import PropTypes from "prop-types";
@@ -8,12 +9,13 @@ const AgreementModal = ({ visible, onClose, documents = [] }) => (
       <h5 id="agreement-documents-modal">Agreement Documents</h5>
     </CModalHeader>
     <CModalBody>
-      {documents.length > 0 ? (
+      {documents && documents.length > 0 ? ( // Check if documents exists before accessing length
         <div className="list-group">
           {documents.map((doc, idx) => {
-            const docUrl = doc.url || "#";
-            const docName = doc.name || `Document ${idx + 1}`;
-            const docType = doc.type || "Download";
+            // Assuming doc is the file path from backend, construct download URL
+            const docUrl = `/lease/download/${doc}`; // Use backend download endpoint
+            const docName = doc.split('/').pop() || `Document ${idx + 1}`; // Extract filename
+            const docType = doc.split('.').pop().toUpperCase() || "File"; // Extract file extension
 
             return (
               <a
@@ -47,13 +49,7 @@ const AgreementModal = ({ visible, onClose, documents = [] }) => (
 AgreementModal.propTypes = {
   visible: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  documents: PropTypes.arrayOf(
-    PropTypes.shape({
-      url: PropTypes.string.isRequired, // Ensure URL is provided
-      name: PropTypes.string,           // Optional: Display name
-      type: PropTypes.string,           // Optional: Document type
-    })
-  ),
+  documents: PropTypes.arrayOf(PropTypes.string), // documents are now expected to be array of strings (file paths)
 };
 
 AgreementModal.defaultProps = {

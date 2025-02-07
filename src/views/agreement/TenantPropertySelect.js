@@ -1,3 +1,4 @@
+// src/views/agreement/TenantPropertySelect.js
 import React from "react";
 import PropTypes from "prop-types";
 import { CCol, CFormSelect } from "@coreui/react";
@@ -26,7 +27,7 @@ const TenantPropertySelect = ({
         >
           <option value="">Select Tenant</option>
           {tenantOptions.map((tenant) => (
-            <option key={tenant._id} value={tenant._id}>
+            <option key={tenant.id} value={tenant.id}>
               {tenant.tenantName}
             </option>
           ))}
@@ -40,13 +41,13 @@ const TenantPropertySelect = ({
 TenantPropertySelect.propTypes = {
   tenantOptions: PropTypes.arrayOf(
     PropTypes.shape({
-      _id: PropTypes.string.isRequired,
+      id: PropTypes.string.isRequired,
       tenantName: PropTypes.string.isRequired,
     })
   ).isRequired,
     propertyOptions: PropTypes.arrayOf(
       PropTypes.shape({
-        _id: PropTypes.string.isRequired,
+        id: PropTypes.string.isRequired,
         name: PropTypes.string.isRequired,
       })
     ).isRequired,

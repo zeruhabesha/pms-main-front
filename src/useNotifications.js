@@ -34,7 +34,7 @@ const useNotifications = (userId) => {
     fetchNotifications();
 
     // Real-time updates with WebSockets
-    const socket = io("http://localhost:4000");
+    const socket = io("http://localhost:4000/api/v1");
     socket.on(`notification_${userId}`, (newNotification) => {
       setUnreadCounts((prev) => ({
         ...prev,

@@ -45,12 +45,12 @@ export const updateComplaint = createAsyncThunk(
 
 export const assignComplaint = createAsyncThunk(
     'complaint/assignComplaint',
-    async ({ id, userId }, { rejectWithValue }) => {
+    async ({ id, userId }, { rejectWithValue }) => { // Expects { id, userId }
         try {
             const response = await ComplaintService.assignComplaint(id, userId);
             return response;
         } catch (error) {
-             return rejectWithValue(
+            return rejectWithValue(
                 error.response?.data || { message: 'Failed to assign complaint' }
             );
         }

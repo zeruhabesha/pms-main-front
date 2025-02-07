@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     CTable,
@@ -37,7 +37,8 @@ import {
     cilCheckCircle,
     cilWarning,
     cilXCircle,
-    cilSearch
+    cilSearch,
+    // cilFolderDownload // New icon for download
 } from '@coreui/icons';
 import { CSVLink } from 'react-csv';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
@@ -50,10 +51,11 @@ import { setSelectedTenant, clearError } from '../../api/slice/TenantSlice';
 import './TenantTable.scss'; // Import the dedicated CSS file
 import ClearanceDetailsModal from '../Clearance/ClearanceDetailsModal' // Import the ClearanceDetailsModal
 import clearanceService from '../../api/services/clearance.service'; // Import the clearance service
-
+import './TenantTable.scss'; // Import the dedicated CSS file
+import { fetchTenants } from '../../api/actions/TenantActions';
 
 const TenantTable = ({
-    tenants = [],
+    tenants,
     currentPage,
     totalPages,
     searchTerm,
@@ -62,10 +64,10 @@ const TenantTable = ({
     handleEdit,
     handleDelete,
     handlePageChange,
-    handleFetchTenants,
-    itemsPerPage = 10,
     loading,
-}) => {
+    itemsPerPage,
+    handleFetchTenants
+  }) => {
 
     const dispatch = useDispatch();
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
@@ -80,6 +82,13 @@ const TenantTable = ({
     const [isClearanceModalVisible, setIsClearanceModalVisible] = useState(false);
     const [clearanceTenantId, setClearanceTenantId] = useState(null);
      const [clearanceStatuses, setClearanceStatuses] = useState({});
+
+// Memoized pagination click handler
+const handlePaginationClick = useCallback((event, page) => {
+    event.preventDefault();
+    event.stopPropagation();
+    handlePageChange(page);
+  }, [handlePageChange]);
 
 
     useEffect(() => {
@@ -300,8 +309,40 @@ const TenantTable = ({
             dispatch(clearError());
         }
     };
-    
-     // Modified handleClearance to show modal
+
+    // const handlePageChange = (page) => {
+    //     if (page >= 1 && page <= totalPages && page !== currentPage) {
+    //         dispatch(fetchTenants({ page, limit: itemsPerPage, search: searchTerm }))
+    //             .unwrap()
+    //             .catch(error => {
+    //                 toast.error(error.message || 'Failed to fetch tenants');
+    //             });
+    //     }
+    // };
+
+        useEffect(() => {
+          if (tenants.length === 0 && currentPage > 1) {
+              // If there are no tenants and we are not on the first page, move back a page
+              handlePageChange(currentPage - 1);
+          }
+      }, [tenants, currentPage]);
+    // Function to handle download ID proof - placeholder, implement actual download logic
+    const handleDownloadIdProof = (idProof) => {
+        if (idProof && idProof.length > 0) {
+            // Assuming idProof is an array of file names or URLs
+            idProof.forEach(file => {
+                // Implement download logic here, e.g., using window.open(file) if it's a URL
+                console.log('Downloading ID Proof:', file);
+                // For now, let's just open a new tab with the first file (if it's a URL)
+                window.open(file, '_blank'); // This might need to be adjusted based on how your files are served
+            });
+        } else {
+            toast.info("No ID Proofs to download.");
+        }
+    };
+
+
+    // Modified handleClearance to show modal
     const handleClearance = (tenantId) => {
          setClearanceTenantId(tenantId);
          setIsClearanceModalVisible(true);
@@ -371,8 +412,10 @@ const TenantTable = ({
                             )}
                         </CTableHeaderCell>
                         <CTableHeaderCell>Contact</CTableHeaderCell>
-                        <CTableHeaderCell>Lease</CTableHeaderCell>
-                        <CTableHeaderCell>Lease Status</CTableHeaderCell>
+                        {/* REMOVED PAYMENT COLUMN */}
+                        {/* <CTableHeaderCell>Payment</CTableHeaderCell> */}
+                        <CTableHeaderCell>Download ID</CTableHeaderCell> {/* NEW COLUMN */}
+                        {/* <CTableHeaderCell>Lease Status</CTableHeaderCell> */}
                           <CTableHeaderCell>Clearance Status</CTableHeaderCell>
                         <CTableHeaderCell>Actions</CTableHeaderCell>
                     </CTableRow>
@@ -429,17 +472,32 @@ const TenantTable = ({
                                         {tenant.contactInformation?.phoneNumber || 'N/A'}
                                     </div>
                                 </CTableDataCell>
-                                <CTableDataCell>
+                                {/* REMOVED PAYMENT DATA CELL */}
+                                {/* <CTableDataCell>
                                     <div className="small text-body-secondary text-nowrap">
                                         <CIcon icon={cilCalendar} size="sm" className="me-1" />
-                                        Start: {formatDate(tenant.leaseAgreement?.startDate) || 'N/A'}
+                                        Security Deposit: {tenant.leaseAgreement?.securityDeposit || 'N/A'}
                                     </div>
                                     <div className="small text-body-secondary text-nowrap">
                                         <CIcon icon={cilCalendar} size="sm" className="me-1" />
-                                        End:{formatDate(tenant.leaseAgreement?.endDate) || 'N/A'}
+                                        Rent Amount:{tenant.leaseAgreement?.rentAmount || 'N/A'}
                                     </div>
+                                </CTableDataCell> */}
+                                <CTableDataCell> {/* NEW DOWNLOAD ID CELL */}
+                                    {tenant.idProof && tenant.idProof.length > 0 ? (
+                                        <CButton
+                                            color="ghost-dark" // Or any suitable style
+                                            size="sm"
+                                            onClick={() => handleDownloadIdProof(tenant.idProof)}
+                                            title="Download ID Proof"
+                                        >
+                                            <CIcon icon={cilCloudDownload} /> Download ID
+                                        </CButton>
+                                    ) : (
+                                        'N/A'
+                                    )}
                                 </CTableDataCell>
-                                <CTableDataCell>
+                                {/* <CTableDataCell>
                                       <div className={`status-badge ${getStatusDetails(tenant.leaseAgreement?.endDate)?.color}`}>
                                      {getStatusDetails(tenant.leaseAgreement?.endDate)?.text}
                                     {
@@ -450,7 +508,7 @@ const TenantTable = ({
                                              />
                                         )}
                                     </div>
-                                </CTableDataCell>
+                                </CTableDataCell> */}
                                     <CTableDataCell>
                                         <div className={`status-badge ${getClearanceStatusDetails(tenant?._id)?.color}`}>
                                               {getClearanceStatusDetails(tenant?._id)?.text}
@@ -500,13 +558,13 @@ const TenantTable = ({
                                                 Details
                                             </CDropdownItem>
 
-                                            <CDropdownItem
+                                            {/* <CDropdownItem
                                                  onClick={() => handleClearance(tenant?._id)}
                                                 title="Clearance"
                                             >
                                                 <CIcon icon={cilClipboard} className="me-2" />
                                                 Clearance
-                                            </CDropdownItem>
+                                            </CDropdownItem> */}
                                         </CDropdownMenu>
                                     </CDropdown>
                                 </CTableDataCell>
@@ -516,47 +574,53 @@ const TenantTable = ({
                 </CTableBody>
             </CTable>
             <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
-                <span>Total Tenants: {tenants.length}</span>
-                <CPagination className="mt-3">
-                    <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
-                        «
-                    </CPaginationItem>
-                    <CPaginationItem
-                        disabled={currentPage === 1}
-                        onClick={() => handlePageChange(currentPage - 1)}
-                    >
-                        ‹
-                    </CPaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <CPaginationItem
-                            key={page}
-                            active={page === currentPage}
-                            className=""
-                            onClick={() => handlePageChange(page)}
-                        >
-                            {page}
-                        </CPaginationItem>
+        <span>Total Tenants: {totalPages * itemsPerPage}</span>
+        <CPagination className="mt-3">
+          <CPaginationItem 
+            disabled={currentPage === 1} 
+            onClick={(e) => handlePaginationClick(e, 1)}
+          >
+            «
+          </CPaginationItem>
+          <CPaginationItem 
+            disabled={currentPage === 1} 
+            onClick={(e) => handlePaginationClick(e, currentPage - 1)}
+          >
+            ‹
+          </CPaginationItem>
 
-                    ))}
-                    <CPaginationItem
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(currentPage + 1)}
-                    >
-                        ›
-                    </CPaginationItem>
-                    <CPaginationItem
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(totalPages)}
-                    >
-                        »
-                    </CPaginationItem>
-                </CPagination>
-                <TenantDetailsModal
-                    visible={isModalVisible}
-                    setVisible={setIsModalVisible}
-                    tenantDetails={tenantDetails}
-                />
-            </div>
+          {Array.from(
+            { length: Math.min(5, totalPages) },
+            (_, i) => {
+              const page = Math.max(1, currentPage - 2) + i;
+              if (page > totalPages) return null;
+              return (
+                <CPaginationItem
+                  key={page}
+                  active={page === currentPage}
+                  onClick={(e) => handlePaginationClick(e, page)}
+                >
+                  {page}
+                </CPaginationItem>
+              );
+            }
+          )}
+
+          <CPaginationItem 
+            disabled={currentPage === totalPages} 
+            onClick={(e) => handlePaginationClick(e, currentPage + 1)}
+          >
+            ›
+          </CPaginationItem>
+          <CPaginationItem 
+            disabled={currentPage === totalPages} 
+            onClick={(e) => handlePaginationClick(e, totalPages)}
+          >
+            »
+          </CPaginationItem>
+        </CPagination>
+      </div>
+
            {/* Conditionally render ClearanceDetailsModal */}
             {isClearanceModalVisible && (
                 <ClearanceDetailsModal

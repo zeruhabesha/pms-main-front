@@ -23,10 +23,17 @@ const UserTableRow = ({
             <CTableDataCell>
               
                 <img
-                    src={user?.photo ? `http://localhost:4000/api/v1/uploads/profile/${user._id}/${user.photo}` : placeholder}
+                src={`http://localhost:4000/api/v1/users/${user._id}/photo`}
+                    // src={
+                    //     // user?.photo 
+                    //     // ? 
+                    //     `http://localhost:4000/api/v1/users/${user._id}/photo`
+                    //     //  : 
+                    //     //  placeholder
+                    //     }
                     alt="User"
-                    style={{ width: '50px', height: '50px', borderRadius: '50%' }}
-                    className="me-2"
+                      style={{ width: '50px', height: '50px', borderRadius: '50%' }}
+                      className="me-2"
                 />
                 <CButton color="light" size="sm" onClick={() => handleEditPhoto(user)} title="Edit photo">
                     <CIcon icon={cilPencil} />

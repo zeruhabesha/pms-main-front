@@ -28,10 +28,18 @@ import { cilCalendar } from '@coreui/icons'
 import { CIcon } from '@coreui/icons-react'
 import { useParams, useNavigate } from 'react-router-dom' // Import useParams and useNavigate
 
-const ComplaintAssign = ({ onAssign }) => {
-  const dispatch = useDispatch()
+const ComplaintAssign = ({
+    onAssign,  // Main handler prop
+    // Destructure once with proper renaming
+    currentPage: parentCurrentPage,
+    itemsPerPage: parentItemsPerPage,
+    searchTerm: parentSearchTerm,
+    statusFilter: parentStatusFilter
+  }) => {
+
   const navigate = useNavigate()
-  const { id: complaintId } = useParams() // Get the complaintId from the URL params
+  const dispatch = useDispatch();
+  const { id: complaintId } = useParams();
   console.log('onAssign props value in ComplaintAssign: ', onAssign) // Log the onAssign prop
 
   const [selectedUser, setSelectedUser] = useState(null)
@@ -43,6 +51,30 @@ const ComplaintAssign = ({ onAssign }) => {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false)
   const [assignedInspector, setAssignedInspector] = useState(null)
   const searchInputRef = useRef(null)
+
+  const [assignee, setAssignee] = useState({});
+
+  const handleAssignClick = async () => {
+    try {
+      // Use parent-prefixed props
+      await onAssign(complaintId, {
+        assignedTo: assignee[complaintId],
+        preferredAccessTimes: new Date(`${schedule.date}T${schedule.time}`),
+        estimatedCompletionTime: new Date(`${estimatedCompletion.date}T${estimatedCompletion.time}`)
+      });
+
+      dispatch(fetchComplaints({
+        page: parentCurrentPage,
+        limit: parentItemsPerPage,
+        search: parentSearchTerm,
+        status: parentStatusFilter
+      }));
+
+      toast.success('Assignment successful');
+    } catch (error) {
+      toast.error(error.message || 'Assignment failed');
+    }
+  };
 
   const { inspectors = [], loading, error: fetchError } = useSelector((state) => state.user)
   const itemsPerPage = 5
@@ -68,8 +100,7 @@ const ComplaintAssign = ({ onAssign }) => {
       setEstimatedCompletion((prevCompletion) => ({ ...prevCompletion, [field]: value }))
     }
   }
-  const handleAssignUser = useCallback(
-    async (e) => {
+  const handleAssignUser = useCallback(async () => {
       e.preventDefault()
       if (!selectedUser) {
         setError('Please select a user to assign.')
@@ -97,13 +128,20 @@ const ComplaintAssign = ({ onAssign }) => {
           // other params
         }
 
-        await onAssign(complaintId, updatedData) // Correct call
+        await onAssign(complaintId, updatedData);
+        dispatch(fetchComplaints({
+            page: currentPage,
+            limit: itemsPerPage,
+            search: searchTerm,
+            status: statusFilter
+          }));
         navigate(`/complaints`) // Redirect to the complaints list after assigning
         setError(null)
         setSelectedUser(null)
         setSchedule({ date: '', time: '' })
         setEstimatedCompletion({ date: '', time: '' })
-      } catch (error) {
+      } 
+      catch (error) {
         setError('Failed to assign user.')
         console.error('Assign error:', error)
       }

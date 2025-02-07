@@ -41,7 +41,7 @@ const tenantSlice = createSlice({
     },
       setSelectedTenant: (state, action) => {
           state.selectedTenant = action.payload;
-           state.tenantDetails = state.tenants.find(tenant => tenant._id === action.payload) || null;
+           state.tenantDetails = state.tenants.find(tenant => tenant.id === action.payload) || null;
       },
     clearError: (state) => {
       state.error = null;
@@ -96,7 +96,7 @@ const tenantSlice = createSlice({
         .addCase(updateTenant.fulfilled, (state, action) => {
             state.loading = false;
           const updatedTenant = action.payload;
-            state.tenants = state.tenants.map(tenant => tenant._id === updatedTenant._id ? updatedTenant : tenant);
+            state.tenants = state.tenants.map(tenant => tenant.id === updatedTenant.id ? updatedTenant : tenant);
             state.tenantDetails = updatedTenant
         })
         .addCase(updateTenant.rejected, (state, action) => {
@@ -112,9 +112,9 @@ const tenantSlice = createSlice({
         state.loading = false;
         const updatedTenant = action.payload;
         state.tenants = state.tenants.map(tenant => 
-            tenant._id === updatedTenant._id ? updatedTenant : tenant
+            tenant.id === updatedTenant.id ? updatedTenant : tenant
         );
-        if (state.tenantDetails?._id === updatedTenant._id) {
+        if (state.tenantDetails?.id === updatedTenant.id) {
             state.tenantDetails = updatedTenant;
         }
       })
@@ -128,7 +128,7 @@ const tenantSlice = createSlice({
       })
         .addCase(deleteTenant.fulfilled, (state, action) => {
             state.loading = false;
-            state.tenants = state.tenants.filter((tenant) => tenant._id !== action.payload);
+            state.tenants = state.tenants.filter((tenant) => tenant.id !== action.payload);
             state.selectedTenant = null;
         })
        .addCase(deleteTenant.rejected, (state, action) => {

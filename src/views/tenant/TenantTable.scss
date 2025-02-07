@@ -214,3 +214,17 @@
     }
   
   }
+
+
+/* In your CSS file (e.g., AgreementDetails.scss) */
+.coming-soon-animated {
+    animation: fadeInOut 1.5s infinite alternate;
+    opacity: 0.7;
+    font-weight: bold;
+    color: #FF7F50;         /* Coral color */
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0.4; }
+    100% { opacity: 1; }
+}

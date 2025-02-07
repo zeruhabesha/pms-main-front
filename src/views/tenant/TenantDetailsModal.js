@@ -41,7 +41,7 @@ const TenantDetailsModal = ({ visible, setVisible, tenantDetails }) => {
                                 <CTableDataCell><strong><CIcon icon={cilUser} className="me-1" />Tenant Name:</strong></CTableDataCell>
                                 <CTableDataCell>{tenantDetails?.tenantName || "N/A"}</CTableDataCell>
                             </CTableRow>
-                            <CTableRow>
+                            {/* <CTableRow>
                                 <CTableDataCell><strong><CIcon icon={cilEnvelopeOpen} className="me-1" />Email:</strong></CTableDataCell>
                                 <CTableDataCell>{tenantDetails.contactInformation?.email || "N/A"}</CTableDataCell>
                             </CTableRow>
@@ -52,27 +52,35 @@ const TenantDetailsModal = ({ visible, setVisible, tenantDetails }) => {
                              <CTableRow>
                                 <CTableDataCell><strong><CIcon icon={cilHome} className="me-1" />Address:</strong></CTableDataCell>
                                 <CTableDataCell>{tenantDetails.contactInformation?.address || "N/A"}</CTableDataCell>
-                            </CTableRow>
-                            <CTableRow>
+                            </CTableRow> */}
+                            {/* <CTableRow>
                                 <CTableDataCell><strong><CIcon icon={cilCalendar} className="me-1" />Start Date:</strong></CTableDataCell>
                                 <CTableDataCell>{tenantDetails.leaseAgreement?.startDate || "N/A"}</CTableDataCell>
                            </CTableRow>
                            <CTableRow>
                               <CTableDataCell><strong><CIcon icon={cilCalendar} className="me-1" />End Date:</strong></CTableDataCell>
                                  <CTableDataCell>{tenantDetails.leaseAgreement?.endDate || "N/A"}</CTableDataCell>
-                          </CTableRow>
-                           <CTableRow>
+                          </CTableRow> */}
+                           {/* <CTableRow>
                                <CTableDataCell><strong><CIcon icon={cilMoney} className="me-1" />Security Deposit:</strong></CTableDataCell>
                                 <CTableDataCell>${tenantDetails.leaseAgreement?.securityDeposit || "N/A"}</CTableDataCell>
                             </CTableRow>
                              <CTableRow>
                                 <CTableDataCell><strong><CIcon icon={cilMoney} className="me-1" />Rent Amount:</strong></CTableDataCell>
                                <CTableDataCell>${tenantDetails.leaseAgreement?.rentAmount || "N/A"}</CTableDataCell>
-                           </CTableRow>
-                            <CTableRow>
-                                <CTableDataCell><strong><CIcon icon={cilCreditCard} className="me-1" />Payment Frequency:</strong></CTableDataCell>
-                                <CTableDataCell>{tenantDetails.leaseAgreement?.paymentFrequency || "N/A"}</CTableDataCell>
-                            </CTableRow>
+                           </CTableRow> */}
+                        <CTableRow>
+    <CTableDataCell><strong><CIcon icon={cilCreditCard} className="me-1" />Payment Frequency:</strong></CTableDataCell>
+    <CTableDataCell>
+        {tenantDetails.leaseAgreement?.paymentFrequency ? (
+            // If paymentFrequency exists, display it
+            tenantDetails.leaseAgreement.paymentFrequency
+        ) : (
+            // If paymentFrequency doesn't exist, display animated "Coming Soon"
+            <span className="coming-soon-animated">Coming Soon</span>
+        )}
+    </CTableDataCell>
+</CTableRow>
                     </CTableBody>
                 </CTable>
 

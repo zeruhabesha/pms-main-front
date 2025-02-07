@@ -1,3 +1,4 @@
+// src/api/actions/AgreementActions.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import AgreementService from "../services/agreement.service";
 
@@ -34,7 +35,6 @@ export const addAgreement = createAsyncThunk(
     async (agreementData, { rejectWithValue }) => {
         try {
             const response = await AgreementService.addAgreement(agreementData);
-            console.log('ffjhgsjhgfjhgds',response);
            return response;
         } catch (error) {
             return rejectWithValue(error.message);

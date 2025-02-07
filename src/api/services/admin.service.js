@@ -59,36 +59,28 @@ class AdminService {
     }
   }
 
-  async updateAdmin(id, AdminData) {
-    if (!AdminData) {
-      throw new Error("No data provided for update");
-    }
-  
-    try {
-      const payload = {
-        name: AdminData.name,
-        email: AdminData.email,
-        phoneNumber: AdminData.phoneNumber,
-        status: AdminData.status || 'active',
-      };
-  
-      const response = await httpCommon.put(`/users/${id}`, payload, {
-        headers: {
-          ...this.getAuthHeader(),
-          'Content-Type': 'application/json',
-        },
+
+async updateAdmin(id, adminData) {
+  try {
+      console.log("Updating admin with ID:", id, "and data:", adminData);
+      
+      const response = await httpCommon.put(`/users/${id}`, adminData, { 
+          headers: { 
+              ...this.getAuthHeader(), 
+              'Content-Type': 'application/json' 
+          }, 
       });
-  
-      if (!response.data) {
-        throw new Error('No data received from server');
-      }
-  
+
       return response.data?.data;
-    } catch (error) {
-      console.error('Admin Update Error:', error.response?.data || error);
-      throw this.handleError(error);
-    }
+  } catch (error) {
+      console.error('Update Admin API Error:', error.response?.data || error.message);
+      throw {
+          message: error.response?.data?.message || "Failed to update user",
+          status: error.response?.status || 500
+      };
   }
+}
+
 
   async uploadAdminPhoto(id, photoFile) {
     try {

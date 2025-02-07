@@ -1,3 +1,4 @@
+// src/api/slice/AgreementSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 import {
     fetchAgreements,
@@ -43,42 +44,42 @@ const agreementSlice = createSlice({
         builder
             .addCase(fetchAgreements.fulfilled, (state, action) => {
                 state.loading = false;
-                state.agreements = action.payload.agreements;
-                state.totalPages = action.payload.totalPages;
-                state.currentPage = action.payload.currentPage;
+                state.agreements = action.payload.agreements || [];
+                state.totalPages = action.payload.totalPages || 1;
+                state.currentPage = action.payload.currentPage || 1;
             })
             .addCase(fetchAgreement.fulfilled, (state, action) => {
                 state.loading = false;
-                state.selectedAgreement = action.payload;
+                state.selectedAgreement = action.payload || null;
             })
             .addCase(addAgreement.fulfilled, (state, action) => {
                 state.loading = false;
-                state.agreements.unshift(action.payload);
+                if (action.payload) state.agreements.unshift(action.payload);
             })
             .addCase(updateAgreement.fulfilled, (state, action) => {
                 state.loading = false;
                 const index = state.agreements.findIndex(
-                    (agreement) => agreement._id === action.payload._id
+                    (agreement) => agreement.id === action.payload?.id
                 );
-                if (index !== -1) {
+                if (index !== -1 && action.payload) {
                     state.agreements[index] = action.payload;
                 }
             })
             .addCase(deleteAgreement.fulfilled, (state, action) => {
                 state.loading = false;
                 state.agreements = state.agreements.filter(
-                    (agreement) => agreement._id !== action.payload
+                    (agreement) => agreement.id !== action.payload
                 );
             })
             .addCase(uploadAgreementFile.fulfilled, (state, action) => {
                 state.loading = false;
                 const index = state.agreements.findIndex(
-                    (agreement) => agreement._id === action.payload._id
+                    (agreement) => agreement.id === action.payload?.id
                 );
-                if (index !== -1) {
+                if (index !== -1 && action.payload) {
                     state.agreements[index] = {
                         ...state.agreements[index],
-                        documents: action.payload.documents,
+                        documents: action.payload.documents || [],
                     };
                 }
             });

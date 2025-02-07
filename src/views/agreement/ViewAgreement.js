@@ -1,3 +1,4 @@
+// src/views/agreement/ViewAgreement.js
 import React, { useState, useEffect } from "react";
 import {
     CRow,
@@ -26,10 +27,7 @@ import {
     deleteAgreement,
 } from "../../api/actions/AgreementActions";
 import { decryptData } from '../../api/utils/crypto';
-
-import {
-    setSelectedAgreement,
-} from "../../api/slice/AgreementSlice";
+import { setSelectedAgreement } from "../../api/slice/AgreementSlice";
 import { useNavigate, Link } from "react-router-dom";
 
 
@@ -62,7 +60,7 @@ const ViewAgreement = () => {
     };
 
 
-     const handleDelete = async (id) => {
+    const handleDelete = async (id) => {
         try {
           await dispatch(deleteAgreement(id)).unwrap();
           dispatch(fetchAgreements({ page: currentPage, limit: itemsPerPage })); // Refresh data
@@ -71,6 +69,7 @@ const ViewAgreement = () => {
           toast.error(err.message || "Failed to delete the agreement.");
         }
       };
+    
 
 
     const [userPermissions, setUserPermissions] = useState(null);
@@ -86,8 +85,8 @@ const ViewAgreement = () => {
 
     const csvData = agreements.map((agreement, index) => ({
         index: (currentPage - 1) * itemsPerPage + index + 1,
-        tenant: agreement.tenant?.name || "N/A",
-        property: agreement.property?.name || "N/A",
+        tenant: agreement.tenant?.tenantName || "N/A",
+        property: agreement.property?.title || "N/A",
         leaseStart: agreement.leaseStart || "N/A",
         leaseEnd: agreement.leaseEnd || "N/A",
         rentAmount: agreement.rentAmount || "N/A",
@@ -97,8 +96,8 @@ const ViewAgreement = () => {
         .map(
             (agreement, index) =>
                 `${(currentPage - 1) * itemsPerPage + index + 1}. ${
-                    agreement.tenant?.name || "N/A"
-                } - ${agreement.property?.name || "N/A"} - ${agreement.leaseStart || "N/A"} - ${
+                    agreement.tenant?.tenantName || "N/A"
+                } - ${agreement.property?.title || "N/A"} - ${agreement.leaseStart || "N/A"} - ${
                     agreement.leaseEnd || "N/A"
                 }`
         )
@@ -110,8 +109,8 @@ const ViewAgreement = () => {
 
         const tableData = agreements.map((agreement, index) => [
             (currentPage - 1) * itemsPerPage + index + 1,
-            agreement.tenant?.name || "N/A",
-            agreement.property?.name || "N/A",
+            agreement.tenant?.tenantName || "N/A",
+            agreement.property?.title || "N/A",
             agreement.leaseStart || "N/A",
             agreement.leaseEnd || "N/A",
             `$${agreement.rentAmount || "N/A"}`,
@@ -177,10 +176,10 @@ const ViewAgreement = () => {
                                 className="w-100"
                             />
                         </div>
-                        {loading ? (
+                        {loading ? ( // Conditional rendering of loading spinner
                             <div className="text-center">
-                            <CSpinner color="dark" />
-                            <p className="mt-2">Loading agreements...</p>
+                                <CSpinner color="dark" />
+                                <p className="mt-2">Loading agreements...</p>
                             </div>
                         ) : (
                             <AgreementTable

@@ -6,7 +6,7 @@ import {
   deleteAdmin,
   addAdmin,
   updateAdmin,
-  uploadAdminPhoto, 
+  uploadAdminPhoto,
 } from '../../api/actions/AdminActions';
 import AdminTable from './AdminTable';
 import AdminModal from './AdminModal';
@@ -17,7 +17,7 @@ import '../Super.scss';
 import 'react-toastify/dist/ReactToastify.css';
 import { createSelector } from 'reselect';
 
-const selectAdminState = (state) => state.Admin || { // Changed from state.admin to state.Admin
+const selectAdminState = (state) => state.Admin || {
   admins: [],
   loading: false,
   error: null,
@@ -40,7 +40,6 @@ const ViewAdmin = () => {
   const dispatch = useDispatch();
   const { admins, loading, error, totalPages, currentPage } = useSelector(adminSelector);
 
-  // Rest of your component code remains the same
   const [searchTerm, setSearchTerm] = useState('');
   const [AdminModalVisible, setAdminModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -55,7 +54,7 @@ const ViewAdmin = () => {
     console.log('Fetching admins with dispatch');
     dispatch(fetchAdmins({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
   }, [dispatch, currentPage, searchTerm]);
-  
+
 
   const handlePageChange = (page) => {
     if (page !== currentPage) {
@@ -73,17 +72,17 @@ const ViewAdmin = () => {
       toast.error('No admin selected for deletion');
       return;
     }
-  
+
     try {
       await dispatch(deleteAdmin(adminToDelete._id)).unwrap();
-      dispatch(fetchAdmins({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
+      handleSaveSuccess(); // Refresh admin list after delete
       setDeleteModalVisible(false);
       toast.success('Admin deleted successfully');
     } catch (error) {
       toast.error('Failed to delete Admin');
     }
   };
-  
+
   const handleEdit = (admin) => {
     setEditingAdmin(admin);
     setAdminModalVisible(true);
@@ -97,32 +96,33 @@ const ViewAdmin = () => {
   const handleSavePhoto = async (photoFile) => {
     if (adminToEdit) {
       dispatch(uploadAdminPhoto({ id: adminToEdit._id, photo: photoFile }));
-      dispatch(fetchAdmins({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
+      handleSaveSuccess(); // Refresh admin list after photo update
       setEditPhotoVisible(false);
       toast.success('Photo updated successfully');
     }
   };
 
-  const handleSave = async (updatedData) => {
-    if (!editingAdmin?._id) {
-      toast.error('No admin selected for editing');
+  const handleSaveSuccess = () => { // Function to refresh admin list
+    dispatch(fetchAdmins({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
+  };
+
+  const handleUpdateAdmin = async (id, adminData) => {
+    console.log("Updating Admin:", id, adminData);
+  
+    if (!id || !adminData) {
+      toast.error("Invalid admin data provided!");
       return;
     }
   
     try {
-      const formattedData = {
-        ...updatedData,
-        status: updatedData.status ? 'active' : 'inactive',
-        activeStart: updatedData.activeStart || null,
-        activeEnd: updatedData.activeEnd || null,
-      };
-  
-      await dispatch(updateAdmin({ id: editingAdmin._id, adminData: formattedData })).unwrap();
-      dispatch(fetchAdmins({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
-      setAdminModalVisible(false);
+      await dispatch(updateAdmin({ id, adminData })).unwrap();
+      
       toast.success('Admin updated successfully');
+      handleSaveSuccess();
+      setAdminModalVisible(false);
     } catch (error) {
-      toast.error(error.message || 'Failed to update Admin');
+      console.error('Error updating admin:', error);
+      toast.error(error?.message || 'Failed to update admin');
     }
   };
   
@@ -131,7 +131,7 @@ const ViewAdmin = () => {
   const handleAddAdmin = async (AdminData) => {
     try {
       await dispatch(addAdmin(AdminData)).unwrap();
-      dispatch(fetchAdmins({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
+      handleSaveSuccess(); // Refresh admin list after add
       toast.success('Admin added successfully');
       setAdminModalVisible(false);
     } catch (error) {
@@ -190,16 +190,16 @@ const ViewAdmin = () => {
       </CCol>
 
       {/* Modals */}
-      {AdminModalVisible && (
-        <AdminModal
-  visible={AdminModalVisible}
-  setVisible={setAdminModalVisible}
-  editingAdmin={editingAdmin} // Pass the correct object here
-  handleSave={handleSave}
-  handleAddAdmin={handleAddAdmin}
-/>
+     {AdminModalVisible && (
+  <AdminModal
+    visible={AdminModalVisible}
+    setVisible={setAdminModalVisible}
+    editingAdmin={editingAdmin}
+    handleSave={editingAdmin ? handleUpdateAdmin : undefined} // Pass handleUpdateAdmin for edit, otherwise undefined
+    handleAddAdmin={handleAddAdmin}
+  />
+)}
 
-      )}
       <AdminDeleteModal
         visible={deleteModalVisible}
         setDeleteModalVisible={setDeleteModalVisible}

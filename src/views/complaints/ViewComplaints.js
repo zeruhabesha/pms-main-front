@@ -134,22 +134,21 @@ const ViewComplaints = () => {
       toast.error(error?.message || 'Failed to update complaint')
     }
   }
-  const handleAssign = async (complaintId, updatedData) => {
+  // Wrap with useCallback to prevent unnecessary recreations
+const handleAssign = useCallback(async (complaintId, updatedData) => {
     try {
-      await dispatch(assignComplaint({ id: complaintId, updatedData })).unwrap()
-      dispatch(
-        fetchComplaints({
-          page: currentPage,
-          limit: itemsPerPage,
-          search: searchTerm,
-          status: statusFilter,
-        }),
-      )
-      toast.success('Complaint assigned successfully')
+      await dispatch(assignComplaint({ 
+        id: complaintId, 
+        updatedData 
+      })).unwrap();
+      
+      toast.success('Assigned successfully');
     } catch (error) {
-      toast.error(error?.message || 'Failed to assign complaint')
+      toast.error(error?.message || 'Assignment failed');
     }
-  }
+  }, [dispatch]);
+  
+
   const handleAddComplaint = async (complaintData) => {
     try {
       await dispatch(addComplaint(complaintData)).unwrap()
@@ -183,10 +182,16 @@ const ViewComplaints = () => {
       toast.error(error?.message || 'Failed to submit feedback')
     }
   }
-  const AssignRoute = () => {
-    return <ComplaintAssign onAssign={handleAssign} />
-  }
 
+  console.log("Type of handleAssign in ViewComplaints:", typeof handleAssign); // ADD THIS LINE
+
+  const AssignRoute = () => {
+    console.log("AssignRoute component is rendering!");
+    console.log("handleAssign in AssignRoute:", handleAssign);
+    const propsForComplaintAssign = { onAssign: handleAssign }; // Explicitly create props object
+    console.log("Props being passed to ComplaintAssign:", propsForComplaintAssign); // Log props object
+    return <ComplaintAssign {...propsForComplaintAssign} /> // Use spread operator
+  }
   return (
     <CRow>
       <CCol xs={12}>
@@ -236,8 +241,7 @@ const ViewComplaints = () => {
             <Routes>
               <Route
                 path="/"
-                element={
-                  <ComplaintsTable
+                element={<ComplaintsTable
                     complaints={complaints}
                     totalComplaints={totalComplaints}
                     currentPage={currentPage}
@@ -250,11 +254,19 @@ const ViewComplaints = () => {
                   />
                 }
               />
-              <Route
-                path="/assign/:id"
-                element={location.pathname.startsWith('/assign/') ? <AssignRoute /> : null}
-              />
-            </Routes>
+  <Route
+  path="/assign/:id"
+  element={
+    <ComplaintAssign
+      onAssign={handleAssign}
+      currentPage={currentPage}
+      itemsPerPage={itemsPerPage}
+      searchTerm={searchTerm}
+      statusFilter={statusFilter}
+    />
+    }
+  />
+</Routes>
           </CCardBody>
         </CCard>
       </CCol>

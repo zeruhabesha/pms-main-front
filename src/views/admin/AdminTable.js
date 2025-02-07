@@ -16,10 +16,10 @@ import "../paggination.scss";
 import { CIcon } from '@coreui/icons-react';
 import { cilPencil, cilTrash, cilCheckCircle, cilXCircle, cilPlus, cilMinus, cilArrowTop, cilArrowBottom } from '@coreui/icons';
 import placeholder from '../image/placeholder.png';
-import { CSVLink } from 'react-csv'; // For CSV Export
-import { CopyToClipboard } from 'react-copy-to-clipboard'; // For Clipboard Copy
-import jsPDF from 'jspdf'; // For PDF Export
-import 'jspdf-autotable'; // For table styling in jsPDF
+import { CSVLink } from 'react-csv';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { cilFile, cilClipboard, cilCloudDownload } from '@coreui/icons';
 
 const AdminTable = ({
@@ -109,7 +109,7 @@ const AdminTable = ({
     role: admin?.role || 'N/A',
     status: admin?.status || 'N/A',
   }));
-  
+
   const clipboardData = admins
     .map(
       (admin, index) =>
@@ -118,11 +118,11 @@ const AdminTable = ({
         }`
     )
     .join('\n');
-  
+
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text('Admin Data', 14, 10);
-  
+
     const tableData = admins.map((admin, index) => [
       (currentPage - 1) * 10 + index + 1,
       admin?.name || 'N/A',
@@ -130,15 +130,15 @@ const AdminTable = ({
       admin?.role || 'N/A',
       admin?.status || 'N/A',
     ]);
-  
+
     doc.autoTable({
       head: [['#', 'Name', 'Email', 'Role', 'Status']],
       body: tableData,
       startY: 20,
     });
-  
+
     doc.save('admin_data.pdf');
-  };  
+  };
 
   return (
     <div>
@@ -175,7 +175,7 @@ const AdminTable = ({
           className="w-100%"
         />
       </div>
-  
+
       <div className="table-responsive">
         <CTable>
           <CTableHead>
@@ -210,84 +210,87 @@ const AdminTable = ({
             </CTableRow>
           </CTableHead>
           <CTableBody>
-            {sortedAdmins.map((admin, index) => (
-              <React.Fragment key={admin._id || `row-${index}`}>
-                <CTableRow>
-                  <CTableDataCell>{(currentPage - 1) * 10 + index + 1}</CTableDataCell>
-                  <CTableDataCell>
-                    <img
-                      src={admin?.photo ? `http://localhost:4000/api/v1/users/${admin._id}/photo` : placeholder}
-                      alt="User"
-                      style={{ width: '50px', height: '50px', borderRadius: '50%' }}
-                      className="me-2"
-                    />
-                    <CButton color="light" size="sm" onClick={() => handleEditPhoto(admin)} title="Edit photo">
-                      <CIcon icon={cilPencil} />
-                    </CButton>
-                  </CTableDataCell>
-                  <CTableDataCell>{admin?.name || 'N/A'}</CTableDataCell>
-                  <CTableDataCell>{admin?.email || 'N/A'}</CTableDataCell>
-                  <CTableDataCell>{admin?.role || 'N/A'}</CTableDataCell>
-                  <CTableDataCell>
-                    {admin?.status?.toLowerCase() === 'active' ? (
-                      <CIcon icon={cilCheckCircle} className="text-success" title="Active" />
-                    ) : (
-                      <CIcon icon={cilXCircle} className="text-danger" title="Inactive" />
-                    )}
-                  </CTableDataCell>
-                  <CTableDataCell>
-                    <CButton color="light" size="sm" className="me-2" onClick={() => handleEdit(admin)} title="Edit">
-                      <CIcon icon={cilPencil} />
-                    </CButton>
-                    <CButton
-                      color="light"
-                      style={{ color: `red` }}
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleDelete(admin)}
-                      title="Delete"
-                    >
-                      <CIcon icon={cilTrash} />
-                    </CButton>
-                    <CButton color="light" size="sm" onClick={() => toggleRow(admin._id)} title="Expand">
-                      <CIcon icon={expandedRows[admin._id] ? cilMinus : cilPlus} />
-                    </CButton>
-                  </CTableDataCell>
-                </CTableRow>
-                <CTableRow>
-                  <CTableDataCell colSpan="8" className="p-0 border-0">
-                    <CCollapse visible={expandedRows[admin?._id]}>
-                      <div className="p-3">
-                        <strong>Phone Number:</strong> {admin?.phoneNumber || 'N/A'}
-                        <br />
-                        <strong>Address:</strong> {admin?.address || 'N/A'}
-                        <br />
-                        <strong>Active Start Date:</strong> {formatDate(admin?.activeStart)}
-                        <br />
-                        <strong>Active End Date:</strong> {formatDate(admin?.activeEnd)}
-                        <br />
-                        <strong>Status:</strong>{' '}
-                        <span className={calculateRemainingDays(admin?.activeStart, admin?.activeEnd) === 'Expired' ? 'text-danger' : 'text-success'}>
-                          {calculateRemainingDays(admin?.activeStart, admin?.activeEnd)}
-                        </span>
-                      </div>
-                    </CCollapse>
-                  </CTableDataCell>
-                </CTableRow>
-              </React.Fragment>
-            ))}
-          </CTableBody>
+  {sortedAdmins.map((admin, index) => (
+    admin && admin._id ? ( // Add this conditional check
+      <React.Fragment key={admin._id || `row-${index}`}>
+        <CTableRow>
+          {/* ... rest of your CTableRow content using admin object ... */}
+          <CTableDataCell>{(currentPage - 1) * 10 + index + 1}</CTableDataCell>
+          <CTableDataCell>
+            <img
+              src={admin?.photo ? `http://localhost:4000/api/v1/users/${admin._id}/photo` : placeholder}
+              alt="User"
+              style={{ width: '50px', height: '50px', borderRadius: '50%' }}
+              className="me-2"
+            />
+            <CButton color="light" size="sm" onClick={() => handleEditPhoto(admin)} title="Edit photo">
+              <CIcon icon={cilPencil} />
+            </CButton>
+          </CTableDataCell>
+          <CTableDataCell>{admin?.name || 'N/A'}</CTableDataCell>
+          <CTableDataCell>{admin?.email || 'N/A'}</CTableDataCell>
+          <CTableDataCell>{admin?.role || 'N/A'}</CTableDataCell>
+          <CTableDataCell>
+            {admin?.status?.toLowerCase() === 'active' ? (
+              <CIcon icon={cilCheckCircle} className="text-success" title="Active" />
+            ) : (
+              <CIcon icon={cilXCircle} className="text-danger" title="Inactive" />
+            )}
+          </CTableDataCell>
+          <CTableDataCell>
+            <CButton color="light" size="sm" className="me-2" onClick={() => handleEdit(admin)} title="Edit">
+              <CIcon icon={cilPencil} />
+            </CButton>
+            <CButton
+              color="light"
+              style={{ color: `red` }}
+              size="sm"
+              className="me-2"
+              onClick={() => handleDelete(admin)}
+              title="Delete"
+            >
+              <CIcon icon={cilTrash} />
+            </CButton>
+            <CButton color="light" size="sm" onClick={() => toggleRow(admin._id)} title="Expand">
+              <CIcon icon={expandedRows[admin._id] ? cilMinus : cilPlus} />
+            </CButton>
+          </CTableDataCell>
+        </CTableRow>
+        <CTableRow>
+          <CTableDataCell colSpan="8" className="p-0 border-0">
+            <CCollapse visible={expandedRows[admin?._id]}>
+              <div className="p-3">
+                <strong>Phone Number:</strong> {admin?.phoneNumber || 'N/A'}
+                <br />
+                <strong>Address:</strong> {admin?.address || 'N/A'}
+                <br />
+                <strong>Active Start Date:</strong> {formatDate(admin?.activeStart)}
+                <br />
+                <strong>Active End Date:</strong> {formatDate(admin?.activeEnd)}
+                <br />
+                <strong>Status:</strong>{' '}
+                <span className={calculateRemainingDays(admin?.activeStart, admin?.activeEnd) === 'Expired' ? 'text-danger' : 'text-success'}>
+                  {calculateRemainingDays(admin?.activeStart, admin?.activeEnd)}
+                </span>
+              </div>
+            </CCollapse>
+          </CTableDataCell>
+        </CTableRow>
+      </React.Fragment>
+    ) : null // Render nothing if admin is undefined or doesn't have _id
+  ))}
+</CTableBody>
         </CTable>
       </div>
-  
+
       <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
         <span>Total Admins: {admins.length}</span>
   <CPagination className="d-inline-flex" >
     <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
-      &laquo;
+      «
     </CPaginationItem>
     <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>
-      &lsaquo;
+      ‹
     </CPaginationItem>
     {[...Array(totalPages)].map((_, index) => (
       <CPaginationItem
@@ -300,17 +303,17 @@ const AdminTable = ({
       </CPaginationItem>
     ))}
     <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)}>
-      &rsaquo;
+      ›
     </CPaginationItem>
     <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)}>
-      &raquo;
+      »
     </CPaginationItem>
   </CPagination>
 
 </div>
 
     </div>
-  );  
+  );
 };
 
 export default AdminTable;

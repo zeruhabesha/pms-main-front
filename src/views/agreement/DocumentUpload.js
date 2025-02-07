@@ -1,3 +1,4 @@
+// src/views/agreement/DocumentUpload.js
 import React from "react";
 import PropTypes from "prop-types";
 import { CCol, CFormInput, CButton } from "@coreui/react";
@@ -26,7 +27,7 @@ const DocumentUpload = ({ formData, fileErrors, handleFileChange, handleRemoveDo
           ))}
         </ul>
       )}
-      {formData.documents.length > 0 && (
+      {formData.documents && formData.documents.length > 0 && ( // Check if formData.documents exists before accessing length
         <ul className="mt-2">
           {formData.documents.map((file, index) => (
             <li key={index} className="d-flex align-items-center">

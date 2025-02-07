@@ -39,18 +39,21 @@ class ComplaintService {
 
     async updateComplaint(id, complaintData) {
         try {
-            const response = await httpCommon.put(`${this.baseURL}/${id}`, complaintData);
-          
+            const response = await httpCommon.put(`${this.baseURL}/${id}`, complaintData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
             return response.data.data;
         } catch (error) {
             throw this.handleError(error);
         }
     }
 
-    async assignComplaint(id, userId) {
+    async assignComplaint(id, userId) { // Expects id, userId
         try {
             const response = await httpCommon.put(`${this.baseURL}/assign/${id}`, { assignedTo: userId });
-             return response.data.data;
+            return response.data.data;
         } catch (error) {
             throw this.handleError(error);
         }

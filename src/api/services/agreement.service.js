@@ -1,3 +1,4 @@
+// src/services/agreement.service.js
 import httpCommon from "../http-common";
 import { encryptData, decryptData } from '../utils/crypto';
 
@@ -47,7 +48,6 @@ class AgreementService {
 }
 
 
-
     async fetchAgreement(id) {
         try {
              const response = await httpCommon.get(`${this.baseURL}/${id}`, {
@@ -60,6 +60,48 @@ class AgreementService {
     }
 
     async addAgreement(agreementData) {
+        try {
+            const formData = new FormData();
+
+            // Ensure property and tenant are ObjectIds
+            for (const key in agreementData) {
+                if (agreementData.hasOwnProperty(key)) {
+                    if (key !== 'documents') {
+                        // Convert numbers to strings for FormData
+                        if (typeof agreementData[key] === 'number') {
+                            formData.append(key, agreementData[key].toString());
+                        } else if (typeof agreementData[key] === 'object' && agreementData[key] !== null) {
+                            // Handle nested objects like paymentTerms
+                            formData.append(key, JSON.stringify(agreementData[key]));
+                        } else {
+                            formData.append(key, agreementData[key]);
+                        }
+                    }
+                }
+            }
+
+            // Append documents if they exist and are an array of files
+            if (agreementData.documents && Array.isArray(agreementData.documents)) {
+                agreementData.documents.forEach(file => { // Iterate and append each file
+                    formData.append('documents', file);
+                });
+            }
+
+            const response = await httpCommon.post(this.baseURL, formData, {
+                headers: {
+                    ...this.getAuthHeader(),
+                    "Content-Type": "multipart/form-data"
+                },
+            });
+
+            return response.data?.data;
+        } catch (error) {
+            throw this.handleError(error, "Failed to add agreement");
+        }
+    }
+
+
+    async updateAgreement(id, agreementData) {
         try {
             const formData = new FormData();
     
@@ -80,37 +122,26 @@ class AgreementService {
                 }
             }
     
-            // Append documents if they exist
-            if (agreementData.documents) {
-                formData.append('documents', agreementData.documents);
+            // Append new documents if provided
+            if (agreementData.documents && Array.isArray(agreementData.documents)) {
+                agreementData.documents.forEach(file => {
+                    formData.append('documents', file);
+                });
             }
     
-            const response = await httpCommon.post(this.baseURL, formData, {
-                headers: { 
-                    ...this.getAuthHeader(), 
+    
+            const response = await httpCommon.put(`${this.baseURL}/${id}`, formData, {
+                headers: {
+                    ...this.getAuthHeader(),
                     "Content-Type": "multipart/form-data"
                 },
-            });
-            console.log('ffjhgsjhgfjhgds',response.data?.data);
-
-            return response.data?.data;
-        } catch (error) {
-            throw this.handleError(error, "Failed to add agreement");
-        }
-    }
-
-
-    async updateAgreement(id, agreementData) {
-        try {
-            const response = await httpCommon.put(`${this.baseURL}/${id}`, agreementData, {
-                headers: { ...this.getAuthHeader(), ...this.defaultHeaders },
             });
             return response.data?.data;
         } catch (error) {
             throw this.handleError(error, "Failed to update agreement");
         }
     }
-
+    
     async deleteAgreement(id) {
         try {
             await httpCommon.delete(`${this.baseURL}/${id}`, {
@@ -135,7 +166,7 @@ class AgreementService {
 
         // Make the API call
         const response = await httpCommon.post(
-            `${this.baseURL}/${id}/file`,
+            `${this.baseURL}/${id}/file`, // Assuming this is the correct endpoint
             formData,
             {
                 headers: {
@@ -155,34 +186,34 @@ class AgreementService {
 
 
 
-    async downloadAgreementFile(fileName) {
-        if (!fileName) throw new Error("File name is required for download");
+async downloadAgreementFile(fileName) {
+    if (!fileName) throw new Error("File name is required for download");
 
-        try {
-             const response = await httpCommon.get(`${this.baseURL}/download/${fileName}`, {
-                headers: this.getAuthHeader(),
-                responseType: "blob",
-            });
+    try {
+         const response = await httpCommon.get(`${this.baseURL}/download/${fileName}`, {
+            headers: this.getAuthHeader(),
+            responseType: "blob",
+        });
 
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", fileName);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-             return  fileName;
-        } catch (error) {
-            throw this.handleError(error, "Failed to download file");
-        }
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+         return  fileName;
+    } catch (error) {
+        throw this.handleError(error, "Failed to download file");
     }
+}
 
-    handleError(error, defaultMessage) {
-        const message = error.response?.data?.message || error.message || defaultMessage;
-        const status = error.response?.status || 500;
-        console.error("API Error:", { message, status });
-        throw { message, status };
-    }
+handleError(error, defaultMessage) {
+    const message = error.response?.data?.message || error.message || defaultMessage;
+    const status = error.response?.status || 500;
+    console.error("API Error:", { message, status });
+    throw { message, status };
+}
 
 }
 

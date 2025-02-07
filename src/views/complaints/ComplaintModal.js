@@ -157,35 +157,42 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
 
     const handleSubmit = async () => {
         try {
-            const submissionData = new FormData();
-            submissionData.append('tenant', formData.tenant);
-            submissionData.append('property', formData.property); // This must be an ObjectId
-            submissionData.append('complaintType', formData.complaintType);
-            submissionData.append('description', formData.description);
-            submissionData.append('priority', formData.priority);
-    
-            if (formData.supportingFiles?.length > 0) {
-                formData.supportingFiles.forEach((file) =>
-                    submissionData.append('supportingFiles', file)
-                );
-            }
-    
-            if (editingComplaint) {
-                // Update complaint
-                await dispatch(updateComplaint({ id: editingComplaint._id, formData: submissionData })).unwrap();
-                toast.success('Complaint updated successfully');
-            } else {
-                // Add complaint
-                await dispatch(addComplaint(submissionData)).unwrap();
-                toast.success('Complaint added successfully');
-            }
-    
-            handleClose(); // Close the modal
-        } catch (error) {
-            console.error('Submit Error:', error);
-            toast.error('Failed to submit complaint. Please try again.');
+        const submissionData = new FormData();
+        submissionData.append('tenant', formData.tenant);
+        submissionData.append('property', formData.property);
+        submissionData.append('complaintType', formData.complaintType);
+        submissionData.append('description', formData.description);
+        submissionData.append('priority', formData.priority);
+        submissionData.append('status', formData.status);
+        
+        // Append files correctly
+        if (formData.supportingFiles?.length > 0) {
+          formData.supportingFiles.forEach((file, index) => {
+            submissionData.append('supportingFiles', file);
+          });
         }
-    };    
+        
+        if (editingComplaint) {
+          // Add _method parameter for PUT request
+          submissionData.append('_method', 'PUT');
+          const response = await dispatch(
+            updateComplaint({
+              id: editingComplaint._id,
+              formData: submissionData
+            })
+          ).unwrap();
+          toast.success('Complaint updated successfully');
+        } else {
+          await dispatch(addComplaint(submissionData)).unwrap();
+          toast.success('Complaint added successfully');
+        }
+        
+        handleClose();
+        } catch (error) {
+        console.error('Submission Error:', error);
+        toast.error(error.message || 'Failed to submit complaint');
+        }
+        };  
     
     
     

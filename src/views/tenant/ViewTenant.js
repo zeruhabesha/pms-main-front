@@ -38,20 +38,21 @@ const ViewTenant = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { tenants, loading, error, totalPages, currentPage } = useSelector(selectTenantState);
-
-  const [editPhotoVisible, setEditPhotoVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [tenantToDelete, setTenantToDelete] = useState(null);
   const [userToEdit, setUserToEdit] = useState(null);
   const itemsPerPage = 10;
   const [userPermissions, setUserPermissions] = useState(null);
+  const [shouldFetch, setShouldFetch] = useState(true); // New state to control fetching
+
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [tenantDetails, setTenantDetails] = useState(null);
 
   const [clearanceModalVisible, setClearanceModalVisible] = useState(false);
   const [selectedTenantForClearance, setSelectedTenantForClearance] = useState(null);
-  
+  const [editPhotoVisible, setEditPhotoVisible] = useState(false);
+
   const handleClearance = (tenantId) => {
     setSelectedTenantForClearance(tenantId);
     setClearanceModalVisible(true);
@@ -61,25 +62,61 @@ const ViewTenant = () => {
     dispatch(fetchTenants({ page: 1, limit: itemsPerPage, search }));
   };
 
+  const fetchTenantsData = useCallback(async (page, search) => {
+    if (!loading && shouldFetch) {
+      setShouldFetch(false); // Reset the fetch flag
+      try {
+        await dispatch(fetchTenants({ 
+          page, 
+          limit: itemsPerPage, 
+          search 
+        })).unwrap();
+      } catch (error) {
+        toast.error(error.message || 'Failed to fetch tenants');
+      }
+    }
+  }, [dispatch, loading, itemsPerPage]);
+
+  useEffect(() => {
+    setShouldFetch(true);
+    const timer = setTimeout(() => {
+      fetchTenantsData(1, searchTerm);
+    }, 500); // Debounce search
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (currentPage > 0) {
+      setShouldFetch(true);
+      fetchTenantsData(currentPage, searchTerm);
+    }
+  }, [currentPage]);
+
 // In ViewTenant.js
 useEffect(() => {
   const fetchData = async () => {
-    try {
-      await dispatch(fetchTenants({ 
-        page: currentPage, 
-        limit: itemsPerPage, 
-        search: searchTerm 
-      })).unwrap();
-    } catch (error) {
-      toast.error(error.message || 'Failed to fetch tenants');
+    if (!loading) { // Add loading check to prevent duplicate fetches
+      try {
+        await dispatch(fetchTenants({ 
+          page: currentPage, 
+          limit: itemsPerPage, 
+          search: searchTerm 
+        })).unwrap();
+      } catch (error) {
+        toast.error(error.message || 'Failed to fetch tenants');
+      }
     }
   };
   
   fetchData();
-}, [dispatch, currentPage, searchTerm, itemsPerPage]);
+}, [dispatch, currentPage, searchTerm]); // Remove itemsPerPage if it's constant
 
   useEffect(() => {
     const encryptedUser = localStorage.getItem('user');
+
+
+
     if (encryptedUser) {
       const decryptedUser = decryptData(encryptedUser);
       if (decryptedUser && decryptedUser.permissions) {
@@ -92,25 +129,32 @@ useEffect(() => {
     debounce((term) => {
       dispatch(fetchTenants({ page: 1, limit: itemsPerPage, search: term }));
     }, 500),
-    [dispatch, itemsPerPage]
+    [dispatch]
   );
 
-  const handleSearchChange = (e) => {
-    const term = e.target.value;
-    setSearchTerm(term);
-    debouncedSearch(term);
-  };
+   // Handle search change
+   const handleSearchChange = useCallback((e) => {
+    setSearchTerm(e.target.value);
+  }, []);
   
   useEffect(() => {
     dispatch(fetchTenants({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
   }, [dispatch, currentPage, searchTerm]);
 
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages && page !== currentPage) {
-      dispatch(fetchTenants({ page, limit: itemsPerPage, search: searchTerm }));
+  // const handlePageChange = (page) => {
+  //   if (page >= 1 && page <= totalPages && page !== currentPage) {
+  //     dispatch(fetchTenants({ page, limit: itemsPerPage, search: searchTerm }));
+  //   }
+  // };
+  const handlePageChange = useCallback((newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      dispatch(fetchTenants({ 
+        page: newPage, 
+        limit: itemsPerPage, 
+        search: searchTerm 
+      }));
     }
-  };
-
+  }, [currentPage, totalPages, searchTerm, dispatch, itemsPerPage]);
 
   const handleAddTenant = () => {
      navigate('/tenant/add')
@@ -173,6 +217,11 @@ useEffect(() => {
     }
 };
   
+const handleSearchTermChange = (term) => {
+  setSearchTerm(term); // Update parent's searchTerm state if needed
+  setCurrentPage(1); // Reset to first page on new search
+  handleFetchTenants({ search: term, page: 1 }); // Fetch with new search term and reset page
+};
   return (
     <CRow>
       <CCol xs={12}>
@@ -196,19 +245,20 @@ useEffect(() => {
                 {error.message || 'Failed to fetch tenants'}
               </CAlert>
             )}
-            <TenantTable
-  tenants={tenants}
-  currentPage={currentPage}
-  totalPages={totalPages}
-  searchTerm={searchTerm}
-  setSearchTerm={setSearchTerm}
-  handleEdit={handleEdit}
-  handleEditPhoto={handleEditPhoto}
-  handleDelete={handleDelete}
-  handlePageChange={handlePageChange}
-  handleFetchTenants={handleFetchTenants}
-  handleClearance={handleClearance} // Pass the handler
-/>
+           <TenantTable
+              tenants={tenants}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              searchTerm={searchTerm}
+              // setSearchTerm={handleSearchChange}
+              setSearchTerm={handleSearchTermChange}
+              handleEdit={handleEdit}
+              handleEditPhoto={handleEditPhoto}
+              handleDelete={handleDelete}
+              handlePageChange={handlePageChange}
+              loading={loading}
+              itemsPerPage={itemsPerPage}
+            />
 
           </CCardBody>
         </CCard>
