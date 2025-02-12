@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     CModal,
     CModalHeader,
@@ -29,8 +29,54 @@ import {
 } from '@coreui/icons';
 import { CIcon } from '@coreui/icons-react';
 import { format } from 'date-fns';
+import httpCommon from '../../api/http-common'; // Import your httpCommon
+import { decryptData } from '../../api/utils/crypto';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUserById } from '../../api/actions/userActions';
 
 const MaintenanceDetailsModal = ({ visible, setVisible, maintenance }) => {
+    const [assignedMaintainer, setAssignedMaintainer] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const dispatch = useDispatch();
+    const fetchedUser = useSelector((state) => state.user.user);
+
+    useEffect(() => {
+        const fetchAssignedMaintainer = async () => {
+            if (maintenance?.assignedMaintainer) {
+                setLoading(true);
+                setError(null);
+                try {
+                  // const encryptedUser = localStorage.getItem('token')
+                  // const token = decryptData(encryptedUser)
+                  //   const response = await httpCommon.get(`/users/${maintenance.assignedMaintainer}`, {
+                  //     headers: {
+                  //       Authorization: `Bearer ${token}`,
+                  //     },
+                  //   });
+                  //   setAssignedMaintainer(response.data.data);
+                  const result = await dispatch(fetchUserById(maintenance.assignedMaintainer)).unwrap()
+                  console.log("Dispatched fetchUserById:", result)
+
+                } catch (err) {
+                    setError(err.message || 'Failed to fetch assigned maintainer.');
+                    console.error('Failed to fetch assigned maintainer:', err);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchAssignedMaintainer();
+    }, [dispatch, maintenance?.assignedMaintainer]);
+
+    useEffect(() => {
+      if (fetchedUser) {
+        setAssignedMaintainer(fetchedUser);
+        console.log("Assigned Maintainer Set:", fetchedUser)
+      }
+    }, [fetchedUser]);
+
     if (!maintenance) return null;
 
    const formatDate = (dateString) => {
@@ -64,7 +110,11 @@ const MaintenanceDetailsModal = ({ visible, setVisible, maintenance }) => {
                 <CModalTitle>Maintenance Details</CModalTitle>
             </CModalHeader>
             <CModalBody>
-                <CTable bordered hover responsive>
+             {error && <p className="text-danger">{error}</p>}
+                {loading ? (
+                    <p>Loading Assigned Maintainer...</p>
+                ) : (
+                    <CTable bordered hover responsive>
                     <CTableHead>
                          <CTableRow>
                                 <CTableHeaderCell colSpan={2}><h5>
@@ -155,6 +205,14 @@ const MaintenanceDetailsModal = ({ visible, setVisible, maintenance }) => {
                                  <CTableDataCell><strong> <CIcon icon={cilDescription} className="me-1" />Notes:</strong></CTableDataCell>
                                  <CTableDataCell>{maintenance.notes || 'No notes available.'}</CTableDataCell>
                              </CTableRow>
+                             <CTableDataCell><strong><CIcon icon={cilUser} className="me-1" />Assigned Maintainer:</strong></CTableDataCell>
+
+                               {fetchedUser && (
+                                    <CTableRow>
+                                        <CTableDataCell><strong><CIcon icon={cilUser} className="me-1" />Assigned Maintainer:</strong></CTableDataCell>
+                                        <CTableDataCell>{fetchedUser.name || 'N/A'}</CTableDataCell>
+                                    </CTableRow>
+                                )}
                       </CTableBody>
                          <CTableHead>
                                  <CTableRow>
@@ -174,6 +232,7 @@ const MaintenanceDetailsModal = ({ visible, setVisible, maintenance }) => {
                               </CTableRow>
                          </CTableBody>
                 </CTable>
+                )}
                    {maintenance.photosOrVideos && maintenance.photosOrVideos.length > 0 && (
     <>
         <h5><CIcon icon={cilImage} className="me-1" />Photos/Videos</h5>
@@ -204,8 +263,8 @@ const MaintenanceDetailsModal = ({ visible, setVisible, maintenance }) => {
         <div className="d-flex flex-wrap mt-2">
             {maintenance.property.photos.map((photo, idx) => {
 
-                      const imageUrl = photo.url ? `http://localhost:4000${photo.url}` :
-                                            Object.values(photo)[0]  ? `http://localhost:4000/api/v1/properties/${Object.values(photo)[0]}` : null;
+                      const imageUrl = photo.url ? `https://pms-backend-sncw.onrender.com/api/v1/${photo.url}` :
+                                            Object.values(photo)[0]  ? `https://pms-backend-sncw.onrender.com/api/v1/properties/${Object.values(photo)[0]}` : null;
 
                 return imageUrl ?
                     (<img
@@ -233,7 +292,7 @@ const MaintenanceDetailsModal = ({ visible, setVisible, maintenance }) => {
                     <h5><CIcon icon={cilImage} className="me-1" />Tenant Photo</h5>
                     <div className="d-flex flex-wrap mt-2">
                      <img
-                             src={`http://localhost:4000/api/v1/tenants/${maintenance.tenant.photo}`}
+                             src={`https://pms-backend-sncw.onrender.com/api/v1/uploads/maintenance/${maintenance.tenant.photo}`}
                              alt="Tenant Photo"
                             style={{
                                   width: '100px',

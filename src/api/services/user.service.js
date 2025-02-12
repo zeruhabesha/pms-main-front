@@ -232,6 +232,18 @@ async addUser(userData) {
       }
     }
 
+    async getById(id) {
+      try {
+          const response = await httpCommon.get(`/users/${id}`, {
+              headers: this.getAuthHeader(),
+          });
+          return response.data?.data; // Return the user data
+      } catch (error) {
+          console.error(`Error fetching user with ID ${id}:`, error.response?.data || error.message);
+          throw this.handleError(error);
+      }
+  }
+  
     async deleteUser(id) {
         try {
           await httpCommon.delete(`/users/${id}`, {

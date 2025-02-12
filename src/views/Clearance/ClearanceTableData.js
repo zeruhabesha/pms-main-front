@@ -31,6 +31,7 @@ const ClearanceTableData = ({
     handleEdit,
     handleDelete,
     userPermissions,
+    role,
     dropdownOpen,
     toggleDropdown,
     closeDropdown,
@@ -110,26 +111,28 @@ const ClearanceTableData = ({
                                     <CIcon icon={cilOptions} />
                                 </CDropdownToggle>
                                 <CDropdownMenu>
-                                    {/* {userPermissions?.editClearance && ( */}
+                                {role === 'Tenant' && (
                                     <CDropdownItem onClick={() => handleEdit(clearance?._id)} title="Edit">
                                         <CIcon icon={cilPencil} className="me-2" />
                                         Edit
                                     </CDropdownItem>
-                                    {/* )} */}
-                                    {/* {userPermissions?.deleteClearance && ( */}
+                                    )}
+                                     {role === 'Tenant' && (
                                     <CDropdownItem onClick={() => handleDelete(clearance?._id)} title="Delete" style={{ color: 'red' }}>
                                         <CIcon icon={cilTrash} className="me-2" />
                                         Delete
                                     </CDropdownItem>
-                                    {/* )} */}
+                                    )}
                                     <CDropdownItem onClick={() => handleViewDetails(clearance?.tenant?._id)} title="View Details">
                                         <CIcon icon={cilFullscreen} className="me-2" />
                                         Details
                                     </CDropdownItem>
+                                    {role === 'Admin' && (
                                     <CDropdownItem onClick={() => handleApprove(clearance?.tenant?._id)} title="View Details">
                                         <CIcon icon={cilFullscreen} className="me-2" />
-                                        Details
+                                        Approve
                                     </CDropdownItem>
+                                    )}
                                 </CDropdownMenu>
                             </CDropdown>
                         </CTableDataCell>

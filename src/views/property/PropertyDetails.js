@@ -37,6 +37,7 @@ import { useDispatch } from "react-redux";
 import PropertyPhotoModal from "./PropertyPhotoModal";
 import PhotoDeleteModal from "./PhotoDeleteModal.js";
 import { toast } from "react-toastify";
+import { decryptData } from '../../api/utils/crypto'
 
 const PropertyDetails = () => {
   const [property, setProperty] = useState(null);
@@ -53,6 +54,10 @@ const PropertyDetails = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // These useState calls are OK, they are always called on every render.
+  const [userPermissions, setUserPermissions] = useState(null);
+  const [role, setRole] = useState(null);
 
   const handleCloseFullscreen = useCallback(() => {
     setFullscreenModalVisible(false);
@@ -84,6 +89,20 @@ const PropertyDetails = () => {
 
     fetchProperty();
   }, [dispatch, id]); // Ensure dependency array is correct
+
+  useEffect(() => {
+    try {
+      const encryptedUser = localStorage.getItem('user')
+      if (encryptedUser) {
+        const decryptedUser = decryptData(encryptedUser)
+        setUserPermissions(decryptedUser?.permissions || null)
+        setRole(decryptedUser?.role || null)
+      }
+    } catch (err) {
+      setError('Failed to load user permissions')
+      console.error('Permission loading error:', err)
+    }
+  }, [])
 
   if (!id) {
     return (
@@ -230,6 +249,98 @@ const PropertyDetails = () => {
       .join(", ");
   };
 
+  const PhotoItem = ({ photo, index }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    return (
+      <div
+        key={photo._id || index}
+        className="m-2"
+        style={{
+          position: "relative",
+          width: "200px",
+          height: "200px",
+          cursor: "pointer",
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <img
+          src={
+            photo?.url
+              ? `https://pms-backend-sncw.onrender.com/api/v1/${photo.url}`
+              : "/placeholder-image.png"
+          }
+          alt={`Property Photo ${index + 1}`}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            opacity: isHovered ? 0.6 : 1,
+            transition: "opacity 0.3s ease",
+          }}
+          onError={() =>
+            console.error(`Error loading photo at index ${index}`)
+          }
+        />
+        {isHovered && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+              }}
+            >
+              <CButton
+                color="light"
+                size="sm"
+                onClick={() =>
+                  handleExpandImage(
+                    photo?.url
+                      ? `https://pms-backend-sncw.onrender.com/api/v1/${photo.url}`
+                      : null
+                  )
+                }
+              >
+                <CIcon icon={cilFullscreen} />
+              </CButton>
+              {userPermissions?.editPropertyPhotos && (
+                <CButton
+                  color="light"
+                  size="sm"
+                  onClick={() => handlePhotoUpdate(photo)}
+                >
+                  <CIcon icon={cilPencil} />
+                </CButton>
+              )}
+              {userPermissions?.viewProperty && (
+                <CButton
+                  color="danger"
+                  size="sm"
+                  onClick={() => handlePhotoDeleteClick(photo)}
+                >
+                  <CIcon icon={cilTrash} />
+                </CButton>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       {/* <CButton color="secondary" onClick={() => navigate('/property')} className="mb-3">
@@ -319,82 +430,20 @@ const PropertyDetails = () => {
               <div className="d-flex flex-wrap">
                 {property.photos?.length ? (
                   property.photos.map((photo, index) => (
-                    <div
-                      key={photo._id || index}
-                      className="m-2"
-                      style={{
-                        position: "relative",
-                        width: "200px",
-                        height: "200px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <img
-                        src={
-                          photo?.url
-                            ? `http://localhost:4000/api/v1/${photo.url}`
-                            : "/placeholder-image.png"
-                        }
-                        alt={`Property Photo ${index + 1}`}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                        onError={() =>
-                          console.error(`Error loading photo at index ${index}`)
-                        }
-                      />
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          gap: "8px",
-                          marginTop: "10px",
-                        }}
-                      >
-                        <CButton
-                          color="light"
-                          size="sm"
-                          onClick={() =>
-                            handleExpandImage(
-                              photo?.url
-                                ? `http://localhost:4000/api/v1/${photo.url}`
-                                : null
-                            )
-                          }
-                        >
-                          <CIcon icon={cilFullscreen} />
-                        </CButton>
-
-                        <CButton
-                          color="light"
-                          size="sm"
-                          onClick={() => handlePhotoUpdate(photo)}
-                        >
-                          <CIcon icon={cilPencil} />
-                        </CButton>
-                        <CButton
-                          color="danger"
-                          size="sm"
-                          onClick={() => handlePhotoDeleteClick(photo)}
-                        >
-                          <CIcon icon={cilTrash} />
-                        </CButton>
-                      </div>
-                    </div>
+                    <PhotoItem key={photo._id || index} photo={photo} index={index} />
                   ))
                 ) : (
                   <p>No photos available.</p>
                 )}
               </div>
             </CCol>
+            {userPermissions?.editPropertyPhotos && (
             <CCol className="mt-6" xs={12}>
               <CButton color="dark" onClick={handleAddImageClick}>
                 <CIcon icon={cilImage} className="me-1" /> Add Photo
               </CButton>
             </CCol>
+            )}
           </CRow>
         </CCardBody>
       </CCard>

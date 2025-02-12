@@ -95,8 +95,8 @@ const PermissionsModal = ({ visible, user, onClose, handleSavePermissions }) => 
                 addProperty: 'Add Property',
                 editProperty: 'Edit Property',
                 deleteProperty: 'Delete Property',
-                viewProperty: 'View Property',
-                editPropertyPhotos: 'Edit Property Photos',
+                viewProperty: 'Delete Property Image',
+                editPropertyPhotos: 'Add & Edit Property Image',
             },
         },
         tenants: {

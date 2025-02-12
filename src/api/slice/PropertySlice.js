@@ -16,6 +16,9 @@ import {
   fetchProperties,
   softDeleteProperty, // Importing the soft delete action
   importProperties, //Import new action
+  getPropertiesByUser, // New actions
+  getPropertiesByUserAdmin,
+  getPropertyReport,
 } from "../actions/PropertyAction";
 
 const initialState = {
@@ -32,6 +35,7 @@ const initialState = {
   },
   selectedProperty: null,
   importResult: null, // Store import results - added it to listen results after new change or flag updates
+  report: null, // Add report to state if needed to store it
 };
 
 const propertySlice = createSlice({
@@ -57,6 +61,7 @@ const propertySlice = createSlice({
         hasPreviousPage: false,
       }),
         (state.importResult = null);
+        state.report = null; // Reset report as well
     },
   },
   extraReducers: (builder) => {
@@ -76,17 +81,14 @@ const propertySlice = createSlice({
       })
       .addCase(filterProperties.pending, (state) => {
         state.loading = true;
-        state.error = null;
       })
       .addCase(filterProperties.fulfilled, (state, action) => {
         state.loading = false;
-        state.properties = action.payload.properties;
-        state.pagination = action.payload.pagination;
+        state.properties = action.payload.properties || []; // ✅ Ensure payload is assigned properly
       })
       .addCase(filterProperties.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
-        state.properties = [];
+        state.error = action.payload || "Failed to fetch properties";
       })
       .addCase(addProperty.pending, (state) => {
         state.loading = true;
@@ -410,6 +412,47 @@ const propertySlice = createSlice({
         state.loading = false;
         state.error = action.payload;
         state.importResult = null;
+      })
+      .addCase(getPropertiesByUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getPropertiesByUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.properties = action.payload;
+        state.error = null;
+      })
+      .addCase(getPropertiesByUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(getPropertiesByUserAdmin.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getPropertiesByUserAdmin.fulfilled, (state, action) => {
+        state.loading = false;
+        state.properties = action.payload;
+        state.error = null;
+      })
+      .addCase(getPropertiesByUserAdmin.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(getPropertyReport.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.report = null; // Clear previous report
+      })
+      .addCase(getPropertyReport.fulfilled, (state, action) => {
+        state.loading = false;
+        state.report = action.payload; // Store report data
+        state.error = null;
+      })
+      .addCase(getPropertyReport.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+        state.report = null;
       });
   },
 });

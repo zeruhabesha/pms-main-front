@@ -1,11 +1,10 @@
-// ViewTenant.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { CRow, CCol, CCard, CCardHeader, CCardBody, CAlert } from '@coreui/react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  fetchTenants, 
-  deleteTenant, 
-  fetchTenantById  
+import {
+  fetchTenants,
+  deleteTenant,
+  fetchTenantById
 } from '../../api/actions/TenantActions';
 import TenantTable from './TenantTable';
 import TenantDeleteModal from './TenantDeleteModal';
@@ -66,10 +65,10 @@ const ViewTenant = () => {
     if (!loading && shouldFetch) {
       setShouldFetch(false); // Reset the fetch flag
       try {
-        await dispatch(fetchTenants({ 
-          page, 
-          limit: itemsPerPage, 
-          search 
+        await dispatch(fetchTenants({
+          page,
+          limit: itemsPerPage,
+          search
         })).unwrap();
       } catch (error) {
         toast.error(error.message || 'Failed to fetch tenants');
@@ -77,40 +76,40 @@ const ViewTenant = () => {
     }
   }, [dispatch, loading, itemsPerPage]);
 
+  // useEffect(() => {
+  //   setShouldFetch(true);
+  //   const timer = setTimeout(() => {
+  //     fetchTenantsData(1, searchTerm);
+  //   }, 500); // Debounce search
+
+  //   return () => clearTimeout(timer);
+  // }, [searchTerm]);
+
+  // useEffect(() => {
+  //   if (currentPage > 0) {
+  //     setShouldFetch(true);
+  //     fetchTenantsData(currentPage, searchTerm);
+  //   }
+  // }, [currentPage]);
+
+  // In ViewTenant.js
   useEffect(() => {
-    setShouldFetch(true);
-    const timer = setTimeout(() => {
-      fetchTenantsData(1, searchTerm);
-    }, 500); // Debounce search
-
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  useEffect(() => {
-    if (currentPage > 0) {
-      setShouldFetch(true);
-      fetchTenantsData(currentPage, searchTerm);
-    }
-  }, [currentPage]);
-
-// In ViewTenant.js
-useEffect(() => {
-  const fetchData = async () => {
-    if (!loading) { // Add loading check to prevent duplicate fetches
-      try {
-        await dispatch(fetchTenants({ 
-          page: currentPage, 
-          limit: itemsPerPage, 
-          search: searchTerm 
-        })).unwrap();
-      } catch (error) {
-        toast.error(error.message || 'Failed to fetch tenants');
+    const fetchData = async () => {
+      if (!loading) { // Add loading check to prevent duplicate fetches
+        try {
+          await dispatch(fetchTenants({
+            page: currentPage,
+            limit: itemsPerPage,
+            search: searchTerm
+          })).unwrap();
+        } catch (error) {
+          toast.error(error.message || 'Failed to fetch tenants');
+        }
       }
-    }
-  };
-  
-  fetchData();
-}, [dispatch, currentPage, searchTerm]); // Remove itemsPerPage if it's constant
+    };
+
+    fetchData();
+  }, [dispatch, currentPage, searchTerm]); // Remove itemsPerPage if it's constant
 
   useEffect(() => {
     const encryptedUser = localStorage.getItem('user');
@@ -125,18 +124,18 @@ useEffect(() => {
     }
   }, []);
 
-  const debouncedSearch = useCallback(
-    debounce((term) => {
-      dispatch(fetchTenants({ page: 1, limit: itemsPerPage, search: term }));
-    }, 500),
-    [dispatch]
-  );
+  // const debouncedSearch = useCallback(
+  //   debounce((term) => {
+  //     dispatch(fetchTenants({ page: 1, limit: itemsPerPage, search: term }));
+  //   }, 500),
+  //   [dispatch]
+  // );
 
-   // Handle search change
-   const handleSearchChange = useCallback((e) => {
+  // Handle search change
+  const handleSearchChange = useCallback((e) => {
     setSearchTerm(e.target.value);
   }, []);
-  
+
   useEffect(() => {
     dispatch(fetchTenants({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
   }, [dispatch, currentPage, searchTerm]);
@@ -146,22 +145,26 @@ useEffect(() => {
   //     dispatch(fetchTenants({ page, limit: itemsPerPage, search: searchTerm }));
   //   }
   // };
-  const handlePageChange = useCallback((newPage) => {
-    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
-      dispatch(fetchTenants({ 
-        page: newPage, 
-        limit: itemsPerPage, 
-        search: searchTerm 
-      }));
-    }
-  }, [currentPage, totalPages, searchTerm, dispatch, itemsPerPage]);
+  const handlePageChange = useCallback(
+    (newPage) => {
+      if (newPage < 1 || newPage > totalPages || newPage === currentPage) return;
+
+      dispatch(fetchTenants({ page: newPage, limit: itemsPerPage, search: searchTerm }))
+        .unwrap()
+        .catch(error => {
+          console.log(error)
+          toast.error(error.message || 'Failed to fetch tenants');
+        });
+    },
+    [dispatch, currentPage, totalPages, searchTerm, itemsPerPage]
+  );
 
   const handleAddTenant = () => {
-     navigate('/tenant/add')
-   };
+    navigate('/tenant/add')
+  };
   const handleEdit = (id) => {
-     navigate(`/tenant/edit/${id}`);
-   };
+    navigate(`/tenant/edit/${id}`);
+  };
   const handleDelete = (id, tenant) => {
     setTenantToDelete({ id, ...tenant });
     setDeleteModalVisible(true);
@@ -202,26 +205,25 @@ useEffect(() => {
   };
 
   const handleViewDetails = async (id) => {
-    try {
-      const response = await dispatch(fetchTenantById(id)).unwrap(); // Changed from getTenantById to fetchTenantById
-  
-      if (!response) {
-        throw new Error('Tenant details not found');
+      try {
+          const response = await dispatch(fetchTenantById(id)).unwrap();
+
+          if (!response) {
+              throw new Error('Tenant details not found');
+          }
+
+          setTenantDetails(response);
+          setDetailsModalVisible(true);
+      } catch (error) {
+          console.error('Error fetching tenant details:', error);
+          toast.error(error.message || 'Failed to fetch tenant details');
       }
-  
-      setTenantDetails(response);
-      setDetailsModalVisible(true);
-    } catch (error) {
-      console.error('Error fetching tenant details:', error);
-      toast.error(error.message || 'Failed to fetch tenant details');
-    }
-};
-  
-const handleSearchTermChange = (term) => {
-  setSearchTerm(term); // Update parent's searchTerm state if needed
-  setCurrentPage(1); // Reset to first page on new search
-  handleFetchTenants({ search: term, page: 1 }); // Fetch with new search term and reset page
-};
+  };
+
+  const handleSearchTermChange = (term) => {
+    setSearchTerm(term); // Update parent's searchTerm state if needed
+    dispatch(fetchTenants({search: term, page: 1 })); // Fetch with new search term and reset page
+  };
   return (
     <CRow>
       <CCol xs={12}>
@@ -229,15 +231,15 @@ const handleSearchTermChange = (term) => {
           <CCardHeader className="d-flex justify-content-between align-items-center">
             <strong>Tenant List</strong>
             {userPermissions?.addTenant && (
-              <div id="container">
-                <button className="learn-more" onClick={handleAddTenant}>
-                  <span className="circle" aria-hidden="true">
-                    <span className="icon arrow"></span>
-                  </span>
-                  <span className="button-text">Add Tenant</span>
-                </button>
-              </div>
-            )}
+            <div id="container">
+              <button className="learn-more" onClick={handleAddTenant}>
+                <span className="circle" aria-hidden="true">
+                  <span className="icon arrow"></span>
+                </span>
+                <span className="button-text">Add Tenant</span>
+              </button>
+            </div>
+             )} 
           </CCardHeader>
           <CCardBody>
             {error && (
@@ -258,6 +260,9 @@ const handleSearchTermChange = (term) => {
               handlePageChange={handlePageChange}
               loading={loading}
               itemsPerPage={itemsPerPage}
+
+               handleViewDetails={handleViewDetails}
+               handleClearance={handleClearance}
             />
 
           </CCardBody>
@@ -283,9 +288,9 @@ const handleSearchTermChange = (term) => {
         onSavePhoto={handleSavePhoto}
       />
       <TenantDetailsModal
-        visible={detailsModalVisible}
-        setVisible={setDetailsModalVisible}
-        tenantDetails={tenantDetails}
+          visible={detailsModalVisible}
+          setVisible={setDetailsModalVisible}
+          tenantDetails={tenantDetails}
       />
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </CRow>

@@ -1,4 +1,3 @@
-// frontend/src/api/actions/userActions.js
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import UserService from '../services/user.service';
 
@@ -135,6 +134,19 @@ export const forgotPassword = createAsyncThunk( // Add forgotPassword async thun
             }
         } catch (error) {
             return rejectWithValue({ message: error.message || 'An error occurred while requesting password reset' });
+        }
+    }
+);
+
+// Fetch User by ID
+export const fetchUserById = createAsyncThunk(
+    'user/fetchUserById',
+    async (id, { rejectWithValue }) => {
+        try {
+            const user = await UserService.getById(id);
+            return user;
+        } catch (error) {
+            return rejectWithValue(error.message);
         }
     }
 );

@@ -218,7 +218,7 @@ const AdminTable = ({
           <CTableDataCell>{(currentPage - 1) * 10 + index + 1}</CTableDataCell>
           <CTableDataCell>
             <img
-              src={admin?.photo ? `http://localhost:4000/api/v1/users/${admin._id}/photo` : placeholder}
+              src={admin?.photo ? `https://pms-backend-sncw.onrender.com/api/v1/users/${admin._id}/photo` : placeholder}
               alt="User"
               style={{ width: '50px', height: '50px', borderRadius: '50%' }}
               className="me-2"

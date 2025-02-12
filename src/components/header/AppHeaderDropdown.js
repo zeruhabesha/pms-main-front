@@ -103,7 +103,7 @@
 
 
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CAvatar,
   CDropdown,
@@ -117,6 +117,7 @@ import { cilLockLocked, cilUser } from '@coreui/icons';
 import CIcon from '@coreui/icons-react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import avatar8 from './../../assets/images/avatars/8.jpg';
+import { decryptData } from '../../api/utils/crypto'
 
 const AppHeaderDropdown = () => {
   const navigate = useNavigate();
@@ -135,11 +136,27 @@ const AppHeaderDropdown = () => {
   const handleProfileNavigation = () => {
     navigate('/profile'); // Navigate to the profile page
   };
+  const [id, setUserid] = useState(null)
+  useEffect(() => {
+    try {
+      const encryptedUser = localStorage.getItem('user')
+      if (encryptedUser) {
+        const decryptedUser = decryptData(encryptedUser)
+        setUserid(decryptedUser?._id || null)
+      }
+    } catch (err) {
+      setError('Failed to load user permissions')
+      console.error('Permission loading error:', err)
+    }
+  }, [])
 
   return (
     <CDropdown variant="nav-item">
       <CDropdownToggle placement="bottom-end" className="py-0 pe-0" caret={false}>
-        <CAvatar src={avatar8} size="md" />
+        <CAvatar 
+        // src={avatar8} 
+        src={`https://pms-backend-sncw.onrender.com/api/v1/users/${id}/photo`}
+        size="md" />
       </CDropdownToggle>
       <CDropdownMenu className="pt-0" placement="bottom-end">
         <CDropdownHeader className="bg-body-secondary fw-semibold my-2">Settings</CDropdownHeader>

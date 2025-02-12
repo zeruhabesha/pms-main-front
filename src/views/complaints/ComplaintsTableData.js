@@ -113,12 +113,16 @@ const ComplaintsTableData = ({
                                         <CIcon icon={cilOptions} />
                                     </CDropdownToggle>
                                     <CDropdownMenu>
+                                    {role === 'Tenant' && (
                                         <CDropdownItem onClick={() => handleEdit(complaint)}>
                                             <CIcon icon={cilPencil} className="me-2" /> Edit
                                         </CDropdownItem>
+                                    )}
+                                    {role === 'Tenant' && (
                                         <CDropdownItem onClick={() => handleDelete(complaint)}>
                                             <CIcon icon={cilTrash} className="me-2" /> Delete
                                         </CDropdownItem>
+                                    )}
                                         <CDropdownItem onClick={() => handleModalOpen(complaint)}>
                                             Details
                                         </CDropdownItem>

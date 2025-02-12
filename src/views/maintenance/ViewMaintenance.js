@@ -1,10 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import {
-  fetchMaintenances,
-  deleteMaintenance,
-  fetchMaintenanceById,
-} from '../../api/actions/MaintenanceActions'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   CRow,
   CCol,
@@ -27,6 +21,9 @@ import 'jspdf-autotable'
 import { useNavigate } from 'react-router-dom'
 import MaintenanceDetailsModal from './MaintenanceDetailsModal'
 import MaintenanceDeleteModal from './MaintenanceDeleteModal'
+import { fetchMaintenances, updateMaintenance, deleteMaintenance, fetchMaintenanceById } from '../../api/actions/MaintenanceActions' // **Import deleteMaintenance**
+import { useDispatch, useSelector } from 'react-redux'
+import MaintenanceCompletionModal from './MaintenanceCompletionModal'
 
 const ViewMaintenance = () => {
   const dispatch = useDispatch()
@@ -48,7 +45,11 @@ const ViewMaintenance = () => {
 
   const [modalStates, setModalStates] = useState({
     details: { visible: false, maintenance: null },
+    completion: { visible: false, maintenance: null },
   })
+
+ const [completionModalVisible, setCompletionModalVisible] = useState(false);
+ const [maintenanceToComplete, setMaintenanceToComplete] = useState(null);
 
   const [userPermissions, setUserPermissions] = useState(null)
   const [role, setRole] = useState(null)
@@ -120,12 +121,13 @@ const ViewMaintenance = () => {
   const confirmDelete = async () => {
     try {
       if (maintenanceToDelete?._id) {
-        await dispatch(deleteMaintenance(maintenanceToDelete._id))
+        await dispatch(deleteMaintenance(maintenanceToDelete._id)).unwrap(); // Await and unwrap the promise
         fetchMaintenanceRequests() // Refresh the list
         setDeleteModalVisible(false)
       }
     } catch (error) {
       console.error('Delete error:', error)
+      // Handle error appropriately, e.g., show an error message to the user
     }
   }
 
@@ -217,34 +219,23 @@ const ViewMaintenance = () => {
     }
   }
   const handleViewDetails = (maintenance) => {
-    handleOpenModal('details', maintenance)
-  }
-
-  const handleAssign = (maintenance) => {
-    navigate(`/maintenance/assign/${maintenance._id}`)
-  }
-
-  const handleOpenModal = (type, maintenance = null) => {
     setModalStates((prev) => ({
       ...prev,
-      [type]: {
-        ...prev[type],
+      details: {
+        ...prev.details,
         visible: true,
         maintenance,
       },
     }))
   }
+  const handleAssign = (maintenance) => {
+      navigate(`/maintenance/assign/${maintenance._id}`)
+    }
 
-  const handleCloseModal = (type) => {
-    setModalStates((prev) => ({
-      ...prev,
-      [type]: {
-        ...prev[type],
-        visible: false,
-        maintenance: null,
-      },
-    }))
-  }
+  const handleDone = (maintenance) => {
+    setMaintenanceToComplete(maintenance);
+    setCompletionModalVisible(true);
+  };
 
   return (
     <CRow>
@@ -253,15 +244,15 @@ const ViewMaintenance = () => {
           <CCardHeader className="d-flex justify-content-between align-items-center">
             <strong>Maintenance Records</strong>
             {role === 'Tenant' && (
-              <div id="container">
-                <button className="learn-more" onClick={handleAddRequest}>
-                  <span className="circle" aria-hidden="true">
-                    <span className="icon arrow"></span>
-                  </span>
-                  <span className="button-text">Add Request</span>
-                </button>
-              </div>
-            )}
+            <div id="container">
+              <button className="learn-more" onClick={handleAddRequest}>
+                <span className="circle" aria-hidden="true">
+                  <span className="icon arrow"></span>
+                </span>
+                <span className="button-text">Add Request</span>
+              </button>
+            </div>
+             )} 
           </CCardHeader>
           <CCardBody>
             <div className="d-flex mb-3 gap-2">
@@ -304,12 +295,14 @@ const ViewMaintenance = () => {
               <div className="text-danger">{error}</div>
             ) : maintenances && maintenances.length > 0 ? (
               <MaintenanceTable
-                maintenanceList={maintenances.filter(Boolean).map((maintenance) => ({
-                  ...maintenance,
-                  tenantName: maintenance.tenant?.name || 'N/A',
-                  email: maintenance.tenant?.email || 'N/A',
-                  phone: maintenance.tenant?.phoneNumber || 'N/A',
-                }))}
+                maintenanceList={maintenances
+                  .filter(Boolean)
+                  .map((maintenance) => ({
+                    ...maintenance,
+                    tenantName: maintenance.tenant?.name || 'N/A',
+                    email: maintenance.tenant?.email || 'N/A',
+                    phone: maintenance.tenant?.phoneNumber || 'N/A',
+                  }))}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 totalRequests={totalMaintenanceRequests}
@@ -318,8 +311,9 @@ const ViewMaintenance = () => {
                 handleDelete={handleDelete}
                 handleEdit={handleEdit}
                 handleViewDetails={handleViewDetails}
-                handleAssign={handleAssign}
+                handleAssign={handleAssign} // Pass handleAssign here
                 handlePageChange={handlePageChange}
+                handleDone={handleDone} // Pass handleDone here
               />
             ) : (
               <div className="text-center text-muted">No maintenance records found.</div>
@@ -329,7 +323,13 @@ const ViewMaintenance = () => {
       </CCol>
       <MaintenanceDetailsModal
         visible={modalStates.details.visible}
-        setVisible={() => handleCloseModal('details')}
+        setVisible={() => setModalStates((prev) => ({
+          ...prev,
+          details: {
+            ...prev.details,
+            visible: false,
+          },
+        }))}
         maintenance={modalStates.details.maintenance}
       />
       <MaintenanceDeleteModal
@@ -337,6 +337,11 @@ const ViewMaintenance = () => {
         setDeleteModalVisible={setDeleteModalVisible}
         maintenanceToDelete={maintenanceToDelete}
         confirmDelete={confirmDelete}
+      />
+      <MaintenanceCompletionModal
+        visible={completionModalVisible}
+        setCompletionModalVisible={setCompletionModalVisible}
+        maintenanceToComplete={maintenanceToComplete}
       />
     </CRow>
   )

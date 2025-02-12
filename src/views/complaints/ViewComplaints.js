@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo,useCallback  } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { CRow, CCol, CCard, CCardHeader, CCardBody, CAlert, CFormSelect } from '@coreui/react'
 import {
@@ -18,6 +18,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import { createSelector } from 'reselect'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import ComplaintAssign from './ComplaintAssign' // Import the component
+import { decryptData } from '../../api/utils/crypto'
 
 const selectComplaintState = (state) =>
   state.complaint || {
@@ -67,6 +68,20 @@ const ViewComplaints = () => {
       }),
     )
   }, [dispatch, currentPage, searchTerm, statusFilter])
+    const [userPermissions, setUserPermissions] = useState(null);
+  const [role, setRole] = useState(null)
+useEffect(() => {
+    try {
+      const encryptedUser = localStorage.getItem('user')
+      if (encryptedUser) {
+        const decryptedUser = decryptData(encryptedUser)
+        setUserPermissions(decryptedUser?.permissions || null)
+        setRole(decryptedUser?.role || null)
+      }
+    } catch (err) {
+      console.error('Permission loading error:', err)
+    }
+  }, [])
 
   const handlePageChange = (page) => {
     if (page !== currentPage) {
@@ -137,17 +152,17 @@ const ViewComplaints = () => {
   // Wrap with useCallback to prevent unnecessary recreations
 const handleAssign = useCallback(async (complaintId, updatedData) => {
     try {
-      await dispatch(assignComplaint({ 
-        id: complaintId, 
-        updatedData 
+      await dispatch(assignComplaint({
+        id: complaintId,
+        updatedData
       })).unwrap();
-      
+
       toast.success('Assigned successfully');
     } catch (error) {
       toast.error(error?.message || 'Assignment failed');
     }
   }, [dispatch]);
-  
+
 
   const handleAddComplaint = async (complaintData) => {
     try {
@@ -192,13 +207,17 @@ const handleAssign = useCallback(async (complaintId, updatedData) => {
     console.log("Props being passed to ComplaintAssign:", propsForComplaintAssign); // Log props object
     return <ComplaintAssign {...propsForComplaintAssign} /> // Use spread operator
   }
+
+  
+
   return (
     <CRow>
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader className="d-flex justify-content-between align-items-center">
             <strong>Complaint</strong>
-            <div id="container">
+            {role === 'Tenant' && (
+              <div id="container">
               <button
                 className="learn-more"
                 onClick={() => {
@@ -212,6 +231,7 @@ const handleAssign = useCallback(async (complaintId, updatedData) => {
                 <span className="button-text">Add Complaint</span>
               </button>
             </div>
+            )}
           </CCardHeader>
           <CCardBody>
             {error && (
@@ -275,8 +295,6 @@ const handleAssign = useCallback(async (complaintId, updatedData) => {
           visible={complaintModalVisible}
           setVisible={setComplaintModalVisible}
           editingComplaint={editingComplaint}
-          handleSave={handleSave}
-          handleAddComplaint={handleAddComplaint}
         />
       )}
       <ComplaintDeleteModal

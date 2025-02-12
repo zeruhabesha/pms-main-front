@@ -44,7 +44,7 @@ const guestSlice = createSlice({
             })
             .addCase(createGuest.fulfilled, (state, action) => {
                 state.loading = false;
-               // state.guests.push(action.payload.guest);
+                // state.guests.push(action.payload.guest);  // Adjust based on where you're displaying guests.
                 state.totalGuests = state.totalGuests + 1;
             })
             .addCase(createGuest.rejected, (state, action) => {
@@ -58,7 +58,7 @@ const guestSlice = createSlice({
             })
             .addCase(fetchGuests.fulfilled, (state, action) => {
                 state.loading = false;
-                state.guests = action.payload.data.guests;
+                state.guests = action.payload.data.guests;  // Ensure the array is accessed correctly
                 state.totalGuests = action.payload.data.totalGuests;
                 state.totalPages = action.payload.data.totalPages;
                 state.currentPage = action.payload.data.currentPage;
@@ -74,7 +74,7 @@ const guestSlice = createSlice({
             })
             .addCase(fetchGuestById.fulfilled, (state, action) => {
                 state.loading = false;
-                state.guestDetails = action.payload.guest;
+                state.guestDetails = action.payload; // Ensure you're assigning the single guest object directly
             })
             .addCase(fetchGuestById.rejected, (state, action) => {
                 state.loading = false;
@@ -87,7 +87,7 @@ const guestSlice = createSlice({
             })
             .addCase(updateGuest.fulfilled, (state, action) => {
                 state.loading = false;
-                const updatedGuest = action.payload.guest;
+                const updatedGuest = action.payload;
                 state.guests = state.guests.map((guest) =>
                     guest._id === updatedGuest._id ? updatedGuest : guest
                 );

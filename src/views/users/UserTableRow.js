@@ -23,7 +23,7 @@ const UserTableRow = ({
             <CTableDataCell>
               
                 <img
-                src={`http://localhost:4000/api/v1/users/${user._id}/photo`}
+                src={`https://pms-backend-sncw.onrender.com/api/v1/users/${user._id}/photo`}
                     // src={
                     //     // user?.photo 
                     //     // ? 

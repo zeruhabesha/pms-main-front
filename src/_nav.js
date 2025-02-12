@@ -217,30 +217,6 @@ const _nav = (unreadCounts = {}) => {
               to: '/agreement',
               icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
             },
-            {
-              component: CNavItem,
-              name: 'Maintenance',
-              to: '/maintenance',
-              icon: <CIcon icon={cilSettings} customClassName="nav-icon" />,
-              badge: getBadge("maintenance"),
-
-            },
-            {
-              component: CNavItem,
-              name: 'Complaints',
-              to: '/complaint',
-              icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
-            },
-            {
-              component: CNavItem,
-              name: 'Guest',
-              to: '/guest',
-              icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
-              badge: {
-                color: 'warning',
-                text: '1',
-              },
-            },
           ]
         : []),
 

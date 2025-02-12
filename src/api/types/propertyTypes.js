@@ -16,4 +16,7 @@ export const PropertyTypes = {
   UPDATE_PHOTO: 'property/updatePhoto',
   ADD_PROPERTY_IMAGE: 'property/addPropertyImage',
   IMPORT_PROPERTIES: 'property/importProperties', // Added for excel import
+  GET_PROPERTIES_BY_USER: 'property/getPropertiesByUser', // New action type
+  GET_PROPERTIES_BY_USER_ADMIN: 'property/getPropertiesByUserAdmin', // New action type
+  GET_PROPERTY_REPORT: 'property/getPropertyReport', // New action type
 };

@@ -44,16 +44,25 @@ import 'jspdf-autotable';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { decryptData } from '../../api/utils/crypto';
-import ClearanceTableActions from "./ClearanceTableActions";
 import { formatDate } from "../../api/utils/dateFormatter";
 import { setSelectedClearance } from '../../api/slice/clearanceSlice';
-import { deleteClearance, updateClearance } from '../../api/actions/ClearanceAction';
+// import { deleteClearance, updateClearance, fetchClearances } from '../../api/actions/ClearanceAction';
+import { deleteClearance, updateClearance, fetchClearances, fetchClearanceById } from '../../api/actions/ClearanceAction';
 import debounce from 'lodash/debounce';
+import ClearanceTableData from "./ClearanceTableData";
 
 const ClearanceTable = ({
+    clearances,
+    currentPage,
+    totalPages,
     searchTerm,
     setSearchTerm,
     itemsPerPage = 10,
+    handleViewDetails,
+    handleEditClearance,
+    handleDelete,
+    setAddClearanceModalVisible,
+    handlePageChange
 }) => {
     const dispatch = useDispatch();
     const [modalVisible, setModalVisible] = useState(false);
@@ -62,16 +71,10 @@ const ClearanceTable = ({
     const [userPermissions, setUserPermissions] = useState(null);
     const dropdownRefs = useRef({});
     const [dropdownOpen, setDropdownOpen] = useState(null);
-    const { clearances, loading, error, totalPages, currentPage, totalClearances } = useSelector((state) => ({
-        clearances: state.clearance.clearances || [],
-        loading: state.clearance.loading,
-        error: state.clearance.error,
-        totalPages: state.clearance.totalPages || 1,
-        currentPage: state.clearance.currentPage || 1,
-        totalClearances: state.clearance.totalClearances || 0,
-    }));
     const [approveModalVisible, setApproveModalVisible] = useState(false);
     const [clearanceToApprove, setClearanceToApprove] = useState(null);
+    const [statusFilter, setStatusFilter] = useState('');
+    const [role, setRole] = useState(null)
 
     const handleClickOutside = useCallback((event) => {
         if (dropdownOpen) {
@@ -88,18 +91,21 @@ const ClearanceTable = ({
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [handleClickOutside]);
-    useEffect(() => {
-    }, [dispatch, currentPage, searchTerm, itemsPerPage]); //Depend only on necessary parameters
+
 
     useEffect(() => {
-        const encryptedUser = localStorage.getItem('user');
-        if (encryptedUser) {
-            const decryptedUser = decryptData(encryptedUser);
-            if (decryptedUser && decryptedUser.permissions) {
-                setUserPermissions(decryptedUser.permissions);
-            }
+        try {
+          const encryptedUser = localStorage.getItem('user')
+          if (encryptedUser) {
+            const decryptedUser = decryptData(encryptedUser)
+            setUserPermissions(decryptedUser?.permissions || null)
+            setRole(decryptedUser?.role || null)
+          }
+        } catch (err) {
+          setError('Failed to load user permissions')
+          console.error('Permission loading error:', err)
         }
-    }, []);
+      }, [])
 
 
     const handleSort = (key) => {
@@ -169,9 +175,9 @@ const ClearanceTable = ({
 
     const debouncedSearch = useCallback(
         debounce((term) => {
-            dispatch(fetchClearances({ page: 1, limit: itemsPerPage, search: term }));
+            dispatch(fetchClearances({ page: 1, limit: itemsPerPage, search: term, status: statusFilter }));
         }, 500),
-        [dispatch, itemsPerPage]
+        [dispatch, itemsPerPage, statusFilter]
     );
 
     const handleSearchChange = (e) => {
@@ -179,25 +185,28 @@ const ClearanceTable = ({
         setSearchTerm(term);
         debouncedSearch(term);
     };
+    const handleEdit = async (clearanceId) => {
+        try {
+            const response = await dispatch(fetchClearanceById(clearanceId)).unwrap()
 
-    const handlePageChange = (page) => {
-        if (page >= 1 && page <= totalPages) {
-            dispatch(fetchClearances({ page, limit: itemsPerPage, search: searchTerm }));
-        }
-    };
-    const handleEdit = (id) => {
-        console.log(id);
-        toast.error("Not implemented for now");
-    };
+            if (response) {
+                 setSelectedClearanceData(response);
+                 handleEditClearance(response)
+            } else {
+                 console.error('No data returned for the selected clearance.')
+                 alert('No data returned for the selected clearance.')
+            }
+       } catch (error) {
+            console.error('Failed to fetch clearance details for editing:', error)
+            alert('Failed to fetch clearance details for editing. Please try again.')
+       }
+    }
     const handleApprove = (clearance) => {
         setClearanceToApprove(clearance);
         setApproveModalVisible(true);
     };
-    const handleDelete = (id) => {
-        if (window.confirm("Are you sure you want to delete this clearance request?")) {
-            dispatch(deleteClearance(id));
-            toast.success('Clearance deleted successfully');
-        }
+    const handleDeleteItem = (id) => {
+        handleDelete(id)
     };
     const toggleDropdown = (clearanceId) => {
         setDropdownOpen(prevState => prevState === clearanceId ? null : clearanceId);
@@ -208,6 +217,7 @@ const ClearanceTable = ({
     const handleModalOpen = (clearance) => {
         setSelectedClearanceData(clearance);
         setModalVisible(true);
+         handleViewDetails(clearance?.tenant?._id);
     };
 
     const handleModalClose = () => {
@@ -236,8 +246,9 @@ const ClearanceTable = ({
             return;
         }
         try {
-            await dispatch(updateClearance(clearanceToApprove._id, { ...clearanceToApprove, status: "Approved" })).unwrap();
+            await dispatch(updateClearance({id: clearanceToApprove._id, clearanceData: { ...clearanceToApprove, status: "Approved" }})).unwrap();
             toast.success('Clearance approved successfully');
+            dispatch(fetchClearances({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
             setApproveModalVisible(false);
         } catch (error) {
             toast.error(error?.message || 'Failed to approve clearance request');
@@ -249,8 +260,9 @@ const ClearanceTable = ({
              return;
          }
         try {
-            await dispatch(updateClearance(clearanceToApprove._id, { ...clearanceToApprove, status: "Rejected" })).unwrap();
+             await dispatch(updateClearance({id: clearanceToApprove._id, clearanceData: { ...clearanceToApprove, status: "Rejected" }})).unwrap();
             toast.success('Clearance rejected successfully');
+            dispatch(fetchClearances({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
             setApproveModalVisible(false);
         } catch (error) {
              toast.error(error?.message || 'Failed to reject clearance request');
@@ -296,173 +308,24 @@ const ClearanceTable = ({
                     onChange={handleSearchChange}
                 />
             </div>
-            <CTable align="middle" className="mb-0 border" hover responsive>
-                <CTableHead className="text-nowrap">
-                    <CTableRow>
-                        <CTableHeaderCell className="bg-body-tertiary text-center">
-                            <CIcon icon={cilInfo} />
-                        </CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('tenant')} style={{ cursor: 'pointer' }}>
-                            Tenant Name
-                            {sortConfig.key === 'tenant' && (
-                                <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
-                            )}
-                        </CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('notes')} style={{ cursor: 'pointer' }}>
-                            Notes
-                            {sortConfig.key === 'notes' && (
-                                <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
-                            )}
-                        </CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('moveOutDate')} style={{ cursor: 'pointer' }}>
-                            Move Out Date
-                            {sortConfig.key === 'moveOutDate' && (
-                                <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
-                            )}
-                        </CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
-                            Status
-                            {sortConfig.key === 'status' && (
-                                <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
-                            )}
-                        </CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary">Actions</CTableHeaderCell>
-                    </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                    {sortedClearances?.map((clearance, index) => (
-                        <CTableRow key={clearance?._id || index}>
-                            <CTableDataCell className="text-center">
-                                {(currentPage - 1) * itemsPerPage + index + 1}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                                {clearance?.tenant?.tenantName || 'N/A'}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                                {clearance?.notes || 'N/A'}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                                {formatDate(clearance?.moveOutDate) || 'N/A'}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                                {clearance.status === 'pending' ? (
-                                    <CBadge color="warning">Pending</CBadge>
-                                ) : clearance.status === 'approved' ? (
-                                    <CBadge color="success">Approved</CBadge>
-                                ) : clearance.status === 'rejected' ? (
-                                    <CBadge color="danger">Rejected</CBadge>
-                                ) : clearance.status === 'inspected' ? (
-                                    <CBadge color="info">Inspected</CBadge>
-                                ) : null
-                                }
-                            </CTableDataCell>
-                             <CTableDataCell>
-                                <CDropdown
-                                    variant="btn-group"
-                                    isOpen={dropdownOpen === clearance?._id}
-                                    onToggle={() => toggleDropdown(clearance?._id)}
-                                    onMouseLeave={closeDropdown}
-                                    innerRef={ref => (dropdownRefs.current[clearance?._id] = ref)}
-                                >
-                                    <CDropdownToggle color="light" size="sm" title="Actions">
-                                        <CIcon icon={cilOptions} />
-                                    </CDropdownToggle>
-                                    <CDropdownMenu>
-                                        {/* {userPermissions?.editClearance && ( */}
-                                            <CDropdownItem onClick={() => handleEdit(clearance?._id)} title="Edit">
-                                                <CIcon icon={cilPencil} className="me-2" />
-                                                Edit
-                                            </CDropdownItem>
-                                        {/* )} */}
-                                        {/* {userPermissions?.deleteClearance && ( */}
-                                            <CDropdownItem onClick={() => handleDelete(clearance?._id)} title="Delete" style={{ color: 'red' }}>
-                                                <CIcon icon={cilTrash} className="me-2" />
-                                                Delete
-                                            </CDropdownItem>
-                                        {/* )} */}
-                                        <CDropdownItem onClick={() => handleModalOpen(clearance)} title="View Details">
-                                            <CIcon icon={cilFullscreen} className="me-2" />
-                                            Details
-                                        </CDropdownItem>
-                                        <CDropdownItem onClick={() => handleApprove(clearance)} title="Approve/Reject">
-                                            <CIcon icon={cilFullscreen} className="me-2" />
-                                            Approve/Reject
-                                        </CDropdownItem>
-                                    </CDropdownMenu>
-                                </CDropdown>
-                            </CTableDataCell>
-                        </CTableRow>
-                    ))}
-                </CTableBody>
-            </CTable>
-            <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
-                <span>Total Requests: {totalClearances}</span>
-                <CPagination className="mt-3">
-                    <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
-                        «
-                    </CPaginationItem>
-                    <CPaginationItem
-                        disabled={currentPage === 1}
-                        onClick={() => handlePageChange(currentPage - 1)}
-                    >
-                        ‹
-                    </CPaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <CPaginationItem
-                            key={page}
-                            active={page === currentPage}
-                            className=""
-                            onClick={() => handlePageChange(page)}
-                        >
-                            {page}
-                        </CPaginationItem>
-                    ))}
-                    <CPaginationItem
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(currentPage + 1)}
-                    >
-                        ›
-                    </CPaginationItem>
-                    <CPaginationItem
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(totalPages)}
-                    >
-                        »
-                    </CPaginationItem>
-                </CPagination>
-            </div>
-             {/* Clearance Details Modal */}
-            <CModal
-                size="lg"
-                visible={modalVisible}
-                onClose={handleModalClose}
-            >
-                <CModalHeader onClose={handleModalClose}>
-                    <CModalTitle>Clearance Details</CModalTitle>
-                </CModalHeader>
-                <CModalBody>
-                    {selectedClearance && (
-                        <div>
-                            <p><strong><CIcon icon={cilInfo} className="me-1" />Tenant Name:</strong> {selectedClearance?.tenant?.tenantName || 'N/A'}</p>
-                            <p><strong><CIcon icon={cilDescription} className="me-1" />Notes:</strong> {selectedClearance?.notes || 'N/A'}</p>
-                            <p><strong><CIcon icon={cilCalendar} className="me-1" />Move Out Date:</strong> {formatDate(selectedClearance?.moveOutDate)}</p>
-                            <p>
-                                <strong style={getStatusStyle(selectedClearance?.status)}>
-                                    <CIcon icon={cilInfo} className="me-1" />Status:
-                                </strong>
-                                <span style={getStatusStyle(selectedClearance?.status)}>
-                                    {selectedClearance?.status || 'N/A'}
-                                </span>
-                            </p>
-                        </div>
-                    )}
-                </CModalBody>
-                <CModalFooter>
-                    <CButton color="secondary" onClick={handleModalClose}>
-                        Close
-                    </CButton>
-                </CModalFooter>
-            </CModal>
+           <ClearanceTableData
+                    clearances={sortedClearances}
+                    currentPage={currentPage}
+                    itemsPerPage={itemsPerPage}
+                    sortConfig={sortConfig}
+                    handleSort={handleSort}
+                    handleEdit={handleEdit}
+                    handleDelete={handleDeleteItem}
+                    userPermissions={userPermissions}
+                    role={role}
+                    dropdownOpen={dropdownOpen}
+                    toggleDropdown={toggleDropdown}
+                    closeDropdown={closeDropdown}
+                    dropdownRefs={dropdownRefs}
+                    handleViewDetails={handleViewDetails}
+                    handleApprove={handleApprove}
+                    getStatusStyle={getStatusStyle}
+                />
              <CModal
                 visible={approveModalVisible}
                 onClose={handleCloseApproveModal}
@@ -490,4 +353,4 @@ const ClearanceTable = ({
     );
 };
 
-export default ClearanceTable;
+export default ClearanceTable

@@ -34,8 +34,6 @@ const GuestDetailsModal = ({ visible, setVisible, guestDetails }) => {
                 return { icon: cilCheckCircle, color: '#4caf50' }; // Green
             case 'expired':
                 return { icon: cilXCircle, color: '#e50505' }; // Red
-            case 'pending':
-                return { icon: cilWarning, color: '#ff9800' }; // Orange
             default:
                 return { icon: cilInfo, color: '#9e9e9e' }; // Gray
         }
@@ -62,7 +60,7 @@ const GuestDetailsModal = ({ visible, setVisible, guestDetails }) => {
                             {guestDetails.qrCode ? (
                                 <div className="qr-code-container">
                                     <img
-                                        src={`http://localhost:4000/api/v1/${guestDetails.qrCode}`}
+                                        src={`https://pms-backend-sncw.onrender.com/api/v1/${guestDetails.qrCode}`}
                                         alt="QR Code"
                                         className="qr-code"
                                     />

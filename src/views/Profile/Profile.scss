@@ -46,7 +46,7 @@
   
         &:focus {
           outline: none;
-          border-color: #007bff;
+          border-color: #13161a;
           box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
         }
   
@@ -76,7 +76,7 @@
     }
   
     .update-button {
-      background-color: #007bff;
+      background-color: #171c22;
       color: white;
       padding: 0.75rem 1.5rem;
       font-size: 1rem;
@@ -87,7 +87,7 @@
       transition: background-color 0.2s ease;
   
       &:hover {
-        background-color: #0056b3;
+        background-color: #012851;
       }
   
       &:disabled {

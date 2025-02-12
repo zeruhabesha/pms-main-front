@@ -1,3 +1,4 @@
+// MaintenanceService.js
 import httpCommon from '../http-common'
 import { encryptData, decryptData } from '../utils/crypto'
 
@@ -22,32 +23,80 @@ class MaintenanceService {
     }
   }
 
-  async fetchMaintenances(page = 1, limit = 10, searchTerm = '') {
+  getRegisteredBy() {
     try {
-      const response = await httpCommon.get('/maintenances', {
-        headers: this.getAuthHeader(),
-        params: { page, limit, search: searchTerm },
-      })
-
-      const { data } = response
-      console.log('Fetched maintenances:', data)
-      console.log('Fetched maintenances data:', data?.data)
-
-      if (data?.data) {
-        localStorage.setItem(
-          'maintenances_data',
-          encryptData({
-            timestamp: new Date().getTime(),
-            maintenances: data.data, //Store the entire object containing array
-          }),
-        )
+      const encryptedUser = localStorage.getItem('user');
+      if (!encryptedUser) {
+        console.warn("No user found in local storage");
+        return null;
       }
 
-      return data.data
+      const decryptedUser = decryptData(encryptedUser);
+
+      // Check if decryptedUser is already an object
+      const user = typeof decryptedUser === 'string' ? JSON.parse(decryptedUser) : decryptedUser;
+
+
+      if (!user || !user._id) {
+        console.warn("No registeredBy found in user data");
+        return null;
+      }
+
+      return user;
+
     } catch (error) {
-      return this.handleCachedData(error, 'maintenances_data', 'Fetching maintenances failed.')
+      console.error("Error fetching registeredBy:", error);
+      return null;
     }
   }
+
+  async fetchMaintenances(page = 1, limit = 10, searchTerm = '') {
+    try {
+        const user = this.getRegisteredBy();
+
+        if (!user) {
+            console.warn("User data not available, cannot fetch maintenances.");
+            return {
+              maintenances: [],
+              totalPages: 0,
+              totalMaintenances: 0,
+              currentPage: 1,
+            };
+        }
+
+      let registeredById;
+
+      if (user.role === 'Admin') {
+          registeredById = user._id;
+      } else {
+          registeredById = user.registeredBy;
+      }
+
+      const response = await httpCommon.get(`maintenances/registered/${registeredById}`, {
+        headers: this.getAuthHeader(),
+        params: { page, limit, search: searchTerm },
+      });
+
+      const { data } = response;
+      console.log('Fetched maintenances:', data);
+      console.log('Fetched maintenances data:', data?.data);
+
+      if (data?.data) {
+          localStorage.setItem(
+              'maintenances_data',
+              encryptData({
+                  timestamp: new Date().getTime(),
+                  maintenances: data.data, // Store the entire object containing array
+              })
+          );
+      }
+
+        return data.data;
+    } catch (error) {
+        return this.handleCachedData(error, 'maintenances_data', 'Fetching maintenances failed.');
+    }
+}
+
 
   async addMaintenance(maintenanceData) {
     try {
@@ -60,13 +109,12 @@ class MaintenanceService {
       const response = await httpCommon.post('/maintenances', maintenanceData, {
         headers: {
           ...this.getAuthHeader(),
-          'Content-Type': 'multipart/form-data',
         },
       })
 
       console.log('Service: Received response:', response)
 
-      if (!response.data) {
+      if (!response.data.data) {
         throw new Error('Invalid response from server')
       }
 
@@ -87,7 +135,6 @@ class MaintenanceService {
       const response = await httpCommon.put(`/maintenances/${id}`, formData, {
         headers: {
           ...this.getAuthHeader(),
-          'Content-Type': 'multipart/form-data',
         },
       })
 

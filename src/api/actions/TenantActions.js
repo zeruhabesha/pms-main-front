@@ -8,12 +8,14 @@ export const fetchTenants = createAsyncThunk(
     async ({ page = 1, limit = 10, search = '' } = {}, { rejectWithValue }) => {
         try {
             const response = await TenantService.fetchTenants(page, limit, search);
-            return response;
+            return response; // No need to modify, response is already correctly formatted
+
         } catch (error) {
-            return rejectWithValue(error); // Pass the whole error object
+            return rejectWithValue(error);
         }
     }
 );
+//Fetch Tenant By Id
 //Fetch Tenant By Id
 export const fetchTenantById = createAsyncThunk(
     'tenant/fetchTenantById',

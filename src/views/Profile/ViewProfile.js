@@ -131,7 +131,8 @@ const Profile = () => {
           <label>Profile Photo:</label>
           <div className="photo-container">
             <img
-              src={profile.photoUrl || '/default-avatar.png'}
+              // src={profile.photoUrl || '/default-avatar.png'}
+              src={`https://pms-backend-sncw.onrender.com/api/v1/users/${profile._id}/photo`}
               alt="Profile"
               className="profile-photo"
             />

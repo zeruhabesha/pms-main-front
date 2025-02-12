@@ -33,35 +33,79 @@ class TenantService {
         }
     }
 
+    getRegisteredBy() {
+        try {
+            const encryptedUser = localStorage.getItem('user');
+            if (!encryptedUser) {
+                console.warn("No user found in local storage");
+                return null;
+            }
+
+            const decryptedUser = decryptData(encryptedUser);
+
+            // Check if decryptedUser is already an object
+            const user = typeof decryptedUser === 'string' ? JSON.parse(decryptedUser) : decryptedUser;
+
+
+            if (!user || !user._id) {
+                console.warn("No registeredBy found in user data");
+                return null;
+            }
+
+            return user;
+
+        } catch (error) {
+            console.error("Error fetching registeredBy:", error);
+            return null;
+        }
+    }
+
     async fetchTenants(page = 1, limit = 10, searchTerm = '') {
         try {
-            const response = await httpCommon.get(this.baseURL, {
+            const user = this.getRegisteredBy();
+
+            if (!user) {
+                console.warn("User data not available, cannot fetch tenants.");
+                return {
+                    tenants: [],
+                    totalPages: 0,
+                    totalTenants: 0,
+                    currentPage: page,
+                };
+            }
+
+            let registeredById;
+            if (user.role === 'Admin') {
+                registeredById = user._id;
+            } else {
+                registeredById = user.registeredBy;
+            }
+
+            const response = await httpCommon.get(`tenants/registeredBy/${registeredById}`, { // Modified URL to filter by registeredBy
                 headers: {
                     ...this.getAuthHeader(),
-                    'Content-Type': 'multipart/form-data',
                 },
                 params: { page, limit, search: searchTerm },
             });
-            const { data } = response.data;
-               const cacheData = {
-              timestamp: new Date().getTime(),
-              tenants: data.tenants,
-              totalPages: data.totalPages,
-              totalTenants: data.totalTenants,
-              currentPage: data.currentPage
-            };
-            // Encrypt and store the fetched tenants data in localStorage if needed
-             localStorage.setItem('tenants', encryptData(cacheData));
 
+            const { data } = response.data;
+
+            const cacheData = {
+                timestamp: new Date().getTime(),
+                tenants: data.tenants,
+                totalPages: data.totalPages,
+                totalTenants: data.totalTenants,
+                currentPage: data.currentPage
+            };
+            localStorage.setItem('tenants', encryptData(cacheData));
 
             return {
                 tenants: data.tenants,
-                totalPages: data?.totalPages || 1,
-                totalTenants: data?.totalTenants || 0,
-                currentPage: data?.currentPage || page,
+                totalPages: data.totalPages,
+                totalTenants: data.totalTenants,
+                currentPage: data.currentPage,
             };
         } catch (error) {
-            // Try to get cached data if request fails
             const encryptedCache = localStorage.getItem('tenants');
             if (encryptedCache) {
                 const cachedData = decryptData(encryptedCache);
@@ -79,6 +123,7 @@ class TenantService {
         }
     }
 
+
     async addTenant(tenantData) {
         try {
             console.log("Sending POST request with data:", tenantData);
@@ -94,8 +139,8 @@ class TenantService {
             throw this.handleError(error);
         }
     }
-    
-    
+
+
 
     async updateTenant(id, tenantData) {
         try {
@@ -143,7 +188,7 @@ class TenantService {
             const response = await httpCommon.get(`${this.baseURL}/${id}`, {
                 headers: this.getAuthHeader(),
             });
-             return response.data?.data;
+             return response.data.data;
         } catch (error) {
             throw this.handleError(error);
         }
@@ -189,7 +234,7 @@ class TenantService {
     }
     return formData;
 }
-          
+
     handleError(error) {
          console.error('API Error:', error.response?.data || error.message);
         throw {

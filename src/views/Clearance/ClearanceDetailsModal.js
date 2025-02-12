@@ -1,216 +1,214 @@
 // ClearanceDetailsModal.js
 import React, { useState, useEffect } from 'react';
-import { CModal, CModalHeader, CModalTitle, CModalBody, CButton, CForm, CFormLabel, CFormInput, CCol, CRow, CFormSelect } from '@coreui/react';
+import {
+    CModal, CModalHeader, CModalTitle, CModalBody, CButton,
+    CTable, CTableRow, CTableHeaderCell, CTableDataCell,
+    CTableHead, CTableBody,CModalFooter 
+} from '@coreui/react';
 import { useDispatch } from 'react-redux';
-import { updateClearance, addClearance } from '../../api/actions/ClearanceAction';
-import { toast } from 'react-toastify';
 import { fetchTenantById } from '../../api/actions/TenantActions';
 import propertyService from '../../api/services/property.service';
 import clearanceService from '../../api/services/clearance.service' // Import the clearance service
+import { CIcon } from '@coreui/icons-react';
+import {
+    cilUser,
+    cilHome,
+    cilCalendar,
+    cilDescription,
+    cilInfo,
+    cilMoney,
+    cilClock
+} from '@coreui/icons';
+import { format } from 'date-fns';
 
+const ClearanceDetailsModal = ({ visible, setVisible, tenantId }) => {
+    const dispatch = useDispatch();
+    const [loading, setLoading] = useState(false);
+    const [tenantDetails, setTenantDetails] = useState(null);
+    const [selectedProperty, setSelectedProperty] = useState(null);
+    const [existingClearance, setExistingClearance] = useState(null);
 
-const ClearanceDetailsModal = ({ visible, setVisible, tenantId, onClearanceAdded }) => {
-  const dispatch = useDispatch();
-  const [clearanceData, setClearanceData] = useState({
-    tenant: tenantId,
-    property: '',
-    moveOutDate: '',
-    status: 'Pending',
-    inspectionStatus: 'Pending',
-    notes: '',
-  });
-  const [properties, setProperties] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [tenantDetails, setTenantDetails] = useState(null);
-  const [selectedProperty, setSelectedProperty] = useState(null);
-  const [existingClearance, setExistingClearance] = useState(null);
-
-
-  const handleCloseModal = () => {
-    setVisible(false);
-    setClearanceData({
-      tenant: tenantId,
-      property: '',
-      moveOutDate: '',
-      status: 'Pending',
-      inspectionStatus: 'Pending',
-      notes: '',
-    });
-    setSelectedProperty(null);
-    setExistingClearance(null);
-  };
-
-
-  useEffect(() => {
-    const fetchTenantAndProperties = async () => {
-        setLoading(true);
-         try {
-             const tenantResponse = await dispatch(fetchTenantById(tenantId)).unwrap();
-            setTenantDetails(tenantResponse);
-            const allProperties = await propertyService.getProperties();
-            const associatedProperty = allProperties.find(
-                 (property) => property._id === tenantResponse?.propertyInformation?.propertyId
-             );
-             setSelectedProperty(associatedProperty);
-
-            const existingClearance = await clearanceService.fetchClearances(1,1, '', '', tenantId);
-
-             if (existingClearance?.clearances?.length > 0) {
-                  setExistingClearance(existingClearance.clearances[0]);
-                 setClearanceData(prevData => ({
-                     ...prevData,
-                    ...existingClearance.clearances[0],
-                     property : associatedProperty?._id
-                 }));
-               }else {
-
-                  setClearanceData(prevData => ({
-                       ...prevData,
-                        property : associatedProperty?._id
-                  }));
-               }
-
-                 setProperties(allProperties);
-
-
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        try {
+            return format(new Date(dateString), 'MMM dd, yyyy');
         } catch (error) {
-           console.error('Error fetching tenant or properties:', error);
-           toast.error(error.message || 'Error fetching tenant or properties');
-        } finally {
-            setLoading(false);
+            console.error("Error formatting date:", dateString, error);
+            return 'N/A';
         }
     };
 
-    if (visible && tenantId) {
-        fetchTenantAndProperties();
-    }
-  }, [visible, tenantId, dispatch]);
+    const handleCloseModal = () => {
+        setVisible(false);
+    };
 
+    useEffect(() => {
+        const fetchTenantAndClearance = async () => {
+            setLoading(true);
+            try {
+                const tenantResponse = await dispatch(fetchTenantById(tenantId)).unwrap();
+                setTenantDetails(tenantResponse);
+                const allProperties = await propertyService.getProperties();
+                const associatedProperty = allProperties.find(
+                    (property) => property._id === tenantResponse?.propertyInformation?.propertyId
+                );
+                setSelectedProperty(associatedProperty);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-      setClearanceData((prevData) => ({
-          ...prevData,
-        [name]: value,
-     }));
-  };
+                const existingClearanceResponse = await clearanceService.fetchClearances(1, 1, '', '', tenantId);
 
-   const handleSubmit = async () => {
-       try {
-        if (existingClearance && existingClearance._id && Object.keys(existingClearance).length > 0) {
-          //Check for both existing clearance object and it's id. and also that the object is not empty before accessing the id
-                await dispatch(updateClearance(existingClearance._id, clearanceData)).unwrap();
-                console.log('updated clearance', clearanceData);
-                 toast.success('Clearance updated successfully');
-            } else {
-              await dispatch(addClearance(clearanceData)).unwrap();
-              console.log('created clearance', clearanceData);
-                 toast.success('Clearance created successfully');
+                if (existingClearanceResponse && existingClearanceResponse.data && existingClearanceResponse.data.clearances && existingClearanceResponse.data.clearances.length > 0) {
+                    setExistingClearance(existingClearanceResponse.data.clearances[0]);
+                } else {
+                    setExistingClearance(null);
+                }
+
+            } catch (error) {
+                console.error('Error fetching tenant, properties, or clearance:', error);
+            } finally {
+                setLoading(false);
             }
-             if (onClearanceAdded) {
-                onClearanceAdded();
-             }
-           handleCloseModal();
-       } catch (error) {
-           toast.error(error.message || 'Failed to save clearance');
-       }
-  };
+        };
 
+        if (visible && tenantId) {
+            fetchTenantAndClearance();
+        }
+    }, [visible, tenantId, dispatch]);
 
-  return (
-    <CModal size="lg" visible={visible} onClose={handleCloseModal}>
-      <CModalHeader>
-        <CModalTitle>Clearance Details</CModalTitle>
-      </CModalHeader>
-      <CModalBody>
-        {loading ? (
-          <p>Loading...</p>
-        ) : tenantDetails && (
-          <CForm>
-            <CRow className="mb-3">
-              <CFormLabel htmlFor="tenantName" className="col-sm-2 col-form-label">
-                Tenant Name
-              </CFormLabel>
-              <CCol sm={10}>
-                <CFormInput type="text" id="tenantName" value={tenantDetails.tenantName} readOnly />
-              </CCol>
-            </CRow>
-            <CRow className="mb-3">
-              <CFormLabel htmlFor="property" className="col-sm-2 col-form-label">
-                Property
-              </CFormLabel>
-             <CCol sm={10}>
-                    <CFormInput
-                        type="text"
-                        id="property"
-                        value={selectedProperty?.propertyName || 'Not Available'}
-                        readOnly
-                    />
-                </CCol>
-            </CRow>
-            <CRow className="mb-3">
-              <CFormLabel htmlFor="moveOutDate" className="col-sm-2 col-form-label">
-                Move Out Date
-              </CFormLabel>
-              <CCol sm={10}>
-                <CFormInput
-                  type="date"
-                  id="moveOutDate"
-                  name="moveOutDate"
-                  value={clearanceData.moveOutDate}
-                  // onChange={handleInputChange}
-                  required
-                />
-              </CCol>
-            </CRow>
-            <CRow className="mb-3">
-              <CFormLabel htmlFor="status" className="col-sm-2 col-form-label">
-                  Clearance Status
-              </CFormLabel>
-              <CCol sm={10}>
-                  <CFormSelect
-                      id="status"
-                      name="status"
-                      value={clearanceData.status}
-                      onChange={handleInputChange}
-                      required
-                  >
-                      <option value="Pending">Pending</option>
-                      <option value="Approved">Approved</option>
-                      <option value="Rejected">Rejected</option>
-                  </CFormSelect>
-              </CCol>
-          </CRow>
-             <CRow className="mb-3">
-              <CFormLabel htmlFor="notes" className="col-sm-2 col-form-label">
-                Notes
-              </CFormLabel>
-                <CCol sm={10}>
-                  <CFormInput
-                      as="textarea"
-                      id="notes"
-                      name="notes"
-                      value={clearanceData.notes}
-                      onChange={handleInputChange}
-                      rows={3}
-                    />
-                  </CCol>
-              </CRow>
-            <CRow>
-              <CCol xs={12} className="text-end">
+    return (
+        <CModal size="lg" visible={visible} onClose={handleCloseModal}>
+            <CModalHeader>
+                <CModalTitle>Clearance Details</CModalTitle>
+            </CModalHeader>
+            <CModalBody>
+                {loading ? (
+                    <p>Loading...</p>
+                ) : tenantDetails && (
+                    <CTable bordered hover responsive>
+                        <CTableHead>
+                            <CTableRow>
+                                <CTableHeaderCell colSpan={2}>
+                                    <h5>Tenant Information</h5>
+                                </CTableHeaderCell>
+                            </CTableRow>
+                        </CTableHead>
+                        <CTableBody>
+                            <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilUser} className="me-1" />Tenant Name:</strong></CTableDataCell>
+                                <CTableDataCell>{tenantDetails.tenantName || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                            <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilInfo} className="me-1" />Contact Email:</strong></CTableDataCell>
+                                <CTableDataCell>{tenantDetails?.contactInformation?.email || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                            <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilInfo} className="me-1" />Contact Phone:</strong></CTableDataCell>
+                                <CTableDataCell>{tenantDetails?.contactInformation?.phoneNumber || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                             <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilInfo} className="me-1" />Status:</strong></CTableDataCell>
+                                <CTableDataCell>{tenantDetails?.status || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                             <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilClock} className="me-1" />Created At:</strong></CTableDataCell>
+                                <CTableDataCell>{formatDate(tenantDetails?.createdAt) || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                             <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilClock} className="me-1" />Updated At:</strong></CTableDataCell>
+                                <CTableDataCell>{formatDate(tenantDetails?.updatedAt) || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                        </CTableBody>
+
+                        <CTableHead>
+                            <CTableRow>
+                                <CTableHeaderCell colSpan={2}>
+                                    <h5>Lease Agreement</h5>
+                                </CTableHeaderCell>
+                            </CTableRow>
+                        </CTableHead>
+                        <CTableBody>
+                            <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilCalendar} className="me-1" />Lease Start Date:</strong></CTableDataCell>
+                                <CTableDataCell>{formatDate(tenantDetails?.leaseAgreement?.startDate) || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                            <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilCalendar} className="me-1" />Lease End Date:</strong></CTableDataCell>
+                                <CTableDataCell>{formatDate(tenantDetails?.leaseAgreement?.endDate) || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                            <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilMoney} className="me-1" />Rent Amount:</strong></CTableDataCell>
+                                <CTableDataCell>{tenantDetails?.leaseAgreement?.rentAmount || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                            <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilMoney} className="me-1" />Security Deposit:</strong></CTableDataCell>
+                                <CTableDataCell>{tenantDetails?.leaseAgreement?.securityDeposit || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                            <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilDescription} className="me-1" />Special Terms:</strong></CTableDataCell>
+                                <CTableDataCell>{tenantDetails?.leaseAgreement?.specialTerms || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                        </CTableBody>
+
+                        <CTableHead>
+                            <CTableRow>
+                                <CTableHeaderCell colSpan={2}>
+                                    <h5>Property Information</h5>
+                                </CTableHeaderCell>
+                            </CTableRow>
+                        </CTableHead>
+                        <CTableBody>
+                             <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilHome} className="me-1" />Property Unit:</strong></CTableDataCell>
+                                <CTableDataCell>{tenantDetails?.propertyInformation?.unit || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                            <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilHome} className="me-1" />Property Title:</strong></CTableDataCell>
+                                <CTableDataCell>{selectedProperty?.title || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                        </CTableBody>
+
+                        <CTableHead>
+                            <CTableRow>
+                                <CTableHeaderCell colSpan={2}>
+                                    <h5>Clearance Request</h5>
+                                </CTableHeaderCell>
+                            </CTableRow>
+                        </CTableHead>
+                        <CTableBody>
+                            <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilCalendar} className="me-1" />Move Out Date:</strong></CTableDataCell>
+                                <CTableDataCell>{existingClearance ? formatDate(existingClearance.moveOutDate) : 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                            <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilInfo} className="me-1" />Status:</strong></CTableDataCell>
+                                <CTableDataCell>{existingClearance?.status || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                             <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilInfo} className="me-1" />Inspection Status:</strong></CTableDataCell>
+                                <CTableDataCell>{existingClearance?.inspectionStatus || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                            <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilDescription} className="me-1" />Notes:</strong></CTableDataCell>
+                                <CTableDataCell>{existingClearance?.notes || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                             <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilClock} className="me-1" />Created At:</strong></CTableDataCell>
+                                <CTableDataCell>{formatDate(existingClearance?.createdAt) || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                             <CTableRow>
+                                <CTableDataCell><strong><CIcon icon={cilClock} className="me-1" />Updated At:</strong></CTableDataCell>
+                                <CTableDataCell>{formatDate(existingClearance?.updatedAt) || 'N/A'}</CTableDataCell>
+                            </CTableRow>
+                        </CTableBody>
+                    </CTable>
+                )}
+            </CModalBody>
+            <CModalFooter>
                 <CButton color="secondary" onClick={handleCloseModal}>
-                  Cancel
+                    Close
                 </CButton>
-                <CButton color="primary" className="ms-2" onClick={handleSubmit}>
-                  Save
-                </CButton>
-              </CCol>
-            </CRow>
-          </CForm>
-        )}
-      </CModalBody>
-    </CModal>
-  );
+            </CModalFooter>
+        </CModal>
+    );
 };
 
 export default ClearanceDetailsModal;

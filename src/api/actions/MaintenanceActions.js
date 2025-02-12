@@ -1,3 +1,4 @@
+// MaintenanceActions.js
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import MaintenanceService from '../services/maintenance.service'
 
@@ -20,17 +21,13 @@ export const addMaintenance = createAsyncThunk(
   async (maintenanceData, { rejectWithValue }) => {
     try {
       console.log('Action: Sending maintenance request...')
-      const response = await MaintenanceService.addMaintenance(maintenanceData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
+      const response = await MaintenanceService.addMaintenance(maintenanceData)
       console.log('Action: Received response:', response)
 
-      if (!response) {
+      if (!response.data) {
         throw new Error('Invalid response format')
       }
-      return response
+      return response.data
     } catch (error) {
       console.error('Action: Error occurred:', error)
       return rejectWithValue({
@@ -46,11 +43,7 @@ export const updateMaintenance = createAsyncThunk(
   async ({ id, maintenanceData }, { rejectWithValue }) => {
     try {
       console.log('Action: Sending update request...')
-      const response = await MaintenanceService.updateMaintenance(id, maintenanceData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
+      const response = await MaintenanceService.updateMaintenance(id, maintenanceData)
       console.log('Action: Received response:', response)
       if (!response) {
         throw new Error('Invalid response format')

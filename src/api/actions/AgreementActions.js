@@ -29,14 +29,16 @@ export const fetchAgreement = createAsyncThunk(
     }
 );
 
-// Add agreement
 export const addAgreement = createAsyncThunk(
     "agreement/addAgreement",
     async (agreementData, { rejectWithValue }) => {
         try {
+            console.log('Action: Adding agreement with data:', agreementData);
             const response = await AgreementService.addAgreement(agreementData);
-           return response;
+            console.log('Action: Response received:', response);
+            return response;
         } catch (error) {
+            console.error('Action: Error in addAgreement:', error);
             return rejectWithValue(error.message);
         }
     }

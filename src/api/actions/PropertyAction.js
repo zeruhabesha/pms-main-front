@@ -3,7 +3,7 @@ import { PropertyTypes } from "../types/propertyTypes";
 import propertyService from "../services/property.service";
 import axios from "axios";
 
-const BASE_URL = "http://localhost:4000/api/v1";
+const BASE_URL = "https://pms-backend-sncw.onrender.com/api/v1/";
 
 export const fetchProperties = createAsyncThunk(
   PropertyTypes.FETCH_PROPERTIES,
@@ -17,17 +17,6 @@ export const fetchProperties = createAsyncThunk(
   }
 );
 
-export const fetchPropertiess = createAsyncThunk(
-  PropertyTypes.FETCH_PROPERTIES,
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await propertyService.filterPropertiess();
-      return response;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
 
 export const filterProperties = createAsyncThunk(
   PropertyTypes.FILTER_PROPERTIES,
@@ -228,6 +217,42 @@ export const importProperties = createAsyncThunk(
   async (excel, { rejectWithValue }) => {
     try {
       const response = await propertyService.uploadExcel(excel);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const getPropertiesByUser = createAsyncThunk(
+  PropertyTypes.GET_PROPERTIES_BY_USER,
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await propertyService.getPropertiesByUser(userId);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const getPropertiesByUserAdmin = createAsyncThunk(
+  PropertyTypes.GET_PROPERTIES_BY_USER_ADMIN,
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await propertyService.getPropertiesByUserAdmin(userId);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const getPropertyReport = createAsyncThunk(
+  PropertyTypes.GET_PROPERTY_REPORT,
+  async (_, { rejectWithValue }) => { // No userId needed for report endpoint
+    try {
+      const response = await propertyService.getPropertyReport();
       return response;
     } catch (error) {
       return rejectWithValue(error.message);

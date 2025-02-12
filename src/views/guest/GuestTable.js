@@ -1,44 +1,44 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
-  CTable,
-  CTableBody,
-  CTableHead,
-  CTableHeaderCell,
-  CTableRow,
-  CTableDataCell,
-  CButton,
-  CPagination,
-  CPaginationItem,
-  CFormInput,
-  CDropdown,
-  CDropdownToggle,
-  CDropdownMenu,
-  CDropdownItem,
-  CBadge,
+    CTable,
+    CTableBody,
+    CTableHead,
+    CTableHeaderCell,
+    CTableRow,
+    CTableDataCell,
+    CButton,
+    CPagination,
+    CPaginationItem,
+    CFormInput,
+    CDropdown,
+    CDropdownToggle,
+    CDropdownMenu,
+    CDropdownItem,
+    CBadge,
 } from '@coreui/react';
 import GuestDetailsModal from './GuestDetailsModal';
 import "../paggination.scss";
 import { CIcon } from '@coreui/icons-react';
 import {
-  cilPencil,
-  cilTrash,
-  cilArrowTop,
-  cilArrowBottom,
-  cilFile,
-  cilClipboard,
-  cilCloudDownload,
-  cilFullscreen,
-  cilOptions,
-  cilInfo,
-  cilCalendar,
-  cilDescription,
-  cilPeople,
-  cilPrint,
-  cilUser,
-  cilEnvelopeOpen,
-  cilCheckCircle,
-  cilWarning,
-  cilXCircle,
+    cilPencil,
+    cilTrash,
+    cilArrowTop,
+    cilArrowBottom,
+    cilFile,
+    cilClipboard,
+    cilCloudDownload,
+    cilFullscreen,
+    cilOptions,
+    cilInfo,
+    cilCalendar,
+    cilDescription,
+    cilPeople,
+    cilPrint,
+    cilUser,
+    cilEnvelopeOpen,
+    cilCheckCircle,
+    cilWarning,
+    cilXCircle,
 } from '@coreui/icons';
 
 import { CSVLink } from 'react-csv';
@@ -53,9 +53,11 @@ import { formatDate } from "../../api/utils/dateFormatter";
 import { fetchGuests, deleteGuest } from '../../api/actions/guestActions';
 import debounce from 'lodash/debounce';
 import axios from 'axios'; // Import axios if you haven't already
+import { useNavigate } from 'react-router-dom';  // Import useNavigate
 
-const GuestTable = ({ searchTerm, setSearchTerm, itemsPerPage = 10 }) => {
-    
+
+const GuestTable = ({ searchTerm, setSearchTerm, itemsPerPage = 10, handleEdit }) => {
+
     const dispatch = useDispatch();
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedGuest, setSelectedGuest] = useState(null);
@@ -68,15 +70,16 @@ const GuestTable = ({ searchTerm, setSearchTerm, itemsPerPage = 10 }) => {
         currentPage: state.guest.currentPage || 1,
         totalPages: state.guest.totalPages || 1,
         totalGuests: state.guest.totalGuests || 0,
-      }));
+    }));
 
-      
+    const navigate = useNavigate();  // Initialize useNavigate
+
 
 
     const handleClickOutside = useCallback((event) => {
         if (dropdownOpen) {
             const ref = dropdownRefs.current[dropdownOpen];
-            if(ref && !ref.contains(event.target)){
+            if (ref && !ref.contains(event.target)) {
                 setDropdownOpen(null)
             }
 
@@ -94,42 +97,47 @@ const GuestTable = ({ searchTerm, setSearchTerm, itemsPerPage = 10 }) => {
 
     useEffect(() => {
         dispatch(fetchGuests({ page: currentPage, limit: itemsPerPage, search: searchTerm }));
-      }, [dispatch, currentPage, searchTerm, itemsPerPage]);
-    
+    }, [dispatch, currentPage, searchTerm, itemsPerPage]);
 
 
-   useEffect(() => {
-        const encryptedUser = localStorage.getItem('user');
-        if (encryptedUser) {
-            const decryptedUser = decryptData(encryptedUser);
-            if (decryptedUser && decryptedUser.permissions) {
-                setUserPermissions(decryptedUser.permissions);
-            }
+
+    const [role, setRole] = useState(null)
+    useEffect(() => {
+        try {
+          const encryptedUser = localStorage.getItem('user')
+          if (encryptedUser) {
+            const decryptedUser = decryptData(encryptedUser)
+            setUserPermissions(decryptedUser?.permissions || null)
+            setRole(decryptedUser?.role || null)
+          }
+        } catch (err) {
+        //   setError('Failed to load user permissions')
+          console.error('Permission loading error:', err)
         }
-    }, []);
+      }, [])
 
     const handleSort = (key) => {
         setSortConfig((prevConfig) => {
-          const direction =
-            prevConfig.key === key && prevConfig.direction === 'ascending'
-              ? 'descending'
-              : 'ascending';
-          return { key, direction };
+            const direction =
+                prevConfig.key === key && prevConfig.direction === 'ascending'
+                    ? 'descending'
+                    : 'ascending';
+            return { key, direction };
         });
-      };
+    };
 
-      const sortedGuests = useMemo(() => {
+    const sortedGuests = useMemo(() => {
         if (!sortConfig.key) return guests;
         return [...guests].sort((a, b) => {
-          const aKey = a[sortConfig.key] || '';
-          const bKey = b[sortConfig.key] || '';
-          if (aKey < bKey) return sortConfig.direction === 'ascending' ? -1 : 1;
-          if (aKey > bKey) return sortConfig.direction === 'ascending' ? 1 : -1;
-          return 0;
+            const aKey = a[sortConfig.key] || '';
+            const bKey = b[sortConfig.key] || '';
+            if (aKey < bKey) return sortConfig.direction === 'ascending' ? -1 : 1;
+            if (aKey > bKey) return sortConfig.direction === 'ascending' ? 1 : -1;
+            return 0;
         });
-      }, [guests, sortConfig]);
+    }, [guests, sortConfig]);
 
-  
+
 
     const csvData = guests.map((guest, index) => ({
         index: (currentPage - 1) * itemsPerPage + index + 1,
@@ -145,7 +153,7 @@ const GuestTable = ({ searchTerm, setSearchTerm, itemsPerPage = 10 }) => {
         .map(
             (guest, index) =>
                 `${(currentPage - 1) * itemsPerPage + index + 1}. Name: ${guest?.name || 'N/A'}, Email: ${
-                    guest?.email || 'N/A'
+                guest?.email || 'N/A'
                 }, Phone: ${guest?.phoneNumber || 'N/A'}, Arrival Date: ${formatDate(guest?.arrivalDate) || 'N/A'}, Departure Date: ${formatDate(guest?.departureDate) || 'N/A'}, Status: ${guest?.status || 'N/A'}`
         )
         .join('\n');
@@ -165,7 +173,7 @@ const GuestTable = ({ searchTerm, setSearchTerm, itemsPerPage = 10 }) => {
         ]);
 
         doc.autoTable({
-            head: [['#', 'Name', 'Email', 'Phone', 'Arrival Date', 'Departure Date','Status']],
+            head: [['#', 'Name', 'Email', 'Phone', 'Arrival Date', 'Departure Date', 'Status']],
             body: tableData,
             startY: 20,
         });
@@ -189,21 +197,21 @@ const GuestTable = ({ searchTerm, setSearchTerm, itemsPerPage = 10 }) => {
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= totalPages) {
-             dispatch(fetchGuests({ page, limit: itemsPerPage, search: searchTerm }));
+            dispatch(fetchGuests({ page, limit: itemsPerPage, search: searchTerm }));
         }
     };
 
-    const handleEdit = (guest) => {
-        setSelectedGuest(guest); // Set the selected guest data
-        setModalVisible(true); // Open AddGuest modal
-      };
-    
-      const handleDelete = (id) => {
+    // const handleEdit = (guest) => {
+    //     setSelectedGuest(guest); // Set the selected guest data
+    //     setModalVisible(true); // Open AddGuest modal
+    //   };
+
+    const handleDelete = (id) => {
         if (window.confirm('Are you sure you want to delete this guest?')) {
-          dispatch(deleteGuest(id));
-          toast.success('Guest deleted successfully');
+            dispatch(deleteGuest(id));
+            toast.success('Guest deleted successfully');
         }
-      };
+    };
     const toggleDropdown = (guestId) => {
         setDropdownOpen(prevState => prevState === guestId ? null : guestId);
     };
@@ -214,24 +222,23 @@ const GuestTable = ({ searchTerm, setSearchTerm, itemsPerPage = 10 }) => {
     const handleModalOpen = (guest) => {
         setSelectedGuest(guest);
         setModalVisible(true);
-      };
+    };
 
     const handleModalClose = () => {
         setModalVisible(false);
         setSelectedGuest(null);
     };
-    const baseURL = "http://localhost:4000/api/v1/";
+    const baseURL = "https://pms-backend-sncw.onrender.com/api/v1/";
 
     const getStatusStyle = (status) => {
         switch (status) {
             case 'expired':
                 return { fontWeight: 'bold', color: 'red' };
-            case 'pending':
-                 return { fontWeight: 'bold', color: 'orange' };
+
             case 'active':
                 return { fontWeight: 'bold', color: 'green' };
-             case 'cancelled':
-                    return { fontWeight: 'bold', color: 'gray' };
+            case 'cancelled':
+                return { fontWeight: 'bold', color: 'gray' };
             default:
                 return {};
         }
@@ -239,38 +246,43 @@ const GuestTable = ({ searchTerm, setSearchTerm, itemsPerPage = 10 }) => {
 
     const handleEditClick = (guest) => {
         handleEdit(guest); // Call the parent component's handleEdit function
-      };
-      
+    };
+
+    const handleViewClick = (guest) => {
+        // Navigate to the GuestDetail component with the guest's ID
+        navigate(`/guestdetail/${guest._id}`);
+    };
+    
     return (
         <div>
             <div className="d-flex mb-3 gap-2">
-                   <div className="d-flex gap-2">
-                        <CSVLink
-                            data={csvData}
-                            headers={[
-                                 { label: '#', key: 'index' },
-                                { label: 'Name', key: 'name' },
-                                { label: 'Email', key: 'email' },
-                                { label: 'Phone', key: 'phone' },
-                                 { label: 'Arrival Date', key: 'arrivalDate' },
-                                { label: 'Departure Date', key: 'departureDate' },
-                                { label: 'Status', key: 'status' },
-                            ]}
-                            filename="guest_data.csv"
-                            className="btn btn-dark"
-                        >
-                            <CIcon icon={cilFile} title="Export CSV" />
-                        </CSVLink>
-                        <CopyToClipboard text={clipboardData}>
-                            <CButton color="dark" title="Copy to Clipboard">
-                                <CIcon icon={cilClipboard} />
-                            </CButton>
-                        </CopyToClipboard>
-                        <CButton color="dark" onClick={exportToPDF} title="Export PDF">
-                            <CIcon icon={cilCloudDownload} />
+                <div className="d-flex gap-2">
+                    <CSVLink
+                        data={csvData}
+                        headers={[
+                            { label: '#', key: 'index' },
+                            { label: 'Name', key: 'name' },
+                            { label: 'Email', key: 'email' },
+                            { label: 'Phone', key: 'phone' },
+                            { label: 'Arrival Date', key: 'arrivalDate' },
+                            { label: 'Departure Date', key: 'departureDate' },
+                            { label: 'Status', key: 'status' },
+                        ]}
+                        filename="guest_data.csv"
+                        className="btn btn-dark"
+                    >
+                        <CIcon icon={cilFile} title="Export CSV" />
+                    </CSVLink>
+                    <CopyToClipboard text={clipboardData}>
+                        <CButton color="dark" title="Copy to Clipboard">
+                            <CIcon icon={cilClipboard} />
                         </CButton>
-                    </div>
-                 <CFormInput
+                    </CopyToClipboard>
+                    <CButton color="dark" onClick={exportToPDF} title="Export PDF">
+                        <CIcon icon={cilCloudDownload} />
+                    </CButton>
+                </div>
+                <CFormInput
                     type="text"
                     placeholder="Search by name or email or phone"
                     value={searchTerm}
@@ -278,24 +290,25 @@ const GuestTable = ({ searchTerm, setSearchTerm, itemsPerPage = 10 }) => {
                 />
             </div>
             <CTable align="middle" className="mb-0 border" hover responsive>
-            <CTableHead className="text-nowrap">
+                <CTableHead className="text-nowrap">
                     <CTableRow>
                         <CTableHeaderCell className="bg-body-tertiary text-center">
                             <CIcon icon={cilPeople} />
                         </CTableHeaderCell>
-                         <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
+                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
                             Name
                             {sortConfig.key === 'name' && (
                                 <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
                             )}
                         </CTableHeaderCell>
-                         <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('phoneNumber')} style={{ cursor: 'pointer' }}>
+                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('phoneNumber')} style={{ cursor: 'pointer' }}>
                             Contacts
                             {sortConfig.key === 'phoneNumber' && (
                                 <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
                             )}
+
                         </CTableHeaderCell>
-                           <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('arrivalDate')} style={{ cursor: 'pointer' }}>
+                        <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('arrivalDate')} style={{ cursor: 'pointer' }}>
                             Arrival Date
                             {sortConfig.key === 'arrivalDate' && (
                                 <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
@@ -312,117 +325,123 @@ const GuestTable = ({ searchTerm, setSearchTerm, itemsPerPage = 10 }) => {
                             {sortConfig.key === 'status' && (
                                 <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
                             )}
-                         </CTableHeaderCell>
-                         <CTableHeaderCell className="bg-body-tertiary">Actions</CTableHeaderCell>
+                        </CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary">Actions</CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                {sortedGuests.map((guest, index) => (
-            <CTableRow key={guest._id}>
-                           <CTableDataCell className="text-center">
-                                {(currentPage - 1) * itemsPerPage + index + 1}
-                           </CTableDataCell>
-                             <CTableDataCell>
-                                {guest?.name || 'N/A'}
-                             </CTableDataCell>
-                            <CTableDataCell>
-                                  <div className="small text-body-secondary text-nowrap">
-                                                                    <CIcon icon={cilEnvelopeOpen} size="sm" className="me-1" />
-                                                                    {guest?.email || 'N/A'}
-                                                                </div>
-                                                                <div className="small text-body-secondary text-nowrap">
-                                                                    <CIcon icon={cilUser} size="sm" className="me-1" />
-                                                                    {guest?.phoneNumber || 'N/A'}
-                                                                </div>
-                          
-                            </CTableDataCell>
-                           <CTableDataCell>
-                                {formatDate(guest?.arrivalDate) || 'N/A'}
-                            </CTableDataCell>
-                              <CTableDataCell>
-                                {formatDate(guest?.departureDate) || 'N/A'}
-                            </CTableDataCell>
-                           <CTableDataCell>
-                                {guest.status === 'pending' ? (
-                                        <CBadge color="warning">Pending</CBadge>
-                                    ) : guest.status === 'active' ? (
+                    {sortedGuests.map((guest, index) => (
+                        guest ? (
+                            <CTableRow key={guest._id}>
+                                <CTableDataCell className="text-center">
+                                    {(currentPage - 1) * itemsPerPage + index + 1}
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    {guest?.name || 'N/A'}
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <CIcon icon={cilEnvelopeOpen} size="sm" className="me-1" />
+                                        {guest?.email || 'N/A'}
+                                    </div>
+                                    <div className="small text-body-secondary text-nowrap">
+                                        <CIcon icon={cilUser} size="sm" className="me-1" />
+                                        {guest?.phoneNumber || 'N/A'}
+                                    </div>
+
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    {formatDate(guest?.arrivalDate) || 'N/A'}
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    {formatDate(guest?.departureDate) || 'N/A'}
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    {guest.status === 'active' ? (
                                         <CBadge color="success">Active</CBadge>
                                     ) : guest.status === 'expired' ? (
                                         <CBadge color="danger">Expired</CBadge>
                                     ) : (
-                                      <CBadge color="secondary">Cancelled</CBadge>
+                                        <CBadge color="secondary">Cancelled</CBadge>
                                     )}
-                            </CTableDataCell>
-                             <CTableDataCell>
-                                <CDropdown
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                    <CDropdown
                                         variant="btn-group"
                                         isOpen={dropdownOpen === guest?._id}
                                         onToggle={() => toggleDropdown(guest?._id)}
-                                         onMouseLeave={closeDropdown}
+                                        onMouseLeave={closeDropdown}
                                         innerRef={ref => (dropdownRefs.current[guest?._id] = ref)}
                                     >
                                         <CDropdownToggle color="light" size="sm" title="Actions">
                                             <CIcon icon={cilOptions} />
                                         </CDropdownToggle>
                                         <CDropdownMenu>
-                                             {/* {userPermissions?.editGuest && ( */}
-                                                <CDropdownItem   onClick={() => handleEdit(guest)} title="Edit">
-                                                    <CIcon icon={cilPencil} className="me-2"/>
-                                                    Edit
-                                                </CDropdownItem>
-                                            {/* )}
-                                             {userPermissions?.deleteGuest && ( */}
-                                                <CDropdownItem  onClick={() => handleDelete(guest._id)} title="Delete"  style={{ color: 'red' }}>
-                                                    <CIcon icon={cilTrash} className="me-2"/>
-                                                    Delete
-                                                </CDropdownItem>
-                                            {/* )} */}
-                                            <CDropdownItem onClick={() => handleModalOpen(guest)} title="View Details">
-                                                 <CIcon icon={cilFullscreen} className="me-2"/>
-                                                 Details
+                                        {role === 'Tenant' && (
+                                            <CDropdownItem onClick={() => handleEditClick(guest)} title="Edit">
+                                                <CIcon icon={cilPencil} className="me-2" />
+                                                Edit
                                             </CDropdownItem>
+                                             )}
+                                            {role === 'Tenant' && (
+                                            <CDropdownItem onClick={() => handleDelete(guest._id)} title="Delete" style={{ color: 'red' }}>
+                                                <CIcon icon={cilTrash} className="me-2" />
+                                                Delete
+                                            </CDropdownItem>
+                                          )} 
+                                            <CDropdownItem onClick={() => handleModalOpen(guest)} title="View Details">
+                                                <CIcon icon={cilFullscreen} className="me-2" />
+                                                Details
+                                            </CDropdownItem>
+                                            
+                                            <CDropdownItem onClick={() => handleViewClick(guest)} title="View Details">
+                                                <CIcon icon={cilFullscreen} className="me-2" />
+                                                View
+                                            </CDropdownItem>
+
                                         </CDropdownMenu>
-                                </CDropdown>
-                            </CTableDataCell>
+                                    </CDropdown>
+                                </CTableDataCell>
                             </CTableRow>
-          ))}
-        </CTableBody>
-      </CTable>
-      <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
-        <span>Total Guests: {totalGuests}</span>
-        <CPagination>
-          <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
-            «
-          </CPaginationItem>
-          <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>
-            ‹
-          </CPaginationItem>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <CPaginationItem
-              key={page}
-              active={page === currentPage}
-              onClick={() => handlePageChange(page)}
-            >
-              {page}
-            </CPaginationItem>
-          ))}
-          <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)}>
-            ›
-          </CPaginationItem>
-          <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)}>
-            »
-          </CPaginationItem>
-        </CPagination>
-      </div>
+                        ) : null
+                    ))}
+                </CTableBody>
+            </CTable>
+            <div className="pagination-container d-flex justify-content-between align-items-center mt-3">
+                <span>Total Guests: {totalGuests}</span>
+                <CPagination>
+                    <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(1)}>
+                        «
+                    </CPaginationItem>
+                    <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>
+                        ‹
+                    </CPaginationItem>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <CPaginationItem
+                            key={page}
+                            active={page === currentPage}
+                            onClick={() => handlePageChange(page)}
+                        >
+                            {page}
+                        </CPaginationItem>
+                    ))}
+                    <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)}>
+                        ›
+                    </CPaginationItem>
+                    <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)}>
+                        »
+                    </CPaginationItem>
+                </CPagination>
+            </div>
 
             {/* Guest Details Modal */}
             {modalVisible && (
-        <GuestDetailsModal
-          visible={modalVisible}
-          setVisible={setModalVisible}
-          guestDetails={selectedGuest}
-        />
-      )}
+                <GuestDetailsModal
+                    visible={modalVisible}
+                    setVisible={setModalVisible}
+                    guestDetails={selectedGuest}
+                />
+            )}
         </div>
     );
 };

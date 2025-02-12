@@ -1,4 +1,3 @@
-// src/api/slice/AgreementSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 import {
     fetchAgreements,
@@ -59,32 +58,28 @@ const agreementSlice = createSlice({
             .addCase(updateAgreement.fulfilled, (state, action) => {
                 state.loading = false;
                 const index = state.agreements.findIndex(
-                    (agreement) => agreement.id === action.payload?.id
+                    (agreement) => agreement._id === action.payload?._id
                 );
-                if (index !== -1 && action.payload) {
+                if (index !== -1) {
                     state.agreements[index] = action.payload;
                 }
             })
             .addCase(deleteAgreement.fulfilled, (state, action) => {
                 state.loading = false;
                 state.agreements = state.agreements.filter(
-                    (agreement) => agreement.id !== action.payload
+                    (agreement) => agreement._id !== action.payload
                 );
             })
             .addCase(uploadAgreementFile.fulfilled, (state, action) => {
                 state.loading = false;
                 const index = state.agreements.findIndex(
-                    (agreement) => agreement.id === action.payload?.id
+                    (agreement) => agreement._id === action.payload?._id
                 );
-                if (index !== -1 && action.payload) {
-                    state.agreements[index] = {
-                        ...state.agreements[index],
-                        documents: action.payload.documents || [],
-                    };
+                if (index !== -1) {
+                    state.agreements[index].documents = action.payload.documents || [];
                 }
             });
 
-        // Common `pending` handler for all async actions
         builder.addMatcher(
             (action) => action.type.endsWith("/pending"),
             (state) => {
@@ -103,13 +98,5 @@ const agreementSlice = createSlice({
     },
 });
 
-export const {
-    setSelectedAgreement,
-    clearSelectedAgreement,
-    clearError,
-    toggleExpandedRow,
-    setCurrentPage,
-} = agreementSlice.actions;
-
-export const selectExpandedRows = (state) => state.agreement.expandedRows;
+export const { setSelectedAgreement, clearSelectedAgreement, clearError, toggleExpandedRow, setCurrentPage } = agreementSlice.actions;
 export default agreementSlice.reducer;

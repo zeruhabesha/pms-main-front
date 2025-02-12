@@ -66,20 +66,20 @@ const AddAdmin = ({ visible, setVisible, editingAdmin, onSave }) => {
     }
 
     try {
-      setIsLoading(true);
-      const submissionData = {
-        ...adminData,
-        status: adminData.status ? 'active' : 'inactive',
-        phoneNumber: adminData.phoneNumber || '',
-        address: adminData.address || '',
-        activeStart: adminData.activeStart || null,
-        activeEnd: adminData.activeEnd || null,
-      };
+    setIsLoading(true);
+    const submissionData = {
+      ...adminData,
+      status: adminData.status ? 'active' : 'inactive',
+      phoneNumber: adminData.phoneNumber || '',
+      address: adminData.address || '',
+      activeStart: adminData.activeStart || null, // Explicitly set to null if empty
+      activeEnd: adminData.activeEnd ? adminData.activeEnd : null, //Explicitly set to null if empty,
+    };
 
-      console.log("AddAdmin - handleSubmit - submissionData:", submissionData); // ADD THIS LINE
-      await onSave(submissionData);
+    console.log("submissionData:", submissionData); // INSPECT HERE
+    await onSave(submissionData);
 
-    } catch (error) {
+  } catch (error) {
       setErrorMessage(error.message || 'Operation failed');
     } finally {
       setIsLoading(false);

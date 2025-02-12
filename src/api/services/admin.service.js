@@ -39,45 +39,30 @@ class AdminService {
   
   
   async addAdmin(AdminData) {
-    try {
-      
-      // Make the API call to add Admin
-      const response = await httpCommon.post('/users/admin', AdminData, {
-        headers: {
-          ...this.getAuthHeader(),
-          'Content-Type': 'application/json',
-        },
-      })
-      return response.data?.data;
-    } catch (error) {
-      // Throw an error with meaningful message and status
-      throw {
-        message: error.response?.data?.message || error.message || 'An error occurred',
-        status: error.response?.status || 500,
-        isAuthError: error.response?.status === 401,
-      };
-    }
+  try {
+    const response = await httpCommon.post('/users/admin', AdminData, {
+      headers: {
+        ...this.getAuthHeader(),
+        'Content-Type': 'application/json', // Ensure this is here
+      },
+    });
+    return response.data?.data;
+  } catch (error) {
+    throw this.handleError(error);
   }
-
+}
 
 async updateAdmin(id, adminData) {
   try {
-      console.log("Updating admin with ID:", id, "and data:", adminData);
-      
-      const response = await httpCommon.put(`/users/${id}`, adminData, { 
-          headers: { 
-              ...this.getAuthHeader(), 
-              'Content-Type': 'application/json' 
-          }, 
-      });
-
-      return response.data?.data;
+    const response = await httpCommon.put(`/users/${id}`, adminData, {
+      headers: {
+        ...this.getAuthHeader(),
+        'Content-Type': 'application/json', // Ensure this is here
+      },
+    });
+    return response.data?.data;
   } catch (error) {
-      console.error('Update Admin API Error:', error.response?.data || error.message);
-      throw {
-          message: error.response?.data?.message || "Failed to update user",
-          status: error.response?.status || 500
-      };
+    throw this.handleError(error);
   }
 }
 

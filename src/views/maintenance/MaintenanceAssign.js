@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   CTable,
   CTableHead,
@@ -32,7 +32,7 @@ import { CIcon } from '@coreui/icons-react'
 const MaintenanceAssign = ({ maintenance, onAssign }) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const [selectedUsers, setSelectedUsers] = useState([])
+  const [selectedUser, setSelectedUser] = useState(null)
   const [schedule, setSchedule] = useState({ date: '', time: '' })
   const [estimatedCompletion, setEstimatedCompletion] = useState({ date: '', time: '' })
   const [searchTerm, setSearchTerm] = useState('')
@@ -56,8 +56,8 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
     fetchData()
   }, [dispatch])
 
-  const handleCheckboxChange = (userId) => {
-    setSelectedUsers((prevSelected) => (prevSelected.includes(userId) ? [] : [userId]))
+  const handleCheckboxChange = (user) => {
+    setSelectedUser(user)
   }
 
   const handleScheduleChange = (field, value, type) => {
@@ -72,8 +72,8 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
     async (e) => {
       e.preventDefault() // Prevent default form submission
 
-      if (selectedUsers.length !== 1) {
-        setError('Please select exactly one user to assign.')
+      if (!selectedUser) {
+        setError('Please select a user to assign.')
         return
       }
 
@@ -86,25 +86,21 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
         return
       }
       try {
-        const assignedMaintainer = maintainers.find((user) => user._id === selectedUsers[0])
+        // const assignedMaintainer = maintainers.find((user) => user._id === selectedUsers[0]);  // No need to find again, already selected
         const preferredAccessTimes = new Date(`${schedule.date}T${schedule.time}`)
         const estimatedCompletionTime = new Date(
           `${estimatedCompletion.date}T${estimatedCompletion.time}`,
         )
 
-        if (!assignedMaintainer) {
-          setError('Error, the selected user was not found in the database, please try again.')
-          return
-        }
         const updatedData = {
-          maintainerId: assignedMaintainer._id,
+          assignedMaintainer: selectedUser._id,
           scheduledDate: preferredAccessTimes.toISOString(),
           estimatedCompletionTime: estimatedCompletionTime.toISOString(),
-          //   status: 'In Progress',
+          // status: 'In Progress',
         }
         await onAssign(maintenance._id, updatedData)
         navigate('/maintenance')
-        setSelectedUsers([])
+        setSelectedUser(null)
         setSchedule({ date: '', time: '' })
         setEstimatedCompletion({ date: '', time: '' })
         setError(null)
@@ -113,19 +109,30 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
         console.error('Assign error:', error)
       }
     },
-    [maintenance, selectedUsers, schedule, navigate, onAssign, maintainers, estimatedCompletion],
+    [
+      maintenance,
+      selectedUser,
+      schedule,
+      navigate,
+      onAssign,
+      estimatedCompletion,
+    ], //selectedUser is replaced by User ID
   )
 
   const handleClose = useCallback(() => {
     navigate('/maintenance')
-    setSelectedUsers([])
+    setSelectedUser(null)
     setSchedule({ date: '', time: '' })
     setEstimatedCompletion({ date: '', time: '' })
     setError(null)
   }, [navigate])
 
-  const filteredMaintainers = maintainers.filter((user) =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredMaintainers = useMemo(
+    () =>
+      maintainers.filter((user) =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()),
+      ),
+    [maintainers, searchTerm],
   )
 
   const totalPages = Math.ceil(filteredMaintainers.length / itemsPerPage)
@@ -264,8 +271,8 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
                 )}
                 {!loading &&
                   paginatedMaintainers.map((user) => {
-                    const isSelected = selectedUsers.includes(user._id)
-                    const isDisabled = selectedUsers.length > 0 && !isSelected
+                    const isSelected = selectedUser?._id === user._id
+                    const isDisabled = selectedUser !== null && selectedUser._id !== user._id
 
                     return (
                       <CTableRow
@@ -276,9 +283,9 @@ const MaintenanceAssign = ({ maintenance, onAssign }) => {
                           <CFormCheck
                             className="user-checkbox"
                             id={`user-checkbox-${user._id}`}
-                            onChange={() => handleCheckboxChange(user._id)}
+                            onChange={() => handleCheckboxChange(user)}
                             checked={isSelected}
-                            disabled={isDisabled && !isSelected}
+                            disabled={isDisabled}
                           />
                         </CTableDataCell>
                         <CTableDataCell>{user.name}</CTableDataCell>

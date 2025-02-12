@@ -1,3 +1,4 @@
+// maintenanceSlice.js
 import { createSlice } from '@reduxjs/toolkit'
 import {
   fetchMaintenances,
@@ -80,16 +81,24 @@ const maintenanceSlice = createSlice({
         state.loading = true
         state.error = null
       })
-      .addCase(updateMaintenance.fulfilled, (state, action) => {
-        state.loading = false
-        const updatedMaintenance = action.payload
-        const index = state.maintenances.findIndex(
-          (maintenance) => maintenance._id === updatedMaintenance._id,
-        )
-        if (index !== -1) {
-          state.maintenances[index] = updatedMaintenance
-        }
-      })
+      // In maintenanceSlice.js or relevant reducer
+.addCase(updateMaintenance.fulfilled, (state, action) => {
+  state.loading = false;
+  const updatedMaintenance = action.payload;
+  const index = state.maintenances.findIndex(
+    (maintenance) => maintenance._id === updatedMaintenance._id
+  );
+  if (index !== -1) {
+    state.maintenances[index] = {
+      ...state.maintenances[index],
+      ...updatedMaintenance,
+      expense: updatedMaintenance.expense, // Ensure expense object is properly updated
+      totalExpenses: updatedMaintenance.totalExpenses,
+      status: updatedMaintenance.status,
+      estimatedCompletionTime: updatedMaintenance.estimatedCompletionTime
+    };
+  }
+})
       .addCase(updateMaintenance.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload?.message || 'Failed to update maintenance'
@@ -103,7 +112,7 @@ const maintenanceSlice = createSlice({
       .addCase(deleteMaintenance.fulfilled, (state, action) => {
         state.loading = false
         state.maintenances = state.maintenances.filter(
-          (maintenance) => maintenance._id !== action.payload?.id,
+          (maintenance) => maintenance._id !== action.payload,
         )
         state.totalMaintenances -= 1
       })

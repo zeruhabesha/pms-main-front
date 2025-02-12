@@ -53,17 +53,18 @@ const PropertyTableRow = ({
   }, []);
 
   const formatCurrency = (amount) => {
-    if (!amount) return "N/A";
+    if (!amount) return 'N/A';
     try {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
+        return new Intl.NumberFormat('en-ET', {
+            style: 'currency',
+            currency: 'ETB',
+        }).format(amount);
     } catch (e) {
-      console.error("Error formatting currency", e);
-      return "N/A";
+        console.error('Error formatting currency', e);
+        return 'N/A';
     }
-  };
+};
+
 
   const getStatusIcon = (status) => {
     const statusIconMap = {

@@ -1,16 +1,12 @@
-// src/services/agreement.service.js
 import httpCommon from "../http-common";
-import { encryptData, decryptData } from '../utils/crypto';
+import { decryptData } from '../utils/crypto';
 
 class AgreementService {
     constructor() {
         this.baseURL = `${httpCommon.defaults.baseURL}/lease`;
-        this.defaultHeaders = {
-            'Content-Type': 'application/json',
-        };
     }
 
-    getAuthHeader() {
+    async getAuthHeader() {
         const encryptedToken = localStorage.getItem("token");
         if (!encryptedToken) {
             throw new Error("Authentication token is missing.");
@@ -21,200 +17,184 @@ class AgreementService {
             throw new Error("Invalid authentication token.");
         }
 
-        return {
-            Authorization: `Bearer ${token}`,
-        };
+        return { Authorization: `Bearer ${token}` };
     }
 
 
-
-   async fetchAgreements(page = 1, limit = 10, searchTerm = "") {
-    try {
-        const response = await httpCommon.get(this.baseURL, {
-            headers: this.getAuthHeader(),
-            params: { page, limit, search: searchTerm },
-        });
-
-        const { data } = response.data;
-        // Return the structured data
-        return {
-            agreements: data?.leases || [],
-            totalPages: data?.totalPages || 1,
-            currentPage: data?.currentPage || page,
-        };
-    } catch (error) {
-        throw this.handleError(error, "Failed to fetch agreements");
-    }
-}
-
-
-    async fetchAgreement(id) {
+    getRegisteredBy() {
         try {
-             const response = await httpCommon.get(`${this.baseURL}/${id}`, {
-                 headers: this.getAuthHeader()
-            });
-            return response.data?.data;
+            const encryptedUser = localStorage.getItem('user');
+            if (!encryptedUser) {
+                console.warn("No user found in local storage");
+                return null;
+            }
+  
+            const decryptedUser = decryptData(encryptedUser);
+  
+            // Check if decryptedUser is already an object
+            const user = typeof decryptedUser === 'string' ? JSON.parse(decryptedUser) : decryptedUser;
+  
+           
+            if (!user || !user._id) {
+                console.warn("No registeredBy found in user data");
+                return null;
+            }
+  
+            return user;
+
         } catch (error) {
-            throw this.handleError(error, "Failed to fetch agreement");
+            console.error("Error fetching registeredBy:", error);
+            return null;
+        }
+    }
+
+
+    async fetchAgreements(page = 1, limit = 10, searchTerm = "") {
+        try {
+            const user = this.getRegisteredBy(); // Get the user object from local storage
+
+            if (!user) {
+                console.warn("User data not available, cannot fetch agreements.");
+                return {
+                    agreements: [],
+                    totalPages: 0,
+                    currentPage: page,
+                };
+            }
+
+            let registeredById;
+            if (user.role === 'Admin') {
+                registeredById = user._id; // Admin fetches data by their own _id
+            } else {
+                registeredById = user.registeredBy; // Regular user fetches data by registeredBy
+            }
+
+            const response = await httpCommon.get(`lease/registeredBy/${registeredById}`, {
+                headers: await this.getAuthHeader(),
+                params: { page, limit, search: searchTerm },
+            });
+
+            const { data } = response.data;
+
+            return {
+                agreements: data?.leases || [],
+                totalPages: data?.totalPages || 1,
+                currentPage: data?.currentPage || page,
+            };
+        } catch (error) {
+            throw this.handleError(error, "Failed to fetch agreements");
         }
     }
 
     async addAgreement(agreementData) {
         try {
-            const formData = new FormData();
-
-            // Ensure property and tenant are ObjectIds
-            for (const key in agreementData) {
-                if (agreementData.hasOwnProperty(key)) {
-                    if (key !== 'documents') {
-                        // Convert numbers to strings for FormData
-                        if (typeof agreementData[key] === 'number') {
-                            formData.append(key, agreementData[key].toString());
-                        } else if (typeof agreementData[key] === 'object' && agreementData[key] !== null) {
-                            // Handle nested objects like paymentTerms
-                            formData.append(key, JSON.stringify(agreementData[key]));
-                        } else {
-                            formData.append(key, agreementData[key]);
-                        }
-                    }
-                }
-            }
-
-            // Append documents if they exist and are an array of files
-            if (agreementData.documents && Array.isArray(agreementData.documents)) {
-                agreementData.documents.forEach(file => { // Iterate and append each file
-                    formData.append('documents', file);
-                });
-            }
-
-            const response = await httpCommon.post(this.baseURL, formData, {
+            console.log('Service: Adding agreement with data:', agreementData);
+    
+            const headers = await this.getAuthHeader();
+            console.log('Service: Auth headers:', headers);
+    
+            const response = await httpCommon.post(this.baseURL, agreementData, {
                 headers: {
-                    ...this.getAuthHeader(),
-                    "Content-Type": "multipart/form-data"
+                    ...headers,
+                    "Content-Type": "multipart/form-data"  // Ensure correct content type
                 },
             });
-
+    
+            console.log('Service: Response received:', response);
             return response.data?.data;
         } catch (error) {
+            console.error('Service: Error in addAgreement:', error);
             throw this.handleError(error, "Failed to add agreement");
         }
     }
 
-
     async updateAgreement(id, agreementData) {
         try {
             const formData = new FormData();
-    
-            // Ensure property and tenant are ObjectIds
             for (const key in agreementData) {
-                if (agreementData.hasOwnProperty(key)) {
-                    if (key !== 'documents') {
-                        // Convert numbers to strings for FormData
-                        if (typeof agreementData[key] === 'number') {
-                            formData.append(key, agreementData[key].toString());
-                        } else if (typeof agreementData[key] === 'object' && agreementData[key] !== null) {
-                            // Handle nested objects like paymentTerms
-                            formData.append(key, JSON.stringify(agreementData[key]));
-                        } else {
-                            formData.append(key, agreementData[key]);
-                        }
-                    }
+                if (agreementData.hasOwnProperty(key) && key !== 'documents') {
+                    formData.append(key, typeof agreementData[key] === "object" ? JSON.stringify(agreementData[key]) : agreementData[key]);
                 }
             }
-    
-            // Append new documents if provided
+
             if (agreementData.documents && Array.isArray(agreementData.documents)) {
-                agreementData.documents.forEach(file => {
-                    formData.append('documents', file);
-                });
+                agreementData.documents.forEach(file => formData.append('documents', file));
             }
-    
-    
+
             const response = await httpCommon.put(`${this.baseURL}/${id}`, formData, {
                 headers: {
-                    ...this.getAuthHeader(),
+                    ...await this.getAuthHeader(),
                     "Content-Type": "multipart/form-data"
                 },
             });
+
             return response.data?.data;
         } catch (error) {
             throw this.handleError(error, "Failed to update agreement");
         }
     }
-    
+
+    async uploadAgreementFile(id, file) {
+        try {
+            if (!id || !file) {
+                throw new Error("Both 'id' and 'file' are required for uploading the agreement file.");
+            }
+
+            const formData = new FormData();
+            formData.append("documents", file);
+
+            const response = await httpCommon.post(`${this.baseURL}/${id}/file`, formData, {
+                headers: {
+                    ...await this.getAuthHeader(),
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            return response.data?.data;
+        } catch (error) {
+            throw this.handleError(error, "Failed to upload agreement file");
+        }
+    }
+
+    async downloadAgreementFile(fileName) {
+        if (!fileName) throw new Error("File name is required for download");
+
+        try {
+            const response = await httpCommon.get(`${this.baseURL}/download/${fileName}`, {
+                headers: await this.getAuthHeader(),
+                responseType: "blob",
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            return fileName;
+        } catch (error) {
+            throw this.handleError(error, "Failed to download file");
+        }
+    }
+
     async deleteAgreement(id) {
         try {
             await httpCommon.delete(`${this.baseURL}/${id}`, {
-                headers: this.getAuthHeader(),
+              headers: await this.getAuthHeader(),
             });
-            return id;
+             return id; // Return the id to the state so that we can update the ui
         } catch (error) {
             throw this.handleError(error, "Failed to delete agreement");
         }
     }
-
-   async uploadAgreementFile(id, file) {
-    try {
-        // Validate input
-        if (!id || !file) {
-            throw new Error("Both 'id' and 'file' are required for uploading the agreement file.");
-        }
-
-        // Prepare the FormData object
-        const formData = new FormData();
-        formData.append("documents", file); // Ensure 'documents' matches the backend expectation
-
-        // Make the API call
-        const response = await httpCommon.post(
-            `${this.baseURL}/${id}/file`, // Assuming this is the correct endpoint
-            formData,
-            {
-                headers: {
-                    ...this.getAuthHeader(),
-                    "Content-Type": "multipart/form-data",
-                },
-            }
-        );
-
-        // Return the server response data
-        return response.data?.data;
-    } catch (error) {
-        // Handle errors using the centralized handleError method
-        throw this.handleError(error, "Failed to upload agreement file");
+    
+    handleError(error, defaultMessage) {
+        const message = error.response?.data?.message || error.message || defaultMessage;
+        console.error("API Error:", message);
+        throw { message };
     }
-}
-
-
-
-async downloadAgreementFile(fileName) {
-    if (!fileName) throw new Error("File name is required for download");
-
-    try {
-         const response = await httpCommon.get(`${this.baseURL}/download/${fileName}`, {
-            headers: this.getAuthHeader(),
-            responseType: "blob",
-        });
-
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", fileName);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-         return  fileName;
-    } catch (error) {
-        throw this.handleError(error, "Failed to download file");
-    }
-}
-
-handleError(error, defaultMessage) {
-    const message = error.response?.data?.message || error.message || defaultMessage;
-    const status = error.response?.status || 500;
-    console.error("API Error:", { message, status });
-    throw { message, status };
-}
-
 }
 
 export default new AgreementService();

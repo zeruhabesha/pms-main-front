@@ -10,7 +10,7 @@ import {
   CButton,
   CFormSelect,
 } from '@coreui/react'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from "react-redux";
 import { decryptData } from '../../api/utils/crypto'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
@@ -19,11 +19,21 @@ import {
   updateMaintenance,
 } from '../../api/actions/MaintenanceActions'
 import PropertySelect from './PropertySelect' // Import PropertySelect
+import { fetchMaintenances } from '../../api/actions/MaintenanceActions'
+import { filterProperties } from "../../api/actions/PropertyAction";
 
-const TenantRequestForm = () => {
-  const dispatch = useDispatch()
+// import { ITEMS_PER_PAGE } from '../../constants/constants'
+
+const TenantRequestForm = ({ initialFormData, onCloseEditMode, currentPage, searchTerm }) => {
+  const dispatch = useDispatch();
+  const { properties, loading, error } = useSelector((state) => state.property); 
   const navigate = useNavigate()
-  const { id } = useParams()
+
+  useEffect(() => {
+    dispatch(filterProperties()); // Fetch properties on mount
+  }, [dispatch]);
+
+  
   const [isLoading, setIsLoading] = useState(false)
   const [noPropertiesMessage, setNoPropertiesMessage] = useState(null)
   const [formData, setFormData] = useState({
@@ -39,58 +49,49 @@ const TenantRequestForm = () => {
   const [filePreviews, setFilePreviews] = useState([])
   const [localError, setError] = useState(null) // Separate local error state
   const [fetchError, setFetchError] = useState(null)
-  const [isEditing, setIsEditing] = useState(false)
   const [files, setFiles] = useState([])
+  const [isEditing, setIsEditing] = useState(false)
+  const { id } = useParams()
 
+  // Initialize form data from initialFormData prop
   useEffect(() => {
-    const initializeForm = async () => {
-      setIsLoading(true)
-      setFetchError(null)
-      try {
-        const encryptedUser = localStorage.getItem('user')
-        if (!encryptedUser) {
-          setError('User not found. Please log in again.')
-          setIsLoading(false)
-          return
-        }
-        const decryptedUser = decryptData(encryptedUser)
-        console.log('Decrypted User:', decryptedUser)
-        const tenantId = decryptedUser?._id || ''
-
-        let initialFormData = {
-          ...formData,
-          tenant: tenantId,
-        }
-        let initialPreviews = []
-
-        if (id) {
-          setIsEditing(true)
-          const result = await dispatch(fetchMaintenanceById(id)).unwrap()
-          if (result) {
-            initialFormData = {
-              ...result,
-              tenant: tenantId,
-              requestDate: result.requestDate ? new Date(result.requestDate) : new Date(),
-            }
-            initialPreviews = (result?.requestedFiles || []).map((file) =>
-              typeof file === 'string' ? file : URL.createObjectURL(file),
-            )
-          } else {
-            setFetchError('Failed to fetch maintenance details for editing. Please try again.')
-          }
-        }
-        setFilePreviews(initialPreviews)
-        setFormData(initialFormData)
-      } catch (err) {
-        console.error('Fetch error:', err)
-        setError(err?.message || 'Failed to initialize form data. Please try again.')
-      } finally {
-        setIsLoading(false)
+    if (initialFormData) {
+      setIsEditing(true)
+      setFormData({
+        ...initialFormData,
+        property: initialFormData.property ? initialFormData.property._id : '',
+        requestDate: initialFormData.requestDate ? new Date(initialFormData.requestDate) : new Date(), // Ensure correct date format
+      })
+      // Handle file previews if any
+      if (initialFormData.requestedFiles && initialFormData.requestedFiles.length > 0) {
+        // Assuming requestedFiles are URLs
+        setFilePreviews(initialFormData.requestedFiles)
       }
-    }
+    } else {
+      // Get user from local storage for creating new requests
+      const initializeForm = async () => {
+        try {
+          const encryptedUser = localStorage.getItem('user')
+          if (!encryptedUser) {
+            setError('User not found. Please log in again.')
+            return
+          }
+          const decryptedUser = decryptData(encryptedUser)
+          const tenantId = decryptedUser?._id || ''
 
-    initializeForm()
-  }, [dispatch, id])
+          setFormData((prev) => ({
+            ...prev,
+            tenant: tenantId,
+          }))
+        } catch (err) {
+          console.error('Initialization error:', err)
+          setError(err?.message || 'Failed to initialize form. Please try again.')
+        }
+      }
+
+      initializeForm()
+    }
+  }, [initialFormData])
 
   // Form change handlers
   const handleChange = (e) => {
@@ -104,12 +105,16 @@ const TenantRequestForm = () => {
   }, [formData])
 
   const handlePropertyChange = (e) => {
-    const selectedProperty = e.target.value
+    const selectedPropertyId = e.target.value;
     setFormData((prev) => ({
       ...prev,
-      property: selectedProperty?._id || selectedProperty,
-    }))
-  }
+      property: selectedPropertyId, // Store only property ID
+    }));
+  };
+  useEffect(() => {
+    console.log("Redux Properties:", properties); // Debugging
+  }, [properties]);
+  
   // Handle file change to set FormData and generate previews
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files)
@@ -182,7 +187,7 @@ const TenantRequestForm = () => {
       submissionData.append('tenant', formData.tenant || '')
       submissionData.append(
         'property',
-        typeof formData.property === 'object' ? formData.property._id : formData.property || '',
+        formData.property,
       )
 
       submissionData.append('typeOfRequest', formData.typeOfRequest || '')
@@ -196,6 +201,11 @@ const TenantRequestForm = () => {
       if (formData.notes) {
         submissionData.append('notes', formData.notes)
       }
+
+      // Append files to the FormData
+      files.forEach((file) => {
+        submissionData.append('requestedFiles', file) // Append each file
+      })
 
       return submissionData
     } catch (error) {
@@ -221,16 +231,6 @@ const TenantRequestForm = () => {
 
       let submissionData = createFormDataWithLogs(formData)
 
-      if (id) {
-        files.forEach((file) => {
-          submissionData.append(`requestedFiles`, file)
-        })
-      } else {
-        files.forEach((file) => {
-          submissionData.append(`requestedFiles`, file)
-        })
-      }
-
       console.log('formData before dispatch', submissionData)
 
       // Log the final FormData entries
@@ -251,11 +251,13 @@ const TenantRequestForm = () => {
       console.log('Dispatching  action...')
       let result
 
-      if (id) {
+      if (isEditing) {
         console.log('====================================')
         console.log(submissionData)
         console.log('====================================')
-        result = await dispatch(updateMaintenance({ id, maintenanceData: submissionData })).unwrap()
+        result = await dispatch(
+          updateMaintenance({ id: initialFormData._id, maintenanceData: submissionData }),
+        ).unwrap()
       } else {
         result = await dispatch(addMaintenance(submissionData)).unwrap()
       }
@@ -264,8 +266,17 @@ const TenantRequestForm = () => {
 
       if (result) {
         console.log('Maintenance request created successfully')
-        navigate('/maintenance')
+        // navigate('/maintenance')
         setFilePreviews([])
+        setFiles([]) // Clear the files state after successful submission
+        onCloseEditMode() // close edit mode
+        dispatch(
+          fetchMaintenances({
+            page: currentPage,
+            // limit: ITEMS_PER_PAGE,
+            search: searchTerm,
+          }),
+        )
       } else {
         throw new Error('No response data received')
       }
@@ -287,7 +298,11 @@ const TenantRequestForm = () => {
   }
 
   const handleClose = () => {
-    navigate('/maintenance')
+    if (onCloseEditMode) {
+      onCloseEditMode()
+    } else {
+      navigate('/maintenance')
+    }
   }
 
   return (
@@ -405,8 +420,7 @@ const TenantRequestForm = () => {
                   id="requestedFiles"
                   name="requestedFiles"
                   type="file"
-                  multiple
-                  onChange={handleFileChange}
+                  multiple                  onChange={handleFileChange}
                 />
               </CCol>
             </CRow>

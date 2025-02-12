@@ -19,9 +19,8 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { decryptData } from "../../api/utils/crypto";
 import { useNavigate } from "react-router-dom";
-import { filterProperties } from "../../api/actions/PropertyAction";
+import { filterProperties } from "../../api/actions/PropertyAction"; // Import getPropertiesByUser
 import { addComplaint, updateComplaint } from "../../api/actions/ComplaintAction";
-import PropertySelect from "../guest/PropertySelect";
 import {
     cilUser,
     cilHome,
@@ -37,13 +36,15 @@ import 'react-toastify/dist/ReactToastify.css'; // Ensure styles are imported
 const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    
+
     const properties = useSelector((state) => state.property.properties);
-    const loading = useSelector((state) => state.property.loading);
-    const error = useSelector((state) => state.property.error);
+    const propertyLoading = useSelector((state) => state.property.loading);
+    const propertyError = useSelector((state) => state.property.error);
     const [isLoading, setIsLoading] = useState(false);
     const [noPropertiesMessage, setNoPropertiesMessage] = useState(null);
-    
+    const [tenantId, setTenantId] = useState(''); // State to hold tenant ID
+    const [tenantProperties, setTenantProperties] = useState([]); // State for tenant properties
+
     const [formData, setFormData] = useState({
         tenant: "",
         property: "",
@@ -57,33 +58,47 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
     const [localError, setError] = useState(null);
 
     useEffect(() => {
-        const fetchProperties = async () => {
-            dispatch(filterProperties());
+        const encryptedUser = localStorage.getItem("user");
+        const decryptedUser = decryptData(encryptedUser);
+        const currentTenantId = decryptedUser?._id || "";
+        setTenantId(currentTenantId); // Set tenant ID in state
+        setFormData(prevFormData => ({ ...prevFormData, tenant: currentTenantId })); // Set tenant ID in form data
+
+        const fetchPropertiesForTenant = async () => {
+            // if (currentTenantId) {
+                dispatch(filterProperties())
+                    .unwrap()
+                    .then(response => {
+                        setTenantProperties(response); // Set tenant properties
+                    })
+                    .catch(error => {
+                        console.error("Error fetching properties for tenant:", error);
+                        setNoPropertiesMessage('Failed to load properties.');
+                    });
+            // } else {
+            //     setNoPropertiesMessage('Tenant ID not found.');
+            // }
         };
-        
-        fetchProperties();
+
+        fetchPropertiesForTenant();
     }, [dispatch]);
 
 
     useEffect(() => {
-        if (properties.length === 0 && !loading && !error) {
+        if (tenantProperties.length === 0 && !propertyLoading && !propertyError) {
             setNoPropertiesMessage('No properties available for this tenant.');
         } else {
             setNoPropertiesMessage(null);
         }
-    }, [properties, loading, error]);
+    }, [tenantProperties, propertyLoading, propertyError]);
 
 
     useEffect(() => {
         const initializeForm = () => {
-            const encryptedUser = localStorage.getItem("user");
-            const decryptedUser = decryptData(encryptedUser);
-            const tenantId = decryptedUser?._id || "";
-    
             if (editingComplaint) {
                 setFormData({
-                    tenant: tenantId,
-                    property: editingComplaint?.property?._id || "",
+                    tenant: tenantId, // Use tenantId from state
+                    property: editingComplaint?.property?.id || "",
                     complaintType: editingComplaint?.complaintType || "Noise",
                     description: editingComplaint?.description || "",
                     status: editingComplaint?.status || "Pending",
@@ -93,7 +108,7 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                 });
             } else {
                 setFormData({
-                    tenant: tenantId,
+                    tenant: tenantId, // Use tenantId from state
                     property: "",
                     complaintType: "Noise",
                     description: "",
@@ -104,10 +119,9 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                 });
             }
         };
-    
+
         initializeForm();
-    }, [editingComplaint]);
-    
+    }, [editingComplaint, tenantId]); // Include tenantId in dependency array
 
 
      const handleChange = (e) => {
@@ -139,13 +153,12 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
     };
 
     const handlePropertyChange = (e) => {
+        const selectedPropertyId = e.target.value;
         setFormData((prev) => ({
             ...prev,
-            property: e.target.value, // This must be the _id of the property
+            property: selectedPropertyId, // Store only property ID
         }));
     };
-      
-    
 
     const validateForm = () => {
         if (!formData.property) return "Please select a property.";
@@ -156,6 +169,7 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
 
 
     const handleSubmit = async () => {
+      setIsLoading(true); // Start loading
         try {
         const submissionData = new FormData();
         submissionData.append('tenant', formData.tenant);
@@ -164,21 +178,30 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
         submissionData.append('description', formData.description);
         submissionData.append('priority', formData.priority);
         submissionData.append('status', formData.status);
-        
+
         // Append files correctly
         if (formData.supportingFiles?.length > 0) {
           formData.supportingFiles.forEach((file, index) => {
             submissionData.append('supportingFiles', file);
           });
         }
-        
+
         if (editingComplaint) {
           // Add _method parameter for PUT request
           submissionData.append('_method', 'PUT');
+
+          // Sanity check:  Make sure editingComplaint has a valid _id.
+          if (!editingComplaint._id) {
+              console.error("Error: editingComplaint does not have a valid _id.");
+              toast.error("Could not update complaint: Invalid complaint ID.");
+              setIsLoading(false); // Stop loading even when error occurred
+              return;
+          }
+
           const response = await dispatch(
             updateComplaint({
-              id: editingComplaint._id,
-              formData: submissionData
+              id: editingComplaint._id, // Use _id here.
+              complaintData: submissionData // corrected this as well
             })
           ).unwrap();
           toast.success('Complaint updated successfully');
@@ -186,16 +209,16 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
           await dispatch(addComplaint(submissionData)).unwrap();
           toast.success('Complaint added successfully');
         }
-        
+
         handleClose();
         } catch (error) {
         console.error('Submission Error:', error);
         toast.error(error.message || 'Failed to submit complaint');
+        } finally {
+          setIsLoading(false); // Stop loading
         }
-        };  
-    
-    
-    
+        };
+
 
     const handleClose = () => {
         setFormData({
@@ -240,18 +263,25 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                                         name="tenant"
                                         type="text"
                                         value={formData.tenant}
-                                        readOnly
+                                        readOnly // Make Tenant ID read-only
                                         className="form-control-animation"
                                     />
                                 </CCol>
 
  <CCol xs={12}>
      <CFormLabel htmlFor="property"><CIcon icon={cilHome} className="me-1"/>Property</CFormLabel>
-     <PropertySelect
-    value={formData.property}
-    onChange={handlePropertyChange}
-    required
-/>
+    <CFormSelect
+        value={formData.property}
+        onChange={handlePropertyChange}
+        required
+    >
+        <option value="">Select a property</option>
+        {tenantProperties && tenantProperties.map((property) => (
+            <option key={property.id} value={property.id}>
+                {property.title}
+            </option>
+        ))}
+    </CFormSelect>
 
 </CCol>
 

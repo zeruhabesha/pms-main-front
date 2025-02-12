@@ -228,3 +228,54 @@
     0% { opacity: 0.4; }
     100% { opacity: 1; }
 }
+
+// TenantTable.scss
+
+.tenant-table-container {
+  // Your existing styles
+}
+
+// CSS for Blurring
+.blurred-column {
+  filter: blur(2px);  // Adjust the blur amount as needed
+}
+
+// TenantTable.scss
+
+.tenant-table-container {
+  // Your existing styles
+}
+
+.bg-body-tertiary {
+  background-color: #f8f9fa !important; /* Or your desired background color */
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25em 0.4em;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.25rem;
+
+  &.text-success {
+    background-color: #28a745;
+  }
+
+  &.text-warning {
+    background-color: #ffc107;
+    color: #212529; /* Adjust text color for visibility */
+  }
+
+  &.text-danger {
+    background-color: #dc3545;
+  }
+
+  &.text-secondary {
+    background-color: #6c757d;
+  }
+}

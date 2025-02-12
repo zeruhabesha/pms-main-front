@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+// AddClearance.js
+
+import React, { useEffect, useState, useCallback } from "react";
 import {
     CFormInput,
     CFormLabel,
@@ -20,7 +22,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { decryptData } from "../../api/utils/crypto";
 import { addClearance } from "../../api/actions/ClearanceAction";
-import PropertySelect from "../guest/PropertySelect";
+import PropertySelect from "../complaints/PropertySelect";
 import { reset } from "../../api/slice/clearanceSlice";
 import { toast } from "react-toastify";
 import {
@@ -32,14 +34,10 @@ import {
     cilWarning,
 } from "@coreui/icons";
 import { CIcon } from "@coreui/icons-react";
-import { fetchTenants } from "../../api/actions/TenantActions";
+import { getPropertiesByUser } from "../../api/actions/PropertyAction";
 
-const AddClearance = ({ visible, setVisible, tenantId }) => {
+const AddClearance = ({ visible, setVisible, tenantId: propTenantId, selectedClearance }) => {
     const dispatch = useDispatch();
-    const properties = useSelector((state) => state.property.properties);
-    const { tenants } = useSelector((state) => state.tenant);
-    const loading = useSelector((state) => state.property.loading);
-    const error = useSelector((state) => state.property.error);
     const { isLoading } = useSelector((state) => state.clearance);
     const [noPropertiesMessage, setNoPropertiesMessage] = useState(null);
     const [localError, setError] = useState(null);
@@ -47,15 +45,15 @@ const AddClearance = ({ visible, setVisible, tenantId }) => {
         tenant: "",
         property: "",
         moveOutDate: "",
-        status: "Pending", // Correct initial status
-        inspectionStatus: "Pending", //Correct default initial value
-        notes: "",
         inspectionDate: "",
         reason: "",
+        notes: "",
     });
-    const [validationError, setValidationError] = useState(null);
     const [userId, setUserId] = useState(null);
     const [userName, setUserName] = useState(null);
+    const [isTenantUser, setIsTenantUser] = useState(false);
+    const [tenantProperties, setTenantProperties] = useState([]);
+    const { tenants } = useSelector((state) => state.tenant);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -64,113 +62,131 @@ const AddClearance = ({ visible, setVisible, tenantId }) => {
                 try {
                     const decryptedUser = decryptData(encryptedUser);
                     if (decryptedUser && decryptedUser._id) {
-                        // Ensure the ID is a string
-                        const userIdString = decryptedUser._id.toString();
-
+                        const userIdString = String(decryptedUser._id);
                         setUserId(userIdString);
                         setUserName(decryptedUser.name);
-                        // Set the tenant to the current user ID ONLY if no tenantId is passed down.
-                        setFormData((prev) => ({
-                            ...prev,
-                             tenant: tenantId || userIdString, 
-                        }));
-                    } else {
-                        setError("Invalid user data, try to log in again.");
+                        setIsTenantUser(decryptedUser.role === 'Tenant');
+
+                        if (decryptedUser.role === 'Tenant') {
+                            // Logged in tenant user
+                            setFormData(prev => ({ ...prev, tenant: userIdString }));
+
+                            const response = await dispatch(getPropertiesByUser(userIdString)).unwrap();
+                            setTenantProperties(response);
+                        } else {
+                            // Logged in Admin/Agent user
+                            // Load the tenant ID from localStorage, if available.
+                            const storedTenantId = localStorage.getItem('selectedTenantId');  // get from localstorage
+                            if (storedTenantId) {
+                                setFormData(prev => ({ ...prev, tenant: storedTenantId }));
+                            }
+                        }
                     }
                 } catch (error) {
                     console.error('Decryption error:', error);
-                    setError("Error decoding token, try to log in again.");
+                    setError("Error decoding user data");
                 }
             }
         };
-        fetchUser();
-        dispatch(fetchTenants({ page: 1, limit: 10000 }));
-    }, [dispatch, tenantId]);
 
+        fetchUser();
+    }, [dispatch]);
+
+    useEffect(() => {
+        if (selectedClearance) {
+            setFormData({
+                tenant: selectedClearance.tenant || '',
+                property: selectedClearance.property || '',
+                moveOutDate: selectedClearance.moveOutDate ? new Date(selectedClearance.moveOutDate).toISOString().split('T')[0] : '',
+                inspectionDate: selectedClearance.inspectionDate ? new Date(selectedClearance.inspectionDate).toISOString().split('T')[0] : '',
+                reason: selectedClearance.reason || '',
+                notes: selectedClearance.notes || '',
+            });
+        } else {
+            const storedTenantId = localStorage.getItem('selectedTenantId');
+            setFormData({
+                tenant: isTenantUser ? userId || '' : storedTenantId || '', //Load from LS or default
+                property: null,
+                moveOutDate: "",
+                inspectionDate: "",
+                reason: "",
+                notes: "",
+            });
+        }
+    }, [selectedClearance, userId, isTenantUser]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
-
-    useEffect(() => {
-        setValidationError(validateForm());
-    }, [formData]);
 
     const validateForm = () => {
         if (!formData.property) return "Please select a property.";
-        if (!formData.tenant) return "Please select a tenant.";
+        if (!formData.tenant) return "Tenant ID is required.";
         if (!formData.inspectionDate) return "Please select the inspection date.";
-         if (!formData.moveOutDate) return "Please select the move out date.";
+        if (!formData.moveOutDate) return "Please select the move out date.";
         if (!formData.reason) return "Please enter the reason for clearance.";
         return null;
     };
 
     const onSubmit = async () => {
         const validationError = validateForm();
-         if (validationError) {
-             setError(validationError);
-             return;
-         }
+        if (validationError) {
+            setError(validationError);
+            return;
+        }
 
         try {
-              const payload = {
-                 ...formData,
-                moveOutDate: new Date(formData.moveOutDate), // Ensure it's a Date object
-                inspectionDate: new Date(formData.inspectionDate),
-             };
+            const payload = {
+                tenant: formData.tenant, // Send as ObjectId
+                property: formData.property, // Send as ObjectId
+                moveOutDate: new Date(formData.moveOutDate).toISOString(),
+                inspectionDate: new Date(formData.inspectionDate).toISOString(),
+                reason: formData.reason,
+                notes: formData.notes,
+                status: "Pending",
+                inspectionStatus: "Pending",
+            };
+
             await dispatch(addClearance(payload)).unwrap();
             toast.success("Clearance request submitted successfully!");
             dispatch(reset());
             handleClose();
         } catch (error) {
-            console.error('Submission error:', error);
-            setError(error.message || "Failed to add clearance request.");
+            console.error("Submission error:", error);
+            setError(error.message || "Failed to create clearance request.");
         }
     };
-
 
     const handleClose = () => {
-        if (window.confirm("Are you sure you want to close this form?")) {
-            setVisible(false);
-            setFormData({
-               tenant: "",
-                property: "",
-                 moveOutDate: "",
-                status: "Pending",
-                 inspectionStatus: "Pending",
-                notes: "",
-                inspectionDate: "",
-                reason: "",
-            });
-            setError(null);
-        }
+        setVisible(false);
+        setFormData({
+            tenant: "",
+            property: null,
+            moveOutDate: "",
+            inspectionDate: "",
+            reason: "",
+            notes: "",
+        });
+        setError(null);
     };
 
-    const handlePropertyChange = (e) => {
+    const handlePropertyChange = useCallback((e) => {
         const propertyId = e.target.value;
         setFormData(prev => ({ ...prev, property: propertyId }));
-    };
+    }, []);
 
-    const handleTenantChange = (e) => {
-        setFormData((prev) => ({ ...prev, tenant: e.target.value }));
-    };
-
-
+    // HANDLE TENANT CHANGE (if you need an admin to select the tenant)
+    const handleTenantChange = useCallback((e) => {
+        const tenantId = e.target.value;
+        setFormData(prev => ({ ...prev, tenant: tenantId }));
+        localStorage.setItem('selectedTenantId', tenantId); // STORE IN LOCAL STORAGE
+    }, []);
 
     return (
-        <CModal
-            visible={visible}
-            onClose={handleClose}
-            alignment="center"
-            backdrop="static"
-            size="lg"
-        >
-            <CModalHeader className="bg-dark text-white">
-                <CModalTitle>
-                    <CIcon icon={cilWarning} className="me-2" />
-                    Request Clearance
-                </CModalTitle>
+        <CModal visible={visible} onClose={handleClose} alignment="center" backdrop="static" size="lg">
+            <CModalHeader>
+                <CModalTitle>{selectedClearance ? 'Edit Clearance Request' : 'Request Clearance'}</CModalTitle>
             </CModalHeader>
             <CModalBody>
                 <CCard className="border-0 shadow-sm">
@@ -193,58 +209,61 @@ const AddClearance = ({ visible, setVisible, tenantId }) => {
                                         Property
                                     </CFormLabel>
                                     <PropertySelect
+                                        id="property"
                                         value={formData.property}
                                         onChange={handlePropertyChange}
                                         required
+                                        properties={tenantProperties}
+                                        name="property"
                                     />
                                 </CCol>
-                                 <CCol md={6}>
+                                <CCol md={6}>
                                     <CFormLabel htmlFor="tenant">
                                         <CIcon icon={cilUser} className="me-1" />
                                         Tenant
                                     </CFormLabel>
-                                    <CFormSelect
-                                        value={formData.tenant}
-                                        onChange={handleTenantChange}
-                                        options={[
-                                          { label: 'Select a Tenant', value: '' },
-                                          ...(userId && !tenantId ? [{ label: userName , value: userId }] : []), // user option
-                                          ...(tenants || []).map((tenant) => ({
-                                              label: tenant.tenantName,
-                                              value: tenant._id,
-                                          })),
-                                      ]}
-                                        required
-                                    />
+                                    {isTenantUser ? (
+                                        <CFormInput
+                                            type="text"
+                                            value={userName || ''}
+                                            readOnly
+                                            disabled
+                                        />
+                                    ) : (
+                                        <CFormSelect
+                                            id="tenant"
+                                            name="tenant"
+                                            value={formData.tenant}
+                                            onChange={handleTenantChange}
+                                        >
+                                            <option value="">Select Tenant</option>
+                                            <option key={userId} value={userId}>
+                                                    {userName}
+                                                </option>
+                                        </CFormSelect>
+                                    )}
                                 </CCol>
-                                   <CCol md={6}>
+                                <CCol md={6}>
                                     <CFormInput
                                         label={
                                             <span>
-                                                <CIcon
-                                                    icon={cilCalendar}
-                                                    className="me-1"
-                                                />
-                                               Move Out Date
+                                                <CIcon icon={cilCalendar} className="me-1" />
+                                                Move Out Date
                                             </span>
                                         }
                                         type="date"
                                         name="moveOutDate"
                                         value={formData.moveOutDate}
                                         onChange={handleChange}
-                                         style={{
-                                            backgroundColor: "aliceblue",
-                                        }}
+                                        className="bg-light"
+                                        required
                                     />
                                 </CCol>
-                                 <CCol md={6}>
+                                <CCol md={6}>
                                     <CFormInput
                                         label={
                                             <span>
-                                                <CIcon
-                                                    icon={cilCalendar}
-                                                    className="me-1"
-                                                />
+                                                <CIcon icon={cilCalendar} className="me-1" />
                                                 Inspection Date
                                             </span>
                                         }
@@ -252,19 +271,15 @@ const AddClearance = ({ visible, setVisible, tenantId }) => {
                                         name="inspectionDate"
                                         value={formData.inspectionDate}
                                         onChange={handleChange}
-                                        style={{
-                                            backgroundColor: "aliceblue",
-                                        }}
+                                        className="bg-light"
+                                        required
                                     />
                                 </CCol>
                                 <CCol md={6}>
                                     <CFormInput
                                         label={
                                             <span>
-                                                <CIcon
-                                                    icon={cilInfo}
-                                                    className="me-1"
-                                                />
+                                                <CIcon icon={cilInfo} className="me-1" />
                                                 Reason
                                             </span>
                                         }
@@ -272,19 +287,15 @@ const AddClearance = ({ visible, setVisible, tenantId }) => {
                                         name="reason"
                                         value={formData.reason}
                                         onChange={handleChange}
-                                        style={{
-                                            backgroundColor: "aliceblue",
-                                        }}
+                                        className="bg-light"
+                                        required
                                     />
                                 </CCol>
                                 <CCol md={6}>
                                     <CFormInput
                                         label={
                                             <span>
-                                                <CIcon
-                                                    icon={cilDescription}
-                                                    className="me-1"
-                                                />
+                                                <CIcon icon={cilDescription} className="me-1" />
                                                 Notes
                                             </span>
                                         }
@@ -292,9 +303,7 @@ const AddClearance = ({ visible, setVisible, tenantId }) => {
                                         name="notes"
                                         value={formData.notes}
                                         onChange={handleChange}
-                                        style={{
-                                            backgroundColor: "aliceblue",
-                                        }}
+                                        className="bg-light"
                                     />
                                 </CCol>
                             </CRow>
@@ -302,27 +311,18 @@ const AddClearance = ({ visible, setVisible, tenantId }) => {
                     </CCardBody>
                 </CCard>
             </CModalBody>
-            <CModalFooter className="border-top-0">
-                <CButton
-                    color="secondary"
-                    variant="ghost"
-                    onClick={handleClose}
-                    disabled={isLoading}
-                >
+            <CModalFooter>
+                <CButton color="secondary" variant="ghost" onClick={handleClose} disabled={isLoading}>
                     Cancel
                 </CButton>
-                <CButton
-                    color="dark"
-                    onClick={onSubmit}
-                    disabled={isLoading || typeof validationError === 'string'}
-                >
+                <CButton color="dark" onClick={onSubmit} disabled={isLoading}>
                     {isLoading ? (
                         <>
                             <CSpinner size="sm" className="me-2" />
                             Requesting...
                         </>
                     ) : (
-                        "Submit Request"
+                        selectedClearance ? "Update Request" : "Submit Request"
                     )}
                 </CButton>
             </CModalFooter>

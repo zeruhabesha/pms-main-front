@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import MaintenanceAssign from './MaintenanceAssign'
 import { useDispatch, useSelector } from 'react-redux'
@@ -19,21 +19,24 @@ const MaintenanceAssignPage = () => {
   useEffect(() => {
     const foundMaintenance = maintenances?.find((m) => m._id === id)
     setMaintenance(foundMaintenance)
-  }, [id, maintenances])
+  }, [id, maintenances, setMaintenance])
 
-  const handleAssign = async (maintenanceId, updatedData) => {
-    try {
-      await dispatch(
-        updateMaintenance({
-          id: maintenanceId,
-          maintenanceData: updatedData,
-        }),
-      )
-      navigate('/maintenance')
-    } catch (error) {
-      console.error('Assign Error', error)
-    }
-  }
+  const handleAssign = useCallback(
+    async (maintenanceId, updatedData) => {
+      try {
+        await dispatch(
+          updateMaintenance({
+            id: maintenanceId,
+            maintenanceData: updatedData,
+          }),
+        )
+        navigate('/maintenance')
+      } catch (error) {
+        console.error('Assign Error', error)
+      }
+    },
+    [dispatch, navigate],
+  )
 
   return (
     <div>

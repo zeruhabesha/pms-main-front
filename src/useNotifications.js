@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import axios from "axios";
 
-const API_URL = "http://localhost:4000/api/v1/notifications";
+const API_URL = "https://pms-backend-sncw.onrender.com/api/v1/notifications";
 
 const useNotifications = (userId) => {
   const [unreadCounts, setUnreadCounts] = useState({});
@@ -34,7 +34,7 @@ const useNotifications = (userId) => {
     fetchNotifications();
 
     // Real-time updates with WebSockets
-    const socket = io("http://localhost:4000/api/v1");
+    const socket = io("https://pms-backend-sncw.onrender.com/api/v1/");
     socket.on(`notification_${userId}`, (newNotification) => {
       setUnreadCounts((prev) => ({
         ...prev,

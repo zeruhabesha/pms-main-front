@@ -1,5 +1,3 @@
-/* eslint-disable react/display-name */
-/* eslint-disable react/prop-types */
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   CTable,
@@ -49,11 +47,11 @@ import { decryptData } from '../../api/utils/crypto'
 import { useNavigate } from 'react-router-dom'
 import MaintenanceApproveModal from './MaintenanceApproveModal'
 import MaintenanceRejectModal from './MaintenanceRejectModal'
-import { updateMaintenance } from '../../api/actions/MaintenanceActions'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux';
 import MaintenanceInspectionModal from './MaintenanceInspectionModal'
 import MaintenanceCompletionModal from './MaintenanceCompletionModal'
 import { format } from 'date-fns'
+import { fetchMaintenances, updateMaintenance } from '../../api/actions/MaintenanceActions';
 
 const MaintenanceTable = ({
   maintenanceList = [],
@@ -65,7 +63,9 @@ const MaintenanceTable = ({
   handleDelete,
   handleEdit,
   handleViewDetails,
+  // handleAssign,
   handlePageChange,
+    handleDone,
 }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' })
   const [userPermissions, setUserPermissions] = useState(null)
@@ -149,56 +149,49 @@ const MaintenanceTable = ({
     }
   }, [dispatch, maintenanceToReject])
 
-  const handleInspection = useCallback((maintenance) => {
-    setMaintenanceToInspect(maintenance)
-    setInspectionModalVisible(true)
-  }, [])
+  const handleInspection = (maintenance) => {
+    setMaintenanceToInspect(maintenance);
+    setInspectionModalVisible(true);
+  };
+  
 
+  // MaintenanceTable.js
   const confirmInspection = useCallback(
-    async (expenseData) => {
+    async (inspectionData) => {
       if (maintenanceToInspect) {
         try {
+          console.log("Submitting inspection data:", inspectionData);
+  
+          const updateData = {
+            status: inspectionData.status,
+            estimatedCompletionTime: inspectionData.estimatedCompletionTime,
+            expense: inspectionData.expense, // <--- IMPORTANT:  Pass it directly
+            totalExpenses: inspectionData.totalExpenses
+          };
+  
           await dispatch(
             updateMaintenance({
               id: maintenanceToInspect._id,
-              maintenanceData: {
-                status: 'Inspected',
-                expense: expenseData,
-              },
-            }),
-          )
-          setInspectionModalVisible(false)
+              maintenanceData: updateData
+            })
+          ).unwrap();
+  
+          // Refresh the maintenance list after successful update
+          dispatch(fetchMaintenances({
+            page: currentPage,
+            limit: ITEMS_PER_PAGE,
+            search: searchTerm,
+          }));
+  
+          setInspectionModalVisible(false);
         } catch (error) {
-          console.error('Failed to update and set to inspected:', error)
+          console.error('Failed to update and set to inspected:', error);
+          // Handle error appropriately, e.g., show an error message to the user
         }
       }
     },
-    [dispatch, maintenanceToInspect],
-  )
-
-  const handleDone = useCallback((maintenance) => {
-    setMaintenanceToComplete(maintenance)
-    setCompletionModalVisible(true)
-  }, [])
-
-  const confirmCompletion = useCallback(
-    async (status, notes = '') => {
-      if (maintenanceToComplete) {
-        try {
-          await dispatch(
-            updateMaintenance({
-              id: maintenanceToComplete._id,
-              maintenanceData: { status, notes },
-            }),
-          )
-          setCompletionModalVisible(false)
-        } catch (error) {
-          console.error('Failed to update status:', error)
-        }
-      }
-    },
-    [dispatch, maintenanceToComplete],
-  )
+    [dispatch, maintenanceToInspect, currentPage, searchTerm]
+  );
 
   const handleAssign = useCallback(
     (maintenance) => {
@@ -336,18 +329,12 @@ const MaintenanceTable = ({
         maintenanceToReject={maintenanceToReject}
         confirmReject={confirmReject}
       />
-      <MaintenanceInspectionModal
-        visible={inspectionModalVisible}
-        setInspectionModalVisible={setInspectionModalVisible}
-        maintenanceToInspect={maintenanceToInspect}
-        confirmInspection={confirmInspection}
-      />
-      <MaintenanceCompletionModal
-        visible={completionModalVisible}
-        setCompletionModalVisible={setCompletionModalVisible}
-        maintenanceToComplete={maintenanceToComplete}
-        confirmCompletion={confirmCompletion}
-      />
+       <MaintenanceInspectionModal
+    visible={inspectionModalVisible}
+    setInspectionModalVisible={setInspectionModalVisible}
+    maintenanceToInspect={maintenanceToInspect}
+    confirmInspection={confirmInspection}
+  />
 
       <CTable align="middle" className="mb-0 border" hover responsive>
         <CTableHead className="text-nowrap">
@@ -355,8 +342,7 @@ const MaintenanceTable = ({
             <CTableHeaderCell className="bg-body-tertiary text-center">
               <CIcon icon={cilPeople} />
             </CTableHeaderCell>
-            <CTableHeaderCell
-              className="bg-body-tertiary"
+            <CTableHeaderCell className="bg-body-tertiary"
               onClick={() => handleSort('name')}
               style={{ cursor: 'pointer' }}
             >
@@ -439,7 +425,7 @@ const MaintenanceTable = ({
                       {role === 'Inspector' && (
                         <CDropdownItem onClick={() => handleDone(maintenance)} title="Edit">
                           <CIcon icon={cilPencil} className="me-2" />
-                          Edit
+                           Edit
                         </CDropdownItem>
                       )}
                       {role === 'Tenant' && (

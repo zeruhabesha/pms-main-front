@@ -40,6 +40,7 @@ const Guest = React.lazy(() => import('./views/guest/ViewGuest'))
 const AddGuest = React.lazy(() => import('./views/guest/AddGuest'))
 const ViewClearance = React.lazy(() => import('./views/Clearance/ViewClearance'))
 const AddClearance = React.lazy(() => import('./views/Clearance/AddClearance'))
+const GuestDetail = React.lazy(() => import('./views/guest/GuestDetail')) // Import the GuestDetail component
 
 // Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute'
@@ -84,7 +85,7 @@ const App = () => {
           <Route path="/404" element={<Page404 />} />
           <Route path="/500" element={<Page500 />} />
           <Route path="/forgot-password" element={<ForgetPassword />} />
-
+          <Route path="/guestdetail/:id" name="Guest Detail" element={<GuestDetail />} />
           {/* Protected Routes under DefaultLayout */}
           <Route element={<DefaultLayout />}>
             <Route path="/dashboard" element={<ProtectedRoute element={Dashboard} />} />

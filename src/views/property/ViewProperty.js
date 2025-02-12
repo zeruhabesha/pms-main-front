@@ -327,8 +327,10 @@ const ViewProperty = () => {
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader className="d-flex justify-content-between align-items-center">
-            <strong>
-              <CButton
+            
+            {userPermissions?.addProperty && (
+            <><strong> 
+                <CButton
                 color="dark"
                 onClick={handleOpenImportModal}
                 title="Import Data"
@@ -337,19 +339,19 @@ const ViewProperty = () => {
               </CButton>
             </strong>
             <div className="d-flex gap-2">
-              {userPermissions?.addProperty && (
+           
                 <button className="learn-more" onClick={handleAddPropertyClick}>
                   <span className="circle" aria-hidden="true">
                     <span className="icon arrow"></span>
                   </span>
                   <span className="button-text">Add Property</span>
                 </button>
-              )}
+                </div>  </> )}
 
               {/* <CButton color="dark" onClick={handleResetView} title="Reset View">
                                   Reset
                                 </CButton> */}
-            </div>
+            
           </CCardHeader>
           <CCardBody>
             {error && <CAlert color="danger">{error}</CAlert>}
