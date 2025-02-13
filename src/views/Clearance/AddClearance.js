@@ -22,13 +22,13 @@ import {
 } from '@coreui/react'
 import { useDispatch, useSelector } from 'react-redux'
 import { decryptData } from '../../api/utils/crypto'
-import { addClearance } from '../../api/actions/ClearanceAction'
+import { addClearance } from '../../api/actions/ClearanceAction.js'
 import PropertySelect from '../complaints/PropertySelect'
 import { toast } from 'react-toastify'
 import { cilUser, cilHome, cilInfo, cilDescription, cilCalendar, cilWarning } from '@coreui/icons'
 import { CIcon } from '@coreui/icons-react'
 import { getPropertiesByUser } from '../../api/actions/PropertyAction'
-import { reset } from '../../api/slice/ClearanceSlice'
+import { reset } from '../../api/slice/ClearanceSlice.js'
 
 const AddClearance = ({ visible, setVisible, tenantId: propTenantId, selectedClearance }) => {
   const dispatch = useDispatch()
