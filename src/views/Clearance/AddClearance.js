@@ -24,11 +24,11 @@ import { useDispatch, useSelector } from 'react-redux'
 import { decryptData } from '../../api/utils/crypto'
 import { addClearance } from '../../api/actions/ClearanceAction'
 import PropertySelect from '../complaints/PropertySelect'
-import { reset } from '../../api/slice/ClearanceSlice.js'
 import { toast } from 'react-toastify'
 import { cilUser, cilHome, cilInfo, cilDescription, cilCalendar, cilWarning } from '@coreui/icons'
 import { CIcon } from '@coreui/icons-react'
 import { getPropertiesByUser } from '../../api/actions/PropertyAction'
+import { reset } from '../../api/slice/ClearanceSlice'
 
 const AddClearance = ({ visible, setVisible, tenantId: propTenantId, selectedClearance }) => {
   const dispatch = useDispatch()
