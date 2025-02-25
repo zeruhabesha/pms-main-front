@@ -49,6 +49,8 @@ import AddImage from "./AddImage";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 import ImportModal from "./ImportModal"; // Import the new modal
 import PropertyTableRow from "./PropertyTableRow";
+const DefaultExcel = "/DefaultExcel.xlsx";
+
 
 const ViewProperty = () => {
   // Define state for photo modals
@@ -68,7 +70,7 @@ const ViewProperty = () => {
     properties = [],
     loading = false,
     error = null,
-    pagination = { currentPage: 1, totalPages: 1 },
+    pagination = { currentPage: 1, totalPages: 1, totalItems: 0 }, // Corrected pagination object
   } = useSelector((state) => state.property);
 
   const itemsPerPage = 10; // Items per page
@@ -292,9 +294,10 @@ const ViewProperty = () => {
   };
 
   const handlePageChange = (newPage) => {
-    dispatch(filterProperties({ page: newPage, limit: itemsPerPage }));
+    dispatch(
+      filterProperties({ page: newPage, limit: itemsPerPage })
+    );
   };
-
   const handleResetView = () => {
     dispatch(resetState());
   };
@@ -322,14 +325,36 @@ const ViewProperty = () => {
     navigate("/property/add");
   };
 
+    // Function to handle the download of the Excel template
+    const handleDownloadTemplate = () => {
+        const link = document.createElement('a');
+        // Adjust the path to your Excel template file
+        link.href = process.env.PUBLIC_URL + '/property_import_template.xlsx'; // Ensure this file exists in your `public` directory!
+        link.download = 'property_import_template.xlsx';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+     // Function to handle the download of the Excel file
+     const handleDownloadExcel = () => {
+      const link = document.createElement('a');
+      link.href = DefaultExcel; // Use the static path
+      link.setAttribute('download', 'properties_data.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  };
+  
+
+
   return (
     <CRow>
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader className="d-flex justify-content-between align-items-center">
-            
             {userPermissions?.addProperty && (
-            <><strong> 
+            <><strong>
                 <CButton
                 color="dark"
                 onClick={handleOpenImportModal}
@@ -337,9 +362,10 @@ const ViewProperty = () => {
               >
                 Import Data
               </CButton>
+              
             </strong>
             <div className="d-flex gap-2">
-           
+
                 <button className="learn-more" onClick={handleAddPropertyClick}>
                   <span className="circle" aria-hidden="true">
                     <span className="icon arrow"></span>
@@ -351,7 +377,7 @@ const ViewProperty = () => {
               {/* <CButton color="dark" onClick={handleResetView} title="Reset View">
                                   Reset
                                 </CButton> */}
-            
+
           </CCardHeader>
           <CCardBody>
             {error && <CAlert color="danger">{error}</CAlert>}
@@ -380,6 +406,10 @@ const ViewProperty = () => {
                 <CButton color="dark" onClick={exportToPDF} title="Export PDF">
                   <CIcon icon={cilCloudDownload} />
                 </CButton>
+                 {/* New Button to Download Excel */}
+                <CButton color="dark" onClick={handleDownloadExcel} title="Download Excel">
+                    Default
+                </CButton>
               </div>
               <CFormInput
                 type="text"
@@ -393,17 +423,17 @@ const ViewProperty = () => {
             ) : (
               <PropertyTable
                 properties={properties}
-                totalProperties={pagination.totalItems}
+                totalProperties={pagination?.totalItems || 0} // Used totalItems here
                 currentPage={pagination?.currentPage || 1}
-                totalPages={pagination?.totalPages || 1}
+                totalPages={pagination?.totalPages || 1} // totalPages
                 handlePageChange={handlePageChange}
                 itemsPerPage={itemsPerPage}
-                onEdit={handleEditProperty} // Make sure this is correct
+                onEdit={handleEditProperty}
                 onView={handleViewProperty}
-                onDelete={handleDeleteProperty} // change this to softDelte properly or change! property to be marked to UI read the flags! instead call
-                onPhotoDelete={handlePhotoDelete} // Pass it here
+                onDelete={handleDeleteProperty}
+                onPhotoDelete={handlePhotoDelete}
                 onDeleteMultiple={handleDeleteMultipleProperties}
-                setSelectedRows={setSelectedPropertyIds} //add selectedrow since all need! now after new feature, so it top update properly
+                setSelectedRows={setSelectedPropertyIds}
               />
             )}
           </CCardBody>

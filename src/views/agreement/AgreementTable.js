@@ -1,4 +1,3 @@
-// src/views/agreement/AgreementTable.js
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
     CTable,
@@ -246,7 +245,7 @@ const AgreementTable = ({
                         <CTableHeaderCell className="bg-body-tertiary">Tenant</CTableHeaderCell>
                         <CTableHeaderCell className="bg-body-tertiary">Property</CTableHeaderCell>
                         <CTableHeaderCell className="bg-body-tertiary">Lease</CTableHeaderCell>
-                        <CTableHeaderCell className="bg-body-tertiary">Usage</CTableHeaderCell>
+                        <CTableHeaderCell className="bg-body-tertiary">Rent</CTableHeaderCell>
                         <CTableHeaderCell className="bg-body-tertiary text-center">
                             Payment
                         </CTableHeaderCell>
@@ -315,10 +314,10 @@ const AgreementTable = ({
                                 <CTableDataCell>
                                     <CDropdown
                                         variant="btn-group"
-                                        isOpen={dropdownOpen === agreement?.id}
-                                        onToggle={() => toggleDropdown(agreement?.id)}
+                                        isOpen={dropdownOpen === agreement._id}
+                                        onToggle={() => toggleDropdown(agreement._id)}
                                         onMouseLeave={closeDropdown}
-                                        innerRef={ref => (dropdownRefs.current[agreement?.id] = ref)}
+                                        innerRef={ref => (dropdownRefs.current[agreement._id] = ref)}
                                     >
                                         <CDropdownToggle color="light" caret={false} size="sm" title="Actions">
                                             <CIcon icon={cilOptions} />
@@ -439,14 +438,8 @@ AgreementTable.propTypes = {
     agreements: PropTypes.arrayOf(
         PropTypes.shape({
             _id: PropTypes.string.isRequired,
-            tenant: PropTypes.shape({
-                tenantName: PropTypes.string,
-                _id: PropTypes.string,
-            }),
-            property: PropTypes.shape({
-                title: PropTypes.string,
-                address: PropTypes.string,
-            }),
+            tenant: PropTypes.string,
+            property: PropTypes.string,
             leaseStart: PropTypes.string,
             leaseEnd: PropTypes.string,
             rentAmount: PropTypes.number,

@@ -22,9 +22,65 @@ class ClearanceService {
         };
     }
 
+    async getRegisteredBy() {
+        try {
+            const encryptedUser = localStorage.getItem('user');
+            if (!encryptedUser) {
+                console.warn("No user found in local storage");
+                return null;
+            }
+
+            const decryptedUser = decryptData(encryptedUser);
+
+            // Check if decryptedUser is already an object
+            const user = typeof decryptedUser === 'string' ? JSON.parse(decryptedUser) : decryptedUser;
+
+            if (!user || !user._id) {
+                console.warn("No registeredBy found in user data");
+                return null;
+            }
+
+            return user;
+
+        } catch (error) {
+            console.error("Error fetching registeredBy:", error);
+            return null;
+        }
+    }
+
     async fetchClearances(page = 1, limit = 10, searchTerm = '', status = '') {
         try {
-            const response = await httpCommon.get(this.baseURL, {
+            const user = await this.getRegisteredBy();
+    
+            if (!user) {
+                console.warn("User data not available, cannot fetch clearances.");
+                return {
+                    clearances: [],
+                    totalPages: 0,
+                    currentPage: 1,
+                    totalClearances: 0,
+                };
+            }
+    
+            let registeredById;
+            let registeredByAdmin;
+            let apiUrl;
+    
+            if (user.role === 'Admin') {
+                registeredById = user._id;
+                apiUrl = `clearance/registeredBy/${registeredById}`;
+            } else if (user.role === 'Tenant') {
+                registeredById = user._id;
+                apiUrl = `clearance/tenant/${registeredById}`;
+            } else if (user.role === 'Inspector') {
+                registeredById = user.assignedTo._id;
+                apiUrl = `clearance/inspected/${registeredById}`;
+            } else {
+                console.warn(`Unknown user role: ${user.role}. Fetching all clearances.`);
+                apiUrl = `clearance`;  // Or handle this case differently, perhaps an error
+            }
+    
+            const response = await  httpCommon.get(`${apiUrl}`, {
                 headers: await this.getAuthHeader(),
                 params: {
                     page,
@@ -33,10 +89,10 @@ class ClearanceService {
                     status,
                 }
             });
-            // console.log("Fetched clearances:", response.data);
-            return response.data; // Return the entire response data (including pagination info)
+    
+            return response.data;
         } catch (error) {
-           throw this.handleError(error);
+            throw this.handleError(error);
         }
     }
 
@@ -56,19 +112,19 @@ class ClearanceService {
             if (!tenant || !property) {
                 throw new Error("Tenant and Property are required.");
             }
-    
+
             // Log tenant and property IDs to check their format
             console.log("Tenant ID before API call:", tenant);
             console.log("Property ID before API call:", property);
-    
+
             // Ensure tenant and property IDs are strings
             const tenantId = String(tenant).trim();
             const propertyId = String(property).trim();
-    
+
             if (!tenantId || !propertyId) {
                 throw new Error("Invalid Tenant or Property ID.");
             }
-    
+
             const payload = {
                 tenant: tenantId,
                 property: propertyId,
@@ -77,16 +133,17 @@ class ClearanceService {
                 reason,
                 notes,
             };
-    
             const response = await httpCommon.post(this.baseURL, payload, { headers: await this.getAuthHeader() });
-            console.log("Clearance added successfully:", response.data);
-            return response.data;
-        } catch (error) {
+            // if (!response.data || !response.data._id || !response.data.id) {
+            //     throw new Error("Invalid response from the server");
+            // }
+             console.log("Clearance added successfully:", response.data);
+             return response.data;
+            } catch (error) {
             console.error("Error in ClearanceService.addClearance:", error.response?.data || error.message);
             throw this.handleError(error);
         }
     }
-    
 
 
 

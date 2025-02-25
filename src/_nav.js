@@ -8,6 +8,7 @@ import {
   cilSettings,
   cilChartPie,
   cilUser,
+  cilLifeRing, // Import cilQuestionMark here, removing the separate import
 } from "@coreui/icons";
 import { CNavGroup, CNavItem } from '@coreui/react';
 import { decryptData } from './api/utils/crypto';
@@ -126,10 +127,7 @@ const _nav = (unreadCounts = {}) => {
               name: 'Guest',
               to: '/guest',
               icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
-              badge: {
-                color: 'warning',
-                text: '1',
-              },
+              
             },
             {
               component: CNavItem,
@@ -143,6 +141,12 @@ const _nav = (unreadCounts = {}) => {
               to: '/report',
               icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
             },
+            {
+              component: CNavItem,
+              name: 'Help',
+              to: '/help',
+              icon: <CIcon icon={cilLifeRing} customClassName="nav-icon" />,
+            }
           ]
         : []),
 
@@ -267,6 +271,12 @@ const _nav = (unreadCounts = {}) => {
               component: CNavItem,
               name: 'Guest',
               to: '/guest',
+              icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
+            },
+            {
+              component: CNavItem,
+              name: 'Clearance',
+              to: '/clearance',
               icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
             },
           ]

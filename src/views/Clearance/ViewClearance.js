@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     CRow, CCol, CCard, CCardHeader, CCardBody,
-    CAlert, CFormSelect, CPagination, CPaginationItem
+    CAlert, CFormSelect, CPagination, CPaginationItem, CModal // ADD THIS LINE
 } from '@coreui/react';
 import {
     fetchClearances, deleteClearance,
@@ -15,7 +15,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import { decryptData } from '../../api/utils/crypto';
 import AddClearance from './AddClearance';
 import ClearanceDetailsModal from './ClearanceDetailsModal';
-
 const ViewClearance = () => {
     const dispatch = useDispatch();
     const {
@@ -26,7 +25,6 @@ const ViewClearance = () => {
         currentPage,
         totalClearances
     } = useSelector(state => state.clearance);
-
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [addClearanceModalVisible, setAddClearanceModalVisible] = useState(false);
@@ -39,42 +37,34 @@ const ViewClearance = () => {
     const [selectedClearance, setSelectedClearance] = useState(null);
     const itemsPerPage = 10;
     const [role, setRole] = useState(null)
-   
-
     useEffect(() => {
         try {
-          const encryptedUser = localStorage.getItem('user')
-          if (encryptedUser) {
-            const decryptedUser = decryptData(encryptedUser)
-            setUserPermissions(decryptedUser?.permissions || null)
-            setRole(decryptedUser?.role || null)
-          }
+            const encryptedUser = localStorage.getItem('user')
+            if (encryptedUser) {
+                const decryptedUser = decryptData(encryptedUser)
+                setUserPermissions(decryptedUser?.permissions || null)
+                setRole(decryptedUser?.role || null)
+            }
         } catch (err) {
-        //   setError('Failed to load user permissions')
-          console.error('Permission loading error:', err)
+            console.error('Permission loading error:', err)
         }
-      }, [])
-
+    }, [])
     useEffect(() => {
         dispatch(fetchClearances({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
     }, [dispatch, currentPage, searchTerm, statusFilter]);
-
     const handlePageChange = (page) => {
         if (page !== currentPage) {
             dispatch(fetchClearances({ page, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
         }
     };
-
     const handleStatusFilterChange = (e) => {
         setStatusFilter(e.target.value);
         dispatch(fetchClearances({ page: 1, limit: itemsPerPage, search: searchTerm, status: e.target.value }));
     };
-
     const handleDelete = (clearance) => {
         setClearanceToDelete(clearance);
         setDeleteModalVisible(true);
     };
-
     const confirmDelete = async () => {
         if (!clearanceToDelete?._id) {
             toast.error('No clearance request selected for deletion');
@@ -89,26 +79,21 @@ const ViewClearance = () => {
             toast.error(error?.message || 'Failed to delete clearance request');
         }
     };
-
     const handleAddClearanceClick = () => {
         setSelectedClearance(null);
         setAddClearanceModalVisible(true);
     };
-
     const handleClearanceUpdated = () => {
         dispatch(fetchClearances({ page: currentPage, limit: itemsPerPage, search: searchTerm, status: statusFilter }));
     };
-
-    const handleViewDetails = (tenantId) => {
-        setSelectedTenantId(tenantId);
+    const handleViewDetails = (clearance) => {
+        setSelectedClearance(clearance);
         setDetailModalVisible(true);
     };
-
     const handleEditClearance = (clearance) => {
         setSelectedClearance(clearance);
         setAddClearanceModalVisible(true);
     };
-
     return (
         <CRow>
             <CCol xs={12}>
@@ -116,12 +101,12 @@ const ViewClearance = () => {
                     <CCardHeader className="d-flex justify-content-between align-items-center">
                         <strong>Clearances</strong>
                         {role === 'Tenant' && (
-                             <button className="learn-more" onClick={handleAddClearanceClick}>
-                            <span className="circle" aria-hidden="true">
-                                <span className="icon arrow"></span>
-                            </span>
-                            <span className="button-text">Request</span>
-                        </button>
+                            <button className="learn-more" onClick={handleAddClearanceClick}>
+                                <span className="circle" aria-hidden="true">
+                                    <span className="icon arrow"></span>
+                                </span>
+                                <span className="button-text">Request</span>
+                            </button>
                         )}
                     </CCardHeader>
                     <CCardBody>
@@ -146,24 +131,24 @@ const ViewClearance = () => {
                             handleViewDetails={handleViewDetails}
                             handleEditClearance={handleEditClearance}
                         />
-                        {/* <CPagination align="center" className="mt-3">
-                            <CPaginationItem disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>Previous</CPaginationItem>
-                            {[...Array(totalPages)].map((_, index) => (
-                                <CPaginationItem key={index} active={currentPage === index + 1} onClick={() => handlePageChange(index + 1)}>
-                                    {index + 1}
-                                </CPaginationItem>
-                            ))}
-                            <CPaginationItem disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)}>Next</CPaginationItem>
-                        </CPagination> */}
                     </CCardBody>
                 </CCard>
             </CCol>
             <AddClearance visible={addClearanceModalVisible} setVisible={setAddClearanceModalVisible} selectedClearance={selectedClearance} onClearanceAdded={handleClearanceUpdated} />
-            <ClearanceDetailsModal visible={detailModalVisible} setVisible={setDetailModalVisible} tenantId={selectedTenantId} onClearanceAdded={handleClearanceUpdated} />
+              <CModal
+                visible={detailModalVisible}
+                onClose={() => setDetailModalVisible(false)}
+                size="lg"
+            >
+                <ClearanceDetailsModal
+                    visible={detailModalVisible}
+                    setVisible={setDetailModalVisible}
+                    selectedClearanceData={selectedClearance} // Now you are passing selectedClearanceData
+                />
+            </CModal>
             <ClearanceDeleteModal visible={deleteModalVisible} setDeleteModalVisible={setDeleteModalVisible} clearanceToDelete={clearanceToDelete} confirmDelete={confirmDelete} />
             <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
         </CRow>
     );
 };
-
 export default ViewClearance;

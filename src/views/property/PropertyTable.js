@@ -32,8 +32,8 @@ const PropertyTable = React.memo(
     onPhotoUpdate = () => {},
     onDeleteMultiple = () => {},
     currentPage = 1,
-    handlePageChange = () => {},
-    totalPages = 1,
+    handlePageChange = () => {}, // use same function as property!! to change!! top level value!!
+    totalPages = 1, // totalpages!
     itemsPerPage = 10,
     // selectedRows = [], // No need for this prop anymore, managed internally
     setSelectedRows: setExtSelectedRows = () => {}, // rename setselectedrow for update purpose for main parent (since dont really neeed for handle but can handle to update top from within this component)
@@ -105,35 +105,36 @@ const PropertyTable = React.memo(
       setDropdownOpen(null);
     };
 
-    const sortedProperties = useMemo(() => {
-      if (!sortConfig.key) return properties;
-
-      return [...properties].sort((a, b) => {
-        const aKey = a[sortConfig.key] || "";
-        const bKey = b[sortConfig.key] || "";
-
-        if (aKey < bKey) return sortConfig.direction === "ascending" ? -1 : 1;
-        if (aKey > bKey) return sortConfig.direction === "ascending" ? 1 : -1;
-        return 0;
-      });
-    }, [properties, sortConfig]);
 
     const filteredProperties = useMemo(() => {
-      let filtered = sortedProperties;
-
+      let filtered = properties;
+    
       if (selectedStatus) {
         filtered = filtered.filter(
           (property) => property.status === selectedStatus
         );
       }
-
+    
       filtered = filtered.filter((property) => {
         const price = Number(property.price);
         return price >= priceRange[0] && price <= priceRange[1];
       });
-
+    
       return filtered;
-    }, [sortedProperties, selectedStatus, priceRange]);
+    }, [properties, selectedStatus, priceRange]);
+    
+    const sortedProperties = useMemo(() => {
+      if (!sortConfig.key) return filteredProperties; // Return filteredProperties directly if no sorting
+    
+      return [...filteredProperties].sort((a, b) => {
+        const aKey = a[sortConfig.key] || "";
+        const bKey = b[sortConfig.key] || "";
+    
+        if (aKey < bKey) return sortConfig.direction === "ascending" ? -1 : 1;
+        if (aKey > bKey) return sortConfig.direction === "ascending" ? 1 : -1;
+        return 0;
+      });
+    }, [filteredProperties, sortConfig]);
 
     // Handle single checkbox change
     const handlePropertySelect = (propertyId) => {
@@ -260,11 +261,11 @@ const PropertyTable = React.memo(
           onDelete={onDelete} // Pass these props
           onView={onView} // Pass these props
         />
-
+        
         <PropertyTablePagination
-          totalPagesComputed={totalPagesComputed}
+          totalPagesComputed={totalPagesComputed} // totalPagesComputed
           currentPage={currentPage}
-          handlePageChange={handlePageChange}
+          handlePageChange={handlePageChange} // page change! back to proper main root since is root one!!
           totalProperties={totalProperties}
         />
 
@@ -289,7 +290,7 @@ PropertyTable.propTypes = {
   onPhotoUpdate: PropTypes.func,
   onDeleteMultiple: PropTypes.func,
   currentPage: PropTypes.number,
-  handlePageChange: PropTypes.func,
+  handlePageChange: PropTypes.func, // change this one! main function trigger for page update! pass all top! level
   totalPages: PropTypes.number,
   itemsPerPage: PropTypes.number,
   setSelectedRows: PropTypes.func,

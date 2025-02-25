@@ -16,6 +16,17 @@ export const fetchTenants = createAsyncThunk(
     }
 );
 //Fetch Tenant By Id
+export const fetchTenantStatusCounts = createAsyncThunk(
+    "tenant/fetchTenantStatusCounts",
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await tenantService.getTenantStatusCounts();
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
 //Fetch Tenant By Id
 export const fetchTenantById = createAsyncThunk(
     'tenant/fetchTenantById',
@@ -31,6 +42,8 @@ export const fetchTenantById = createAsyncThunk(
 
 
 // Add tenant
+// tenantActions.js
+
 export const addTenant = createAsyncThunk(
     'tenant/addTenant',
     async (tenantData, { rejectWithValue }) => {

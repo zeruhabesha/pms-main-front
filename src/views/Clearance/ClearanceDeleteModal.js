@@ -7,7 +7,6 @@ import {
     CModalFooter,
     CButton,
 } from '@coreui/react';
-
 const ClearanceDeleteModal = ({
     visible,
     setDeleteModalVisible,
@@ -17,7 +16,6 @@ const ClearanceDeleteModal = ({
     const handleClose = () => {
         setDeleteModalVisible(false);
     };
-
     return (
         <CModal visible={visible} onClose={handleClose} alignment="center">
             <CModalHeader>
@@ -26,8 +24,12 @@ const ClearanceDeleteModal = ({
             <CModalBody>
                 {clearanceToDelete ? (
                     <p>
-                        Are you sure you want to delete clearance request
-                        <strong>{clearanceToDelete.reason}</strong>?
+                        Are you sure you want to delete this clearance request
+                        {clearanceToDelete.reason && (
+                            <>
+                                for <strong>{clearanceToDelete.reason}</strong>?
+                            </>
+                        )}
                     </p>
                 ) : (
                     <p>No clearance selected to delete.</p>
@@ -37,12 +39,11 @@ const ClearanceDeleteModal = ({
                 <CButton color="secondary" onClick={handleClose}>
                     Cancel
                 </CButton>
-                <CButton color="danger" onClick={confirmDelete}>
+                <CButton color="danger" onClick={confirmDelete} disabled={!clearanceToDelete}>
                     Delete
                 </CButton>
             </CModalFooter>
         </CModal>
     );
 };
-
 export default ClearanceDeleteModal;

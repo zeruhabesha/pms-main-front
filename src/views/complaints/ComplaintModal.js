@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
     CFormInput,
     CFormLabel,
@@ -31,19 +31,19 @@ import {
 } from '@coreui/icons';
 import { CIcon } from '@coreui/icons-react';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; // Ensure styles are imported
+import 'react-toastify/dist/ReactToastify.css';
+import PropertySelect from "../guest/PropertySelect";
 
 const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const properties = useSelector((state) => state.property.properties);
-    const propertyLoading = useSelector((state) => state.property.loading);
-    const propertyError = useSelector((state) => state.property.error);
+    const { properties, loading: propertyLoading, error: propertyError } = useSelector((state) => state.property);
     const [isLoading, setIsLoading] = useState(false);
     const [noPropertiesMessage, setNoPropertiesMessage] = useState(null);
     const [tenantId, setTenantId] = useState(''); // State to hold tenant ID
-    const [tenantProperties, setTenantProperties] = useState([]); // State for tenant properties
+    const [userName, setUserName] = useState(null);
+    const [localError, setError] = useState(null);
 
     const [formData, setFormData] = useState({
         tenant: "",
@@ -55,42 +55,29 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
         supportingFiles: [],
         feedback: "",
     });
-    const [localError, setError] = useState(null);
 
     useEffect(() => {
-        const encryptedUser = localStorage.getItem("user");
-        const decryptedUser = decryptData(encryptedUser);
-        const currentTenantId = decryptedUser?._id || "";
-        setTenantId(currentTenantId); // Set tenant ID in state
-        setFormData(prevFormData => ({ ...prevFormData, tenant: currentTenantId })); // Set tenant ID in form data
+        const fetchUserData = async () => {
+            const encryptedUser = localStorage.getItem("user");
+            if (encryptedUser) {
+                try {
+                    const decryptedUser = decryptData(encryptedUser);
+                    if (decryptedUser && decryptedUser._id) {
+                        const userId = String(decryptedUser._id);
+                        setTenantId(userId);  // setting tenant ID
+                        setUserName(decryptedUser.name);
+                        setFormData(prev => ({ ...prev, tenant: userId })); //Set Tenant Id
+                        dispatch(filterProperties());
 
-        const fetchPropertiesForTenant = async () => {
-            // if (currentTenantId) {
-                dispatch(filterProperties())
-                    .unwrap()
-                    .then(response => {
-                        setTenantProperties(response); // Set tenant properties
-                    })
-                    .catch(error => {
-                        console.error("Error fetching properties for tenant:", error);
-                        setNoPropertiesMessage('Failed to load properties.');
-                    });
-            // } else {
-            //     setNoPropertiesMessage('Tenant ID not found.');
-            // }
+                    }
+                } catch (error) {
+                    console.error("Decryption error:", error);
+                    setError("Error decoding user data");
+                }
+            }
         };
-
-        fetchPropertiesForTenant();
+        fetchUserData();
     }, [dispatch]);
-
-
-    useEffect(() => {
-        if (tenantProperties.length === 0 && !propertyLoading && !propertyError) {
-            setNoPropertiesMessage('No properties available for this tenant.');
-        } else {
-            setNoPropertiesMessage(null);
-        }
-    }, [tenantProperties, propertyLoading, propertyError]);
 
 
     useEffect(() => {
@@ -98,7 +85,7 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
             if (editingComplaint) {
                 setFormData({
                     tenant: tenantId, // Use tenantId from state
-                    property: editingComplaint?.property?.id || "",
+                    property: editingComplaint?.property?._id || "",
                     complaintType: editingComplaint?.complaintType || "Noise",
                     description: editingComplaint?.description || "",
                     status: editingComplaint?.status || "Pending",
@@ -124,41 +111,27 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
     }, [editingComplaint, tenantId]); // Include tenantId in dependency array
 
 
-     const handleChange = (e) => {
-         const { name, value, type, files } = e.target;
+    const handleChange = (e) => {
+        const { name, value, type, files } = e.target;
 
-          if (type === 'file') {
-              if (files.length > 5) {
-                  setError('You can only upload a maximum of 5 files.');
-                  return;
-              }
-              setFormData((prev) => ({
-                  ...prev,
-                  supportingFiles: Array.from(files),
-              }));
-          } else {
-              setFormData((prev) => ({ ...prev, [name]: value }));
-          }
-      };
-
-    const handleNestedChange = (parent, field, value) => {
-        setFormData((prev) => ({
-            ...prev,
-            [parent]: {
-                ...prev[parent],
-                [field]: value,
-            },
-        }));
-        setError(null);
+        if (type === 'file') {
+            if (files.length > 5) {
+                setError('You can only upload a maximum of 5 files.');
+                return;
+            }
+            setFormData((prev) => ({
+                ...prev,
+                supportingFiles: Array.from(files),
+            }));
+        } else {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
     const handlePropertyChange = (e) => {
-        const selectedPropertyId = e.target.value;
-        setFormData((prev) => ({
-            ...prev,
-            property: selectedPropertyId, // Store only property ID
-        }));
+      setFormData((prev) => ({ ...prev, property: e.target.value }));
     };
+
 
     const validateForm = () => {
         if (!formData.property) return "Please select a property.";
@@ -169,55 +142,55 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
 
 
     const handleSubmit = async () => {
-      setIsLoading(true); // Start loading
+        setIsLoading(true); // Start loading
         try {
-        const submissionData = new FormData();
-        submissionData.append('tenant', formData.tenant);
-        submissionData.append('property', formData.property);
-        submissionData.append('complaintType', formData.complaintType);
-        submissionData.append('description', formData.description);
-        submissionData.append('priority', formData.priority);
-        submissionData.append('status', formData.status);
+            const submissionData = new FormData();
+            submissionData.append('tenant', formData.tenant);
+            submissionData.append('property', formData.property);
+            submissionData.append('complaintType', formData.complaintType);
+            submissionData.append('description', formData.description);
+            submissionData.append('priority', formData.priority);
+            submissionData.append('status', formData.status);
 
-        // Append files correctly
-        if (formData.supportingFiles?.length > 0) {
-          formData.supportingFiles.forEach((file, index) => {
-            submissionData.append('supportingFiles', file);
-          });
-        }
+            // Append files correctly
+            if (formData.supportingFiles?.length > 0) {
+                formData.supportingFiles.forEach((file, index) => {
+                    submissionData.append('supportingFiles', file);
+                });
+            }
 
-        if (editingComplaint) {
-          // Add _method parameter for PUT request
-          submissionData.append('_method', 'PUT');
+            if (editingComplaint) {
+                // Add _method parameter for PUT request
+                submissionData.append('_method', 'PUT');
 
-          // Sanity check:  Make sure editingComplaint has a valid _id.
-          if (!editingComplaint._id) {
-              console.error("Error: editingComplaint does not have a valid _id.");
-              toast.error("Could not update complaint: Invalid complaint ID.");
-              setIsLoading(false); // Stop loading even when error occurred
-              return;
-          }
+                // Sanity check:  Make sure editingComplaint has a valid _id.
+                if (!editingComplaint._id) {
+                    console.error("Error: editingComplaint does not have a valid _id.");
+                    toast.error("Could not update complaint: Invalid complaint ID.");
+                    setIsLoading(false); // Stop loading even when error occurred
+                    return;
+                }
 
-          const response = await dispatch(
-            updateComplaint({
-              id: editingComplaint._id, // Use _id here.
-              complaintData: submissionData // corrected this as well
-            })
-          ).unwrap();
-          toast.success('Complaint updated successfully');
-        } else {
-          await dispatch(addComplaint(submissionData)).unwrap();
-          toast.success('Complaint added successfully');
-        }
+                const response = await dispatch(
+                    updateComplaint({
+                        id: editingComplaint._id, // Use _id here.
+                        complaintData: submissionData // corrected this as well
+                    })
+                ).unwrap();
+                toast.success('Complaint updated successfully');
+            } else {
+                await dispatch(addComplaint(submissionData)).unwrap();
+                toast.success('Complaint added successfully');
+            }
 
-        handleClose();
+            handleClose();
         } catch (error) {
-        console.error('Submission Error:', error);
-        toast.error(error.message || 'Failed to submit complaint');
+            console.error('Submission Error:', error);
+            toast.error(error.message || 'Failed to submit complaint');
         } finally {
-          setIsLoading(false); // Stop loading
+            setIsLoading(false); // Stop loading
         }
-        };
+    };
 
 
     const handleClose = () => {
@@ -237,9 +210,9 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
 
     return (
         <CModal visible={visible} onClose={handleClose} alignment="center" backdrop="static" size="lg">
-           <CModalHeader className="bg-dark text-white">
-    <CModalTitle>{editingComplaint ? 'Edit Complaint' : 'Add Complaint'}</CModalTitle>
-</CModalHeader>
+            <CModalHeader className="bg-dark text-white">
+                <CModalTitle>{editingComplaint ? 'Edit Complaint' : 'Add Complaint'}</CModalTitle>
+            </CModalHeader>
             <CModalBody>
                 <div className="maintenance-form">
                     <CCard className="border-0 shadow-sm">
@@ -249,11 +222,7 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                                     {localError}
                                 </CAlert>
                             )}
-                            {noPropertiesMessage && (
-                                <CAlert color="info" className="mb-3">
-                                    {noPropertiesMessage}
-                                </CAlert>
-                            )}
+
 
                             <CRow className="g-4">
                                 <CCol xs={12} className="form-group">
@@ -262,28 +231,25 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                                         id="tenant"
                                         name="tenant"
                                         type="text"
-                                        value={formData.tenant}
+                                        value={userName || ""}
                                         readOnly // Make Tenant ID read-only
                                         className="form-control-animation"
                                     />
                                 </CCol>
 
- <CCol xs={12}>
-     <CFormLabel htmlFor="property"><CIcon icon={cilHome} className="me-1"/>Property</CFormLabel>
-    <CFormSelect
-        value={formData.property}
-        onChange={handlePropertyChange}
-        required
-    >
-        <option value="">Select a property</option>
-        {tenantProperties && tenantProperties.map((property) => (
-            <option key={property.id} value={property.id}>
-                {property.title}
-            </option>
-        ))}
-    </CFormSelect>
-
-</CCol>
+                                <CCol md={12}>
+                                    <CFormLabel htmlFor="property">
+                                        <CIcon icon={cilHome} className="me-1" />
+                                        Property
+                                    </CFormLabel>
+                                    <PropertySelect
+                                        id="property"
+                                        name="property"
+                                        value={formData.property}
+                                        onChange={handlePropertyChange}
+                                        required
+                                    />
+                                </CCol>
 
                                 <CCol xs={12}>
                                     <CFormLabel htmlFor="complaintType"><CIcon icon={cilList} className="me-1" />Type of Complaint</CFormLabel>
@@ -360,15 +326,15 @@ const ComplaintModal = ({ visible, setVisible, editingComplaint = null }) => {
                     Cancel
                 </CButton>
                 <CButton color="dark" onClick={handleSubmit} disabled={isLoading}>
-    {isLoading ? (
-        <>
-            <CSpinner size="sm" className="me-2" />
-            {editingComplaint ? 'Updating...' : 'Adding...'}
-        </>
-    ) : (
-        editingComplaint ? 'Update Complaint' : 'Add Complaint'
-    )}
-</CButton>
+                    {isLoading ? (
+                        <>
+                            <CSpinner size="sm" className="me-2" />
+                            {editingComplaint ? 'Updating...' : 'Adding...'}
+                        </>
+                    ) : (
+                        editingComplaint ? 'Update Complaint' : 'Add Complaint'
+                    )}
+                </CButton>
             </CModalFooter>
         </CModal>
     );

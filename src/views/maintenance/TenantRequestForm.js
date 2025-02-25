@@ -18,7 +18,7 @@ import {
   fetchMaintenanceById,
   updateMaintenance,
 } from '../../api/actions/MaintenanceActions'
-import PropertySelect from './PropertySelect' // Import PropertySelect
+import PropertySelect from '../guest/PropertySelect' // Import PropertySelect
 import { fetchMaintenances } from '../../api/actions/MaintenanceActions'
 import { filterProperties } from "../../api/actions/PropertyAction";
 
@@ -104,13 +104,14 @@ const TenantRequestForm = ({ initialFormData, onCloseEditMode, currentPage, sear
     console.log('formData after change:', formData)
   }, [formData])
 
-  const handlePropertyChange = (e) => {
+   const handlePropertyChange = (e) => {
     const selectedPropertyId = e.target.value;
     setFormData((prev) => ({
       ...prev,
       property: selectedPropertyId, // Store only property ID
     }));
   };
+
   useEffect(() => {
     console.log("Redux Properties:", properties); // Debugging
   }, [properties]);
@@ -342,10 +343,10 @@ const TenantRequestForm = ({ initialFormData, onCloseEditMode, currentPage, sear
               <CCol xs={12}>
                 <CFormLabel htmlFor="property">Property</CFormLabel>
                 <PropertySelect
+                  name="property"
                   value={formData.property}
                   onChange={handlePropertyChange}
                   required
-                  name="property"
                   label="Select a property"
                 />
               </CCol>

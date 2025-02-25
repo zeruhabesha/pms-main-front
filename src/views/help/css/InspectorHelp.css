@@ -1,0 +1,36 @@
+/* InspectorHelp.css */
+
+/* Fade-in animation for the entire component */
+.inspector-help {
+    opacity: 0;
+    transform: translateY(20px); /* Start a bit lower */
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  }
+  
+  .inspector-help.loaded {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  /* Slide-in animation for individual steps */
+  .step {
+    opacity: 0;
+    transform: translateX(-20px); /* Start a bit to the left */
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+    margin-bottom: 20px; /* Add spacing between steps */
+  }
+  
+  .step.loaded {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  
+  /* Placeholder style while the image is loading (for LazyLoad) */
+  .placeholder {
+    height: 20%; /* Match the LazyLoad height */
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #999;
+  }

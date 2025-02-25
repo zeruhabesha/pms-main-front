@@ -17,13 +17,13 @@ import {
 import CIcon from "@coreui/icons-react";
 import PropTypes from "prop-types";
 import { decryptData } from "../../api/utils/crypto";
-import { cilTrash, cilPlus, cilHome, cilDescription, cilLocationPin, cilMoney, cilBuilding, cilList, cilMap, cilCreditCard, cilPeople, cilSettings, cilCalendar, cilCloudUpload } from "@coreui/icons";
+import { cilTrash, cilPlus, cilHome, cilDescription, cilLocationPin, cilMoney, cilList, cilMap, cilCreditCard, cilPeople, cilSettings, cilCalendar, cilCloudUpload, cilBuilding } from "@coreui/icons"; // Ensure cilBuilding is here
 
-const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting = false }) => { // initialData defaults to null
+
+const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting = false }) => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState(() => {
         const defaultForm = {
-            // user: "", // ✅ Ensure this is populated
             tenant: "",
             property: "",
             leaseStart: "",
@@ -38,23 +38,26 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
             fileErrors: [],
             formErrors: {},
         };
-    
+
         return defaultForm
     });
 
     const [filesToUpload, setFilesToUpload] = useState([]);
     const [isDragging, setIsDragging] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [isLoading, setIsLoading] = useState(false); // Local loading state
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+
         if (name.startsWith('paymentTerms.')) {
             const paymentTermField = name.split('.')[1];
-            setFormData(prev => ({
-                ...prev,
-                paymentTerms: { ...prev.paymentTerms, [paymentTermField]: value }
-            }));
-        } else if (name.startsWith('additionalOccupants.')) {
+            setFormData(prev => {
+                const updatedPaymentTerms = { ...prev.paymentTerms, [paymentTermField]: value };
+                return { ...prev, paymentTerms: updatedPaymentTerms };
+            });
+        }
+        else if (name.startsWith('additionalOccupants.')) {
             const index = parseInt(name.split('.')[1], 10);
             const updatedOccupants = [...formData.additionalOccupants];
             updatedOccupants[index] = value;
@@ -91,21 +94,29 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
 
     const handleSubmitLocal = async (e) => {
         e.preventDefault();
-        console.log('Form submitted with data:', formData);
-        
+        setIsLoading(true); // Start local loading
+
         const errors = {};
+
+        if (!formData.paymentTerms.dueDate) {
+            errors['paymentTerms.dueDate'] = 'Payment due date is required.';
+        }
+        if (!formData.paymentTerms.paymentMethod) {
+            errors['paymentTerms.paymentMethod'] = 'Payment method is required.';
+        }
 
         if (Object.keys(errors).length > 0) {
             setFormData(prev => ({ ...prev, formErrors: errors }));
             console.log('Validation errors:', errors);
+            setIsLoading(false); // Stop local loading on error
             return;
         }
 
         const formDataToSend = new FormData();
         for (const key in formData) {
             if (key === 'paymentTerms') {
-                formDataToSend.append('dueDate', formData.paymentTerms.dueDate);
-                formDataToSend.append('paymentMethod', formData.paymentTerms.paymentMethod);
+                formDataToSend.append('paymentTerms[paymentMethod]', formData.paymentTerms.paymentMethod); // Nest the payment terms
+                formDataToSend.append('paymentTerms[dueDate]', formData.paymentTerms.dueDate);  // Nest the payment terms
             } else if (key === 'additionalOccupants') {
                 formData.additionalOccupants.forEach(occupant => {
                     formDataToSend.append('additionalOccupants', occupant);
@@ -124,7 +135,14 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
             console.log(pair[0], pair[1]);
         }
 
-        onSubmit(formDataToSend);
+        try {
+            await onSubmit(formDataToSend); // Await the onSubmit function
+        } catch (error) {
+            console.error("Error submitting form:", error);
+            // Handle the error appropriately, e.g., show an error message
+        } finally {
+            setIsLoading(false); // Stop local loading after onSubmit completes, regardless of success or failure
+        }
     };
 
     // Drag and Drop Handlers
@@ -159,7 +177,7 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
         <CForm onSubmit={handleSubmitLocal} className="space-y-6 p-4" noValidate>
             <CRow className="g-4">
                 <CCol xs={12} md={6}>
-                    <CFormLabel htmlFor="tenant"><CIcon icon={cilPeople} className="me-1"/>Tenant</CFormLabel>
+                    <CFormLabel htmlFor="tenant"><CIcon icon={cilPeople} className="me-1" />Tenant</CFormLabel>
                     <CFormSelect
                         className="form-control-md"
                         name="tenant"
@@ -178,7 +196,7 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
                     )}
                 </CCol>
                 <CCol xs={12} md={6}>
-                    <CFormLabel htmlFor="property"><CIcon icon={cilHome} className="me-1"/>Property</CFormLabel>
+                    <CFormLabel htmlFor="property"><CIcon icon={cilHome} className="me-1" />Property</CFormLabel>
                     <CFormSelect
                         className="form-control-md"
                         name="property"
@@ -196,9 +214,9 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
                         <CFormFeedback invalid>{formData.formErrors.property}</CFormFeedback>
                     )}
                 </CCol>
-             
+
                 <CCol xs={12} md={6}>
-                    <CFormLabel htmlFor="leaseStart"><CIcon icon={cilCalendar} className="me-1"/>Lease Start Date</CFormLabel>
+                    <CFormLabel htmlFor="leaseStart"><CIcon icon={cilCalendar} className="me-1" />Lease Start Date</CFormLabel>
                     <CFormInput
                         className="form-control-md"
                         type="date"
@@ -214,7 +232,7 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
                     )}
                 </CCol>
                 <CCol xs={12} md={6}>
-                    <CFormLabel htmlFor="leaseEnd"><CIcon icon={cilCalendar} className="me-1"/>Lease End Date</CFormLabel>
+                    <CFormLabel htmlFor="leaseEnd"><CIcon icon={cilCalendar} className="me-1" />Lease End Date</CFormLabel>
                     <CFormInput
                         className="form-control-md"
                         type="date"
@@ -230,7 +248,7 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
                     )}
                 </CCol>
                 <CCol xs={12} md={6}>
-                    <CFormLabel htmlFor="rentAmount"><CIcon icon={cilMoney} className="me-1"/>Rent Amount</CFormLabel>
+                    <CFormLabel htmlFor="rentAmount"><CIcon icon={cilMoney} className="me-1" />Rent Amount</CFormLabel>
                     <CInputGroup>
                         <CInputGroupText>$</CInputGroupText>
                         <CFormInput
@@ -249,7 +267,7 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
                     )}
                 </CCol>
                 <CCol xs={12} md={6}>
-                    <CFormLabel htmlFor="securityDeposit"><CIcon icon={cilMoney} className="me-1"/>Security Deposit</CFormLabel>
+                    <CFormLabel htmlFor="securityDeposit"><CIcon icon={cilMoney} className="me-1" />Security Deposit</CFormLabel>
                     <CInputGroup>
                         <CInputGroupText>$</CInputGroupText>
                         <CFormInput
@@ -268,7 +286,7 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
                     )}
                 </CCol>
                 <CCol xs={12} md={6}>
-                    <CFormLabel htmlFor="paymentTerms.dueDate"><CIcon icon={cilDescription} className="me-1"/>Payment Due Date</CFormLabel>
+                    <CFormLabel htmlFor="paymentTerms.dueDate"><CIcon icon={cilDescription} className="me-1" />Payment Due Date</CFormLabel>
                     <CFormInput
                         className="form-control-md"
                         type="text"
@@ -284,7 +302,7 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
                     )}
                 </CCol>
                 <CCol xs={12} md={6}>
-                    <CFormLabel htmlFor="paymentTerms.paymentMethod"><CIcon icon={cilCreditCard} className="me-1"/>Payment Method</CFormLabel>
+                    <CFormLabel htmlFor="paymentTerms.paymentMethod"><CIcon icon={cilCreditCard} className="me-1" />Payment Method</CFormLabel>
                     <CFormSelect
                         className="form-control-md"
                         name="paymentTerms.paymentMethod"
@@ -305,7 +323,7 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
                 </CCol>
 
                 <CCol xs={12}>
-                    <CFormLabel htmlFor="rulesAndConditions"><CIcon icon={cilList} className="me-1"/>Rules & Conditions</CFormLabel>
+                    <CFormLabel htmlFor="rulesAndConditions"><CIcon icon={cilList} className="me-1" />Rules & Conditions</CFormLabel>
                     <CFormTextarea
                         className="form-control-md"
                         id="rulesAndConditions"
@@ -316,7 +334,7 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
                     />
                 </CCol>
                 <CCol xs={12}>
-                    <label className="block text-gray-700"><CIcon icon={cilPeople} className="me-1"/>Additional Occupants</label>
+                    <label className="block text-gray-700"><CIcon icon={cilPeople} className="me-1" />Additional Occupants</label>
                     {formData.additionalOccupants.map((occupant, index) => (
                         <CInputGroup className="mb-3" key={index}>
                             <CFormInput
@@ -343,11 +361,11 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
                         color="light"
                         onClick={handleAddOccupant}
                     >
-                        <CIcon icon={cilPlus} className="me-1"/> Add Occupant
+                        <CIcon icon={cilPlus} className="me-1" /> Add Occupant
                     </CButton>
                 </CCol>
                 <CCol xs={12}>
-                    <CFormLabel htmlFor="utilitiesAndServices"><CIcon icon={cilSettings} className="me-1"/>Utilities and Services</CFormLabel>
+                    <CFormLabel htmlFor="utilitiesAndServices"><CIcon icon={cilSettings} className="me-1" />Utilities and Services</CFormLabel>
                     <CFormTextarea
                         className="form-control-md"
                         id="utilitiesAndServices"
@@ -358,8 +376,8 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
                     />
                 </CCol>
 
-                 <CCol xs={12}>
-                    <CFormLabel htmlFor="documents"><CIcon icon={cilDescription} className="me-1"/>Documents</CFormLabel>
+                <CCol xs={12}>
+                    <CFormLabel htmlFor="documents"><CIcon icon={cilDescription} className="me-1" />Documents</CFormLabel>
                     <div
                         className={`border-2 border-dashed rounded-md p-6 text-center ${
                             isDragging ? 'border-primary bg-light' : 'border-gray-400'
@@ -439,8 +457,8 @@ const AgreementForm = ({ onSubmit, tenants = [], properties = [], isSubmitting =
 
                 <CCol xs={12} className="d-flex justify-content-end gap-2">
                     <CButton color="secondary" onClick={() => navigate("/agreement")}>Cancel</CButton>
-                    <CButton color="dark" type="submit" >
-                        {'Submit'}
+                    <CButton color="dark" type="submit" disabled={isLoading}>
+                        {isLoading ? <CSpinner size="sm" /> : 'Submit'}
                     </CButton>
                 </CCol>
             </CRow>

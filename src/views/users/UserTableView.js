@@ -34,6 +34,7 @@ const UserTableView = ({
     sortConfig,
     handleSort,
     handleUserDetailsClick,
+    handleManageStatusClick
 }) => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [permissionsModalVisible, setPermissionsModalVisible] = useState(false);
@@ -182,18 +183,20 @@ const UserTableView = ({
           <CTableBody>
             {sortedUsers.map((user, index) => (
               <UserTableRow
-                  key={user._id || `row-${index}`}
-                  user={user}
-                  index={index}
-                  currentPage={currentPage}
-                  itemsPerPage={itemsPerPage}
-                  getRoleIcon={getRoleIcon}
-                  handleEdit={handleEdit}
-                  handleDelete={handleDelete}
-                  handleEditPhoto={handleEditPhoto}
-                  handleUserDetailsClick={handleUserDetailsClick}
-                handlePermissionsClick={handlePermissionsClick}
-              />
+              key={user._id || `row-${index}`}
+              user={user}
+              index={index}
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              getRoleIcon={getRoleIcon}
+              handleEdit={handleEdit}
+              handleDelete={handleDelete}
+              handleEditPhoto={handleEditPhoto}
+              handleUserDetailsClick={handleUserDetailsClick}
+              handlePermissionsClick={handlePermissionsClick}
+              handleManageStatusClick={handleManageStatusClick} // ✅ Ensure this is passed
+          />
+          
             ))}
           </CTableBody>
         </CTable>

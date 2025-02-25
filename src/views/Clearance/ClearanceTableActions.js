@@ -1,5 +1,8 @@
 import React from 'react';
-import { CButton, CFormInput, CDropdown, CDropdownToggle, CDropdownMenu, CDropdownItem } from '@coreui/react';
+import {
+    CButton,
+    CFormInput,
+} from '@coreui/react';
 import { CIcon } from '@coreui/icons-react';
 import { cilFile, cilClipboard, cilCloudDownload } from '@coreui/icons';
 import { CSVLink } from 'react-csv';
@@ -12,6 +15,10 @@ const ClearanceTableActions = ({
     searchTerm,
     setSearchTerm,
 }) => {
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+    };
+
     return (
         <div className="d-flex mb-3 justify-content-between align-items-center">
             <div className="d-flex gap-2">
@@ -42,7 +49,7 @@ const ClearanceTableActions = ({
                 type="text"
                 placeholder="Search by tenant name or reason"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
             />
         </div>
     );

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import AgreementForm from './AgreementForm';
 import { fetchTenants } from '../../api/actions/TenantActions';
-import { fetchProperties } from '../../api/actions/PropertyAction';
+import { filterPropertiesOpen } from '../../api/actions/PropertyAction';
 import { addAgreement } from '../../api/actions/AgreementActions';
 import { clearError } from '../../api/slice/AgreementSlice';
 import { toast } from 'react-toastify';
@@ -24,7 +24,8 @@ const AddAgreementPage = () => {
 
     useEffect(() => {
         dispatch(fetchTenants());
-        dispatch(fetchProperties());
+        // dispatch(filterProperties());
+        dispatch(filterPropertiesOpen());
         dispatch(clearError());
     }, [dispatch]);
 

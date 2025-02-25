@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { updateUser } from '../../api/actions/userActions';
+import { updateUser } from '../../api/actions/UserActions';
 import UserService from '../../api/services/user.service';
 import { decryptData, encryptData } from '../../api/utils/crypto';
 import './Profile.scss'; // Import SCSS file

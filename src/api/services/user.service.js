@@ -1,4 +1,3 @@
-// frontend/src/api/services/user.service.js
 import axios from 'axios';
 import httpCommon from '../http-common';
 import { decryptData } from '../utils/crypto';

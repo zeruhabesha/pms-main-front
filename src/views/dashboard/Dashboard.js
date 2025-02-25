@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTenants } from '../../api/actions/TenantActions';
 import { filterProperties } from '../../api/actions/PropertyAction';
-import { fetchMaintenances } from '../../api/actions/MaintenanceActions';
+import { fetchMaintenances, fetchMaintenanceStatusCounts } from '../../api/actions/MaintenanceActions';
 import propertyService from "../../api/services/property.service";
 import { decryptData } from '../../api/utils/crypto';
-
+import { fetchPropertyStatusCounts } from '../../api/actions/PropertyAction';
+import { fetchTenantStatusCounts } from '../../api/actions/TenantActions';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import AdminDashboard from './AdminDashboard';
 import UserDashboard from './UserDashboard';
@@ -52,23 +53,33 @@ const Dashboard = () => {
     const { properties } = useSelector((state) => state.property);
     const { tenants } = useSelector((state) => state.tenant);
     const { maintenances } = useSelector((state) => state.maintenance);
+    const statusCounts = useSelector((state) => state.property.statusCounts);
+    const statusTenantCounts = useSelector((state) => state.tenant.statusCounts);
+        const { user, loading, error } = useSelector((state) => state.auth);
 
-    const encryptedUser = localStorage.getItem('user');
-    const user = decryptData(encryptedUser);
-    const userRole = user.role;
+    useEffect(() => {
+        console.log("Fetching Tenant Status Counts...");
+        dispatch(fetchTenantStatusCounts());
+    }, [dispatch]);
 
-    console.log('User Role:', userRole);
-    console.log('Redux Properties:', properties);
-    console.log('Redux Tenants:', tenants);
-    console.log('Redux Maintenances:', maintenances);
+    useEffect(() => {
+        console.log("Dashboard - Status Counts from Redux:", statusCounts);
+    }, [statusCounts]);
 
+    useEffect(() => {
+        console.log("Dispatching fetchPropertyStatusCounts()");
+        dispatch(fetchPropertyStatusCounts());
+    }, [dispatch]);
 
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
                 await dispatch(filterProperties({ limit: 5, page: 1 }));
                 await dispatch(fetchTenants({ limit: 5, page: 1 }));
-                await dispatch(fetchMaintenances({limit: 10, page: 1}))
+                await dispatch(fetchMaintenances({limit: 10, page: 1}));
+                console.log("Before fetchPropertyStatusCounts");
+                await dispatch(fetchPropertyStatusCounts());
+                console.log("After fetchPropertyStatusCounts");
             } catch (error) {
                 console.error('Failed to fetch initial data:', error);
             }
@@ -77,20 +88,23 @@ const Dashboard = () => {
         fetchInitialData();
     }, [dispatch]);
 
-
     useEffect(() => {
-        // Ensure the data is mapped correctly from the Redux state
         if (properties?.properties) {
             setRecentProperties(properties.properties);
         } else if (properties) {
             setRecentProperties(properties);
         }
+
         if (tenants?.tenants) {
             setRecentTenants(tenants.tenants);
         } else if (tenants) {
             setRecentTenants(tenants);
         }
     }, [properties, tenants]);
+
+    useEffect(() => {
+        dispatch(fetchMaintenanceStatusCounts());
+    }, [dispatch]);
 
     useEffect(() => {
         if (maintenances?.maintenances) {
@@ -108,33 +122,9 @@ const Dashboard = () => {
                 labels: labels,
                 datasets: [{ ...prevState.datasets[0], data: data }],
             }));
-            console.log('MAINTENACE DATA', maintenanceStatusData)
+            console.log('MAINTENANCE DATA', maintenanceStatusData);
         }
     }, [maintenances]);
-
-
-    // useEffect(() => {
-    //     const fetchPropertyTypes = async () => {
-    //         try {
-    //             const response = await propertyService.getPropertyTypes();
-    //             console.log('Response', response)
-    //             if (response?.propertyTypes) {
-    //                 const labels = response.propertyTypes.map(item => item.propertyType);
-    //                 const data = response.propertyTypes.map(item => item.count);
-
-    //                 setPropertyTypesData(prevState => ({
-    //                     ...prevState,
-    //                     labels: labels,
-    //                     datasets: [{ ...prevState.datasets[0], data: data }]
-    //                 }));
-    //             }
-
-    //         } catch (error) {
-    //             console.error('Failed to fetch property types:', error);
-    //         }
-    //     };
-    //     fetchPropertyTypes();
-    // }, []);
 
 
     const getStatusIcon = (status) => {
@@ -148,34 +138,37 @@ const Dashboard = () => {
         };
         return statusIconMap[status?.toLowerCase()] || null;
     };
-        const calculateAdminStats = () => {
-            // Default Stats
-        const defaultStats = {
-            admins: 5,
-            properties: properties?.total || 0,
-            tenants: tenants?.total || 0,
-            revenue: '12000',
-            pendingRequests: 8,
-            newTenants: 12,
-            avgRent: 1600,
-            maintenanceTasks: maintenances?.maintenances?.filter(m => m.status !== 'completed')?.length || 0,
+
+    const calculateAdminStats = () => {
+        const propertyStatusCounts = useSelector((state) => state.property.statusCounts) || {};
+        const tenantStatusCounts = useSelector((state) => state.tenant.statusCounts) || {
+            active: 0,
+            inactive: 0,
+            pending: 0,
         };
 
-            const totalProperties = properties?.total || 0;
-            const totalTenants = tenants?.total || 0;
-            const totalMaintenanceTasks = maintenances?.maintenances?.filter(m => m.status !== 'completed')?.length || 0;
-            const adminStats = {
-                ...defaultStats,
-                properties: totalProperties,
-                tenants: totalTenants,
-                maintenanceTasks: totalMaintenanceTasks,
-                revenue: '12000'
-            }
-            return adminStats;
+        const totalProperties =
+            (propertyStatusCounts.closed || 0) +
+            (propertyStatusCounts["under maintenance"] || 0) +
+            (propertyStatusCounts.reserved || 0) +
+            (propertyStatusCounts.open || 0);
+
+        const totalTenants =
+            (tenantStatusCounts.active || 0) +
+            (tenantStatusCounts.inactive || 0) +
+            (tenantStatusCounts.pending || 0);
+
+        return {
+            properties: totalProperties,
+            tenants: totalTenants,
+            revenue: "12000",
+            tenantStatusCounts,
+            propertyStatusCounts
+        };
     };
 
-    const calculatedStats = calculateAdminStats();
 
+    const calculatedStats = calculateAdminStats();
 
     const monthlyRevenue = {
         labels: ['January', 'February', 'March', 'April', 'May', 'June'],
@@ -191,57 +184,53 @@ const Dashboard = () => {
         ],
     };
 
-
-
-    // Maintenor Specific Data
-        const maintenorStatsData = {
+    const maintenorStatsData = {
         maintenanceTasks: maintenances?.maintenances?.filter(m => m.status !== 'completed')?.length || 0,
-           overdueTasks:  maintenances?.maintenances?.filter(m => m.dueDate < new Date() && m.status !== 'completed')?.length || 0,
+        overdueTasks:  maintenances?.maintenances?.filter(m => m.dueDate < new Date() && m.status !== 'completed')?.length || 0,
         scheduledTasks: maintenances?.maintenances?.filter(m => m.status === 'scheduled').length || 0,
         completedTasksToday: maintenances?.maintenances?.filter(m => m.status === 'completed' && new Date(m.completedAt).toDateString() === new Date().toDateString()).length || 0,
-    }
+    };
 
     const maintenanceStatus = maintenanceStatusData;
 
-       const overdueMaintenanceData = {
-          labels: ['Last Week', 'This Week'],
-          datasets: [
+    const overdueMaintenanceData = {
+        labels: ['Last Week', 'This Week'],
+        datasets: [
             {
-              label: 'Overdue Tasks',
+                label: 'Overdue Tasks',
                 backgroundColor: colors.red,
-              data: [ 5, maintenorStatsData.overdueTasks ],
+                data: [ 5, maintenorStatsData.overdueTasks ],
                 borderColor: colors.red,
                 borderWidth: 2
             },
-          ],
-        };
+        ],
+    };
 
 
     const scheduledMaintenanceData = {
         labels: ['Last Week', 'This Week'],
         datasets: [
-          {
-            label: 'Scheduled Tasks',
-              backgroundColor: colors.yellow,
-            data: [ 2, maintenorStatsData.scheduledTasks ],
-              borderColor: colors.yellow,
-              borderWidth: 2
-          },
+            {
+                label: 'Scheduled Tasks',
+                backgroundColor: colors.yellow,
+                data: [ 2, maintenorStatsData.scheduledTasks ],
+                borderColor: colors.yellow,
+                borderWidth: 2
+            },
         ],
-      };
+    };
 
     const recentActivity = [
         { type: 'completed', text: 'Maintenance task #123 completed by John Doe' },
         { type: 'warning', text: 'Maintenance task #124 is due today' },
-         { type: 'pending', text: 'Maintenance task #125 is pending assignment' },
-        // Add more recent activity data here
+        { type: 'pending', text: 'Maintenance task #125 is pending assignment' },
     ];
-     // Tenant specific data (replace with your actual tenant data fetching)
-     const tenantData = {
+
+    const tenantData = {
         name: "John Doe",
         leaseStart: '2024-01-01',
         leaseEnd: '2025-01-01',
-           rent: 1200,
+        rent: 1200,
         property: '123 Main St',
         outstandingBalance: 200,
         notifications: [
@@ -249,64 +238,70 @@ const Dashboard = () => {
             { message: 'Maintenance scheduled for 2024-08-22', type: 'maintenance' }
         ]
     };
+
     const inspectionStats = {
         completedInspections: 15,
         pendingInspections: 5,
         scheduledInspections: 7,
     }
 
-
     const renderDashboard = () => {
-        switch (userRole) {
-            case 'SuperAdmin':
-                return (
-                    <SuperAdminDashboard
-                        stats={calculatedStats}
-                        monthlyRevenue={monthlyRevenue}
-                        propertyTypesData={propertyTypesData}
-                        recentProperties={recentProperties}
-                        recentTenants={recentTenants}
-                        maintenanceStatusData={maintenanceStatusData}
-                        getStatusIcon={getStatusIcon}
-                    />
-                );
-            case 'Admin':
-                return (
-                    <AdminDashboard
-                        stats={calculatedStats}
-                        monthlyRevenue={monthlyRevenue}
-                        propertyTypesData={propertyTypesData}
-                        recentProperties={recentProperties}
-                        recentTenants={recentTenants}
-                        maintenanceStatusData={maintenanceStatusData}
-                        getStatusIcon={getStatusIcon}
-                       inspectionStats={inspectionStats}
-                    />
-                );
-            case 'User':
-                return <UserDashboard />;
-            case 'Inspector':
-                return (
-                  <InspectorDashboard
-                       inspectionStats={inspectionStats}
-                    />
-                );
-            case 'Maintainer':
-                return (
-                    <MaintenorDashboard
-                        stats={maintenorStatsData}
-                        maintenanceStatusData={maintenanceStatus}
-                        overdueMaintenanceData={overdueMaintenanceData}
-                         scheduledMaintenanceData={scheduledMaintenanceData}
-                        recentMaintenanceActivity={recentActivity}
-                    />
-                );
-            case 'Tenant':
-                return <TenantDashboard tenantData={tenantData}  />;
-            default:
-                return <div>No dashboard for this role</div>;
-        }
-    };
+    if (loading) {
+        return <div>Loading dashboard...</div>;
+    }
+
+    if (error) {
+        return <div>Error: {error}</div>;
+    }
+
+    const userRole = user?.role;
+
+    switch (userRole) {
+        case 'SuperAdmin':
+            return (
+                <SuperAdminDashboard
+                    stats={calculatedStats}
+                    monthlyRevenue={monthlyRevenue}
+                    propertyTypesData={propertyTypesData}
+                    recentProperties={recentProperties}
+                    recentTenants={recentTenants}
+                    maintenanceStatusData={maintenanceStatusData}
+                    getStatusIcon={getStatusIcon}
+                />
+            );
+        case 'Admin':
+            return (
+                <AdminDashboard
+                    stats={calculatedStats}
+                    monthlyRevenue={monthlyRevenue}
+                    getStatusIcon={getStatusIcon}
+                    inspectionStats={inspectionStats}
+                />
+            );
+        case 'User':
+            return <UserDashboard />;
+        case 'Inspector':
+            return (
+                <InspectorDashboard
+                    inspectionStats={inspectionStats}
+                />
+            );
+        case 'Maintainer':
+            return (
+                <MaintenorDashboard
+                    stats={maintenorStatsData}
+                    maintenanceStatusData={maintenanceStatus}
+                    overdueMaintenanceData={overdueMaintenanceData}
+                    scheduledMaintenanceData={scheduledMaintenanceData}
+                    recentMaintenanceActivity={recentActivity}
+                />
+            );
+        case 'Tenant':
+            return <TenantDashboard tenantData={tenantData}  />;
+        default:
+            return <div>No dashboard for this role</div>;
+    }
+};
 
     return (
         <div className="dashboard">

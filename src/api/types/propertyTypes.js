@@ -12,6 +12,7 @@ export const PropertyTypes = {
   BATCH_DELETE: 'property/batchDelete',
   TOGGLE_FEATURED: 'property/toggleFeatured',
   FILTER_PROPERTIES: 'property/filterProperties',
+  FILTER_PROPERTIES_OPEN: 'property/filterPropertiesOpen', // ADDED - This is critical.
   DOWNLOAD_PHOTO: 'property/downloadPhoto',
   UPDATE_PHOTO: 'property/updatePhoto',
   ADD_PROPERTY_IMAGE: 'property/addPropertyImage',
@@ -19,4 +20,6 @@ export const PropertyTypes = {
   GET_PROPERTIES_BY_USER: 'property/getPropertiesByUser', // New action type
   GET_PROPERTIES_BY_USER_ADMIN: 'property/getPropertiesByUserAdmin', // New action type
   GET_PROPERTY_REPORT: 'property/getPropertyReport', // New action type
+  FETCH_PROPERTY_STATUS_COUNTS: 'property/fetchPropertyStatusCounts',
+  GET_LEASED_PROPERTIES_FOR_TENANT: 'property/getLeasedPropertiesForTenant', // ADDED
 };

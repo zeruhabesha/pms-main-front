@@ -29,6 +29,7 @@ const Guest = React.lazy(() => import('./views/guest/ViewGuest'))
 const AddGuest = React.lazy(() => import('./views/guest/AddGuest'))
 const ViewClearance = React.lazy(() => import('./views/Clearance/ViewClearance'))
 const AddClearance = React.lazy(() => import('./views/Clearance/AddClearance'))
+const Help = React.lazy(() => import('./views/help/Help')) // Import the GuestDetail component
 
 const routes = [
   // Public routes (no authentication required)
@@ -145,6 +146,11 @@ const routes = [
     path: '/clearance',
     name: 'View Clearance',
     element: () => <ProtectedRoute element={ViewClearance} />,
+  },
+  {
+    path: '/help',
+    name: 'Help',
+    element: () => <ProtectedRoute element={Help} />,
   },
 ]
 

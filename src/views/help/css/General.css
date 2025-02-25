@@ -1,0 +1,54 @@
+/* General.css */
+
+.general-info {
+    opacity: 0;
+    transform: translateY(20px); /* Start a bit lower */
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+    padding: 25px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+  }
+  
+  .general-info.loaded {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .general-info h5 {
+    color: #2c3e50; /* A darker, professional color */
+    margin-bottom: 15px;
+    font-size: 1.8em; /* Slightly larger heading */
+  }
+  
+  .general-info h6 {
+    color: #34495e; /* Another professional color */
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 1.3em;
+  }
+  
+  .general-info ul {
+    list-style-type: disc;
+    margin-left: 30px; /* Increased indent */
+    margin-bottom: 15px;
+  }
+  
+  .general-info li {
+    margin-bottom: 8px;
+    line-height: 1.6; /* Improved readability */
+    transition: background-color 0.3s ease; /* Hover effect */
+  }
+  
+  .general-info li:hover {
+    background-color: rgba(0, 0, 0, 0.03); /* Subtle highlight on hover */
+    cursor: pointer; /* Indicate clickability */
+  }
+  
+  /* Add a bit more style to the 'strong' elements */
+  .general-info strong {
+    color: #e74c3c; /* A highlight color for the strong elements */
+    font-weight: bold;
+  }

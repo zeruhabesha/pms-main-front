@@ -60,69 +60,159 @@ getRegisteredBy() {
     }
 }
 
-
 async filterProperties(filterCriteria = {}) {
-try {
+  try {
     const user = this.getRegisteredBy();
 
     if (!user) {
-        console.warn("User data not available, cannot fetch properties.");
-        return {
-            properties: [],
-            pagination: {
-                totalPages: 0,
-                totalItems: 0,
-                currentPage: 1,
-                limit: 10,
-                hasNextPage: false,
-                hasPreviousPage: false,
-            }
-        };
+      console.warn("User data not available, cannot fetch properties.");
+      return {
+        properties: [],
+        pagination: {
+          totalPages: 0,
+          totalItems: 0,
+          currentPage: 1,
+          limit: 10,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      };
     }
 
-  const { page = 1, limit = 10, ...otherCriteria } = filterCriteria;
+    const { page = 1, limit = 10, ...otherCriteria } = filterCriteria;
 
     let registeredById;
-    if (user.role === 'Admin') {
-        registeredById = user._id;
-    } 
-    else if ( user.role === 'Tenant') {
-        registeredById = user.registeredByAdmin;
+    if (user.role === "Admin") {
+      registeredById = user._id;
+      console.log("Registered By ID (Admin):", registeredById);
+    } else if (user.role === "Tenant") {
+      registeredById = user.registeredByAdmin._id;
+      console.log("Registered By ID (Tenant):", registeredById);
+    } else {
+      registeredById = user.registeredBy._id;
+      console.log("Registered By ID (User):", registeredById);
     }
-    else {
-        registeredById = user.registeredBy;
+
+    if (
+      !registeredById ||
+      typeof registeredById !== "string" ||
+      registeredById.length !== 24
+    ) {
+      console.error("Invalid registeredById:", registeredById);
+      throw new Error("Invalid registeredById format or missing registeredBy information");
     }
 
-  const response = await httpCommon.get(`properties/userAdmin/${registeredById}`, {
-    headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
-    params: {
-      page,
-      limit,
-      ...otherCriteria,
-    },
-  });
+    const response = await httpCommon.get(
+      `/properties/userAdmin/${registeredById}`,
+      {
+        headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
+        params: {
+          page,
+          limit,
+          ...otherCriteria,
+        },
+      }
+    );
 
-  const totalItems = response.data?.data?.totalProperties || 0;
-  const totalPages = Math.ceil(totalItems / limit);
-  const currentPage = Math.min(page, totalPages || 1);
+    const totalItems = response.data?.data?.totalProperties || 0;
+    const totalPages = Math.ceil(totalItems / limit);
+    const currentPage = Math.min(page, totalPages || 1);
 
-  return {
-    properties: (response.data?.data?.properties || []).map(
-      PropertyAdapter.toDTO
-    ),
-    pagination: {
-      totalPages,
-      totalItems,
-      currentPage,
-      limit,
-      hasNextPage: currentPage < totalPages,
-      hasPreviousPage: currentPage > 1,
-    },
-  };
-} catch (error) {
-  throw this.handleError(error);
+    return {
+      properties: (response.data?.data?.properties || []).map(
+        PropertyAdapter.toDTO
+      ),
+      pagination: {
+        totalPages,
+        totalItems,
+        currentPage,
+        limit,
+        hasNextPage: currentPage < totalPages,
+        hasPreviousPage: currentPage > 1,
+      },
+    };
+  } catch (error) {
+    throw this.handleError(error);
+  }
 }
+
+async filterPropertiesOpen(filterCriteria = {}) {
+  try {
+    const user = this.getRegisteredBy();
+
+    if (!user) {
+      console.warn("User data not available, cannot fetch properties.");
+      return {
+        properties: [],
+        pagination: {
+          totalPages: 0,
+          totalItems: 0,
+          currentPage: 1,
+          limit: 10,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      };
+    }
+
+    const { page = 1, limit = 10, ...otherCriteria } = filterCriteria;
+
+    let registeredById;
+    if (user.role === "Admin") {
+      registeredById = user._id;
+      console.log("Registered By ID (Admin):", registeredById);
+    } else if (user.role === "Tenant") {
+      registeredById = user.registeredByAdmin._id;
+      console.log("Registered By ID (Tenant):", registeredById);
+    } else {
+      registeredById = user.registeredBy._id;
+      console.log("Registered By ID (User):", registeredById);
+    }
+
+    if (
+      !registeredById ||
+      typeof registeredById !== "string" ||
+      registeredById.length !== 24
+    ) {
+      console.error("Invalid registeredById:", registeredById);
+      throw new Error("Invalid registeredById format or missing registeredBy information");
+    }
+
+    const response = await httpCommon.get(
+      `/properties/userAdmin/${registeredById}/open`,
+      {
+        headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
+        params: {
+          page,
+          limit,
+          ...otherCriteria,
+        },
+      }
+    );
+
+    const totalItems = response.data?.data?.totalProperties || 0;
+    const totalPages = Math.ceil(totalItems / limit);
+    const currentPage = Math.min(page, totalPages || 1);
+
+    return {
+      properties: (response.data?.data?.properties || []).map(
+        PropertyAdapter.toDTO
+      ),
+      pagination: {
+        totalPages,
+        totalItems,
+        currentPage,
+        limit,
+        hasNextPage: currentPage < totalPages,
+        hasPreviousPage: currentPage > 1,
+      },
+    };
+  } catch (error) {
+    throw this.handleError(error);
+  }
 }
+
+
   async filterPropertiess(filterCriteria = {}) {
     try {
       const { ...otherCriteria } = filterCriteria;
@@ -155,6 +245,67 @@ try {
       throw this.handleError(error);
     }
   }
+
+  async getPropertyStatusCounts() {
+    try {
+        const user = this.getRegisteredBy();
+
+        if (!user) {
+            console.warn("User data not available, cannot fetch properties.");
+            return null;
+        }
+
+        let registeredById = null; // ✅ Ensure registeredById always has a value
+
+        switch (user.role) {
+            case "Admin":
+                registeredById = user._id;
+                break;
+            case "Tenant":
+                registeredById = user.registeredByAdmin._id;
+                break;
+            default:
+                registeredById = user.registeredBy._id;
+        }
+
+        if (!registeredById || typeof registeredById !== "string" || registeredById.length !== 24) {
+            console.error("Invalid registeredById:", registeredById);
+            throw new Error("Invalid registeredById format or missing registeredBy information");
+        }
+
+        console.log("Fetching property status counts for registeredById:", registeredById);
+
+        const response = await httpCommon.get(
+            `${this.baseURL}/statusCounts/${registeredById}`,  // ✅ Now `registeredById` is always defined
+            {
+                headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
+            }
+        );
+
+        console.log("API Response for Property Status Counts:", response.data);
+
+        return response.data;
+    } catch (error) {
+        throw this.handleError(error, "Failed to fetch property status counts");
+    }
+}
+
+    // ADDED:  Method to fetch leased properties for a tenant.
+    async getLeasedPropertiesForTenant(tenantId) {
+        try {
+            const response = await httpCommon.get(
+                `/properties/leased/user/${tenantId}`,  // Updated URL
+                {
+                    headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
+                }
+            );
+
+            return (response.data?.data?.properties || []).map(PropertyAdapter.toDTO); // Assuming response structure is the same
+        } catch (error) {
+            throw this.handleError(error, "Failed to fetch leased properties for tenant");
+        }
+    }
+
 
   async filterProperties1(filterCriteria = {}) {
     try {
@@ -330,6 +481,17 @@ try {
       throw this.handleError(error);
     }
   }
+  async getTenantById(id) {
+    try {
+      const response = await httpCommon.get(`${this.baseURL}/tenants/${id}`, {
+        headers: this.getAuthHeader(),
+      });
+      return response.data?.data; // Adjust as per your API response structure
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async deleteProperty(id) {
     try {
       await httpCommon.delete(`${this.baseURL}/${id}`, {

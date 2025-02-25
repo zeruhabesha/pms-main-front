@@ -1,3 +1,5 @@
+// src/components/guests/ViewGuest.js
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -30,6 +32,7 @@ import AddGuest from './AddGuest';
 
 import { GuestError } from "../../api/utils/guestError";
 import { decryptData } from '../../api/utils/crypto';
+import { getLeasedPropertiesForTenant } from "../../api/actions/PropertyAction";
 
 
 const selectGuestState = (state) => state.guest || {
@@ -55,6 +58,7 @@ const ViewGuest = () => {
         })
     ), []);
     const { guests, loading, error, totalPages, currentPage, totalGuests } = useSelector(guestSelector);
+    const { properties, loading: propertyLoading, error: propertyError } = useSelector((state) => state.property);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
@@ -81,6 +85,27 @@ const ViewGuest = () => {
          console.error('Permission loading error:', err)
        }
      }, [])
+
+   useEffect(() => {
+     const fetchUserAndProperties = async () => {
+       const encryptedUser = localStorage.getItem("user");
+       if (encryptedUser) {
+         try {
+           const decryptedUser = decryptData(encryptedUser);
+           if (decryptedUser && decryptedUser._id) {
+             const userId = decryptedUser._id;
+             await dispatch(getLeasedPropertiesForTenant(userId));
+           } else {
+             setErrorMessage("Invalid user data, try to log in again");
+           }
+         } catch (error) {
+           setErrorMessage("Error decoding token, try to log in again");
+         }
+       }
+     };
+
+     fetchUserAndProperties();
+   }, [dispatch]);
 
 
   useEffect(() => {
@@ -126,9 +151,10 @@ const ViewGuest = () => {
   };
 
 
-  const handleAddGuestClick = () => {
+    const handleAddGuestClick = () => {
         setAddGuestModalVisible(true)
     }
+
      const handleCancelAddGuest = () => {
         setAddGuestModalVisible(false);
     };
@@ -210,6 +236,7 @@ const ViewGuest = () => {
     setVisible={setAddGuestModalVisible}
     editingGuest={editingGuest}
     setEditingGuest={setEditingGuest}
+    properties={properties} // Pass properties to AddGuest
   />
           <GuestDeleteModal
             visible={deleteModalVisible}

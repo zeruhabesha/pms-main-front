@@ -40,7 +40,8 @@ class GuestService {
     async fetchGuests({ page = 1, limit = 10, search = "", status = "" }) {
         try {
             console.log("GuestService - fetchGuests: Fetching guests with params:", { page, limit, search, status });
-            const response = await httpCommon.get(this.baseURL, {
+            const response = await httpCommon.get( `${this.baseURL}/user`, {
+               
                 headers: this.getAuthHeader(),
                 params: {
                     page,

@@ -78,16 +78,16 @@ class ComplaintService {
                 apiUrl = `complaints/registered/${registeredById}`;
             } else if (user.role === 'Tenant') {
                 registeredById = user._id;
-                apiUrl = `complaints/assigned/${registeredById}`;
+                apiUrl = `complaints/user/${registeredById}`;
             } else if (user.role === 'Inspector') {
-                registeredById = user.assignedTo;
+                registeredById = user.assignedTo._id;
                 apiUrl = `complaints/assigned/${registeredById}`;
             } else {
                 console.warn(`Unknown user role: ${user.role}. Fetching all complaints.`);
                 apiUrl = `complaints`;  // Or handle this case differently, perhaps an error
             }
 
-            const response = await httpCommon.get(apiUrl, {
+            const response = await httpCommon.get(`${apiUrl}`, {
                 headers: {
                     ...this.getAuthHeader()
                 },

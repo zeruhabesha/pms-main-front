@@ -1,4 +1,4 @@
-import React, {useState , useMemo, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   CTable,
@@ -190,6 +190,36 @@ const TenantTable = ({
     }
   }
 
+  const getTenantStatusDetails = (status) => {
+        if (!status) {
+            return {
+                text: 'N/A',
+                color: 'text-secondary',
+                icon: null,
+            };
+        }
+
+        if (status === 'active') {
+            return {
+                text: `Active`,
+                color: 'text-success',
+                icon: cilCheckCircle,
+            };
+        } else if (status === 'inactive') {
+            return {
+                text: `Inactive`,
+                color: 'text-danger',
+                icon: cilXCircle,
+            };
+        }
+
+        return {
+            text: 'N/A',
+            color: 'text-secondary',
+            icon: null,
+        };
+    };
+
   const getClearanceStatusDetails = (tenantId) => {
     const status = clearanceStatuses[tenantId]
     if (!status) {
@@ -231,7 +261,7 @@ const TenantTable = ({
     email: tenant.contactInformation?.email || 'N/A',
     startDate: formatDate(tenant.leaseAgreement?.startDate),
     endDate: formatDate(tenant.leaseAgreement?.endDate),
-    status: getStatusDetails(tenant.leaseAgreement?.endDate)?.text || 'N/A',
+    status: tenant?.status || 'N/A'
   }))
 
   const clipboardData = tenants
@@ -253,7 +283,7 @@ const TenantTable = ({
       tenant.contactInformation?.email || 'N/A',
       formatDate(tenant.leaseAgreement?.startDate) || 'N/A',
       formatDate(tenant.leaseAgreement?.endDate) || 'N/A',
-      getStatusDetails(tenant.leaseAgreement?.endDate)?.text || 'N/A',
+      tenant?.status || 'N/A'
     ])
 
     doc.autoTable({
@@ -433,15 +463,12 @@ const TenantTable = ({
                 )}
               </CTableHeaderCell>
               <CTableHeaderCell className="bg-body-tertiary">Contact</CTableHeaderCell>
-              {/* REMOVED PAYMENT COLUMN */}
-              {/* <CTableHeaderCell>Payment</CTableHeaderCell> */}
               <CTableHeaderCell className="bg-body-tertiary">
                 Download ID
-              </CTableHeaderCell>{' '}
-              {/* NEW COLUMN */}
-              {/* <CTableHeaderCell>Lease Status</CTableHeaderCell> */}
+              </CTableHeaderCell>
+               {/*Adding status in tenant table*/}
               <CTableHeaderCell className="bg-body-tertiary">
-                Clearance Status
+                Status
               </CTableHeaderCell>
               <CTableHeaderCell className="bg-body-tertiary">Actions</CTableHeaderCell>
             </CTableRow>
@@ -493,17 +520,6 @@ const TenantTable = ({
                       {tenant.contactInformation?.phoneNumber || 'N/A'}
                     </div>
                   </CTableDataCell>
-                  {/* REMOVED PAYMENT DATA CELL */}
-                  {/* <CTableDataCell>
-                                    <div className="small text-body-secondary text-nowrap">
-                                        <CIcon icon={cilCalendar} size="sm" className="me-1" />
-                                        Security Deposit: {tenant.leaseAgreement?.securityDeposit || 'N/A'}
-                                    </div>
-                                    <div className="small text-body-secondary text-nowrap">
-                                        <CIcon icon={cilCalendar} size="sm" className="me-1" />
-                                        Rent Amount:{tenant.leaseAgreement?.rentAmount || 'N/A'}
-                                    </div>
-                                </CTableDataCell> */}
                   <CTableDataCell>
                     {' '}
                     {/* NEW DOWNLOAD ID CELL */}
@@ -520,31 +536,18 @@ const TenantTable = ({
                       'N/A'
                     )}
                   </CTableDataCell>
-                  {/* <CTableDataCell>
-                                      <div className={`status-badge ${getStatusDetails(tenant.leaseAgreement?.endDate)?.color}`}>
-                                     {getStatusDetails(tenant.leaseAgreement?.endDate)?.text}
-                                    {
-                                    getStatusDetails(tenant.leaseAgreement?.endDate)?.icon && (
-                                            <CIcon
-                                                icon={getStatusDetails(tenant.leaseAgreement?.endDate)?.icon}
-                                                 className="ms-1"
-                                             />
-                                        )}
-                                    </div>
-                                </CTableDataCell> */}
-                  <CTableDataCell className={shouldBlurClearance ? blurredClass : ''}>
-                    <div
-                      className={`status-badge ${getClearanceStatusDetails(tenant?._id)?.color}`}
-                    >
-                      {getClearanceStatusDetails(tenant?._id)?.text}
-                      {getClearanceStatusDetails(tenant?._id)?.icon && (
-                        <CIcon
-                          icon={getClearanceStatusDetails(tenant?._id)?.icon}
-                          className="ms-1"
-                        />
-                      )}
-                    </div>
-                  </CTableDataCell>
+                  {/*Adding status in tenant table*/}
+                  <CTableDataCell>
+                        <div className={`status-badge ${getTenantStatusDetails(tenant?.status)?.color}`}>
+                            {getTenantStatusDetails(tenant?.status)?.text}
+                            {getTenantStatusDetails(tenant?.status)?.icon && (
+                                <CIcon
+                                    icon={getTenantStatusDetails(tenant?.status)?.icon}
+                                    className="ms-1"
+                                />
+                            )}
+                        </div>
+                    </CTableDataCell>
                   <CTableDataCell>
                     <CDropdown
                       variant="btn-group"

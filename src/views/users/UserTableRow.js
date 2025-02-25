@@ -15,29 +15,19 @@ const UserTableRow = ({
     handleDelete,
     handleEditPhoto,
     handleUserDetailsClick,
-    handlePermissionsClick
+    handlePermissionsClick,
+    handleManageStatusClick // Add handler for status management
 }) => {
     return (
         <CTableRow key={user._id || `row-${index}`}>
             <CTableDataCell>{(currentPage - 1) * itemsPerPage + index + 1}</CTableDataCell>
             <CTableDataCell>
-              
                 <img
-                src={`https://pms-backend-sncw.onrender.com/api/v1/users/${user._id}/photo`}
-                    // src={
-                    //     // user?.photo 
-                    //     // ? 
-                    //     `http://localhost:4000/api/v1/users/${user._id}/photo`
-                    //     //  : 
-                    //     //  placeholder
-                    //     }
+                    src={`https://pms-backend-sncw.onrender.com/api/v1/users/${user._id}/photo`}
                     alt="User"
-                      style={{ width: '50px', height: '50px', borderRadius: '50%' }}
-                      className="me-2"
+                    style={{ width: '50px', height: '50px', borderRadius: '50%' }}
+                    className="me-2"
                 />
-                <CButton color="light" size="sm" onClick={() => handleEditPhoto(user)} title="Edit photo">
-                    <CIcon icon={cilPencil} />
-                </CButton>
             </CTableDataCell>
             <CTableDataCell>{user?.name || 'N/A'}</CTableDataCell>
             <CTableDataCell>{user?.email || 'N/A'}</CTableDataCell>
@@ -52,14 +42,18 @@ const UserTableRow = ({
                 )}
             </CTableDataCell>
             <CTableDataCell>
-                <UserActions
-                    user={user}
-                    handleEdit={handleEdit}
-                    handleDelete={handleDelete}
-                    handleEditPhoto={handleEditPhoto}
-                    handleUserDetailsClick={handleUserDetailsClick}
-                    handlePermissionsClick={handlePermissionsClick}
-                />
+            <UserActions
+    user={user}
+    handleEdit={handleEdit}
+    handleDelete={handleDelete}
+    handleEditPhoto={handleEditPhoto}
+    handleUserDetailsClick={handleUserDetailsClick}
+    handlePermissionsClick={handlePermissionsClick}
+    handleManageStatusClick={handleManageStatusClick} // ✅ Ensure this is passed
+/>
+
+
+
             </CTableDataCell>
         </CTableRow>
     );

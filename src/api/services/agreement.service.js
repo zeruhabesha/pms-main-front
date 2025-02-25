@@ -66,7 +66,7 @@ class AgreementService {
             if (user.role === 'Admin') {
                 registeredById = user._id; // Admin fetches data by their own _id
             } else {
-                registeredById = user.registeredBy; // Regular user fetches data by registeredBy
+                registeredById = user.registeredBy._id; // Regular user fetches data by registeredBy
             }
 
             const response = await httpCommon.get(`lease/registeredBy/${registeredById}`, {

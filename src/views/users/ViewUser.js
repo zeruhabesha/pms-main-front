@@ -1,7 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import {
-    CRow, CCol, CCard, CCardHeader, CCardBody, CAlert,
+    CButton,
+    CModal,
+    CModalBody,
+    CModalHeader,
+    CModalTitle,
+    CModalFooter,
+    CFormLabel,
+    CFormSwitch,
+    CCard,
+    CCardBody, 
+    CCardHeader,
+    CFormInput,
+    CFormSelect,
+    CForm,
+    CFormTextarea,
+    CRow,
+    CCol,
+    CAlert,
 } from '@coreui/react';
+
+
 import { useDispatch, useSelector } from 'react-redux';
 import {
     fetchUsers, fetchInspectors, fetchMaintainers, deleteUser, addUser, updateUser, uploadUserPhoto,
@@ -10,6 +29,7 @@ import UserTable from './UserTable';
 import UserModal from './UserModal';
 import UserDeleteModal from './UserDeleteModal';
 import EditPhotoModal from '../EditPhotoModal';
+import ManageStatusModal from './ManageStatusModal'; // Import the new modal
 import { ToastContainer, toast } from 'react-toastify';
 import './User.scss';
 import '../Super.scss';
@@ -21,9 +41,11 @@ const ViewUser = () => {
     const [userModalVisible, setUserModalVisible] = useState(false);
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [editPhotoVisible, setEditPhotoVisible] = useState(false);
+    const [manageStatusVisible, setManageStatusVisible] = useState(false); // State for the manage status modal
     const [userToDelete, setUserToDelete] = useState(null);
     const [editingUser, setEditingUser] = useState(null);
     const [userToEdit, setUserToEdit] = useState(null);
+    const [userToManageStatus, setUserToManageStatus] = useState(null); // State for the user whose status is being managed
     const [activeTab, setActiveTab] = useState(0);
 
     const itemsPerPage = 10;
@@ -32,6 +54,8 @@ const ViewUser = () => {
     const { users, inspectors, maintainers, loading, error } = useSelector((state) => state.user);
      const [role, setRole] = useState('user');
 
+   
+    
     useEffect(() => {
         //Set role based on active tab
         switch (activeTab) {
@@ -104,6 +128,10 @@ const ViewUser = () => {
         setDeleteModalVisible(true);
     };
 
+   
+    
+
+
     const confirmDelete = async () => {
         try {
             await dispatch(deleteUser(userToDelete._id)).unwrap();
@@ -174,6 +202,29 @@ const ViewUser = () => {
     }
   }, [error, dispatch]);
 
+    // Status Management
+    const handleManageStatusClick = (user) => {
+        if (!user) return; // Prevent errors if user is null
+        setUserToManageStatus(user);
+        setManageStatusVisible(true);
+    };
+    
+    
+
+    useEffect(() => {
+        if (userToManageStatus) {
+            // setStatus(userToManageStatus.status === 'active'); // ❌ REMOVE THIS LINE
+        }
+    }, [userToManageStatus]);
+    
+
+
+
+    const handleCloseManageStatusModal = () => {
+        setManageStatusVisible(false);
+        setUserToManageStatus(null);
+    };
+
     return (
         <CRow>
             <CCol xs={12}>
@@ -194,20 +245,23 @@ const ViewUser = () => {
                         </button>
                     </CCardHeader>
                     <CCardBody>
-                      <UserTable
-                          users={role === 'maintainer' ? maintainers : role === 'inspector' ? inspectors : users || []}
-                          currentPage={localCurrentPage}
-                          searchTerm={searchTerm}
-                          setSearchTerm={handleSearch}
-                          handleEdit={handleEdit}
-                          handleDelete={handleDelete}
-                          handleEditPhoto={handleEditPhoto}
-                          handlePageChange={handlePageChange}
-                          loading={loading}
-                          itemsPerPage={itemsPerPage}
-                          activeTab={activeTab}
-                          setActiveTab={setActiveTab}
-                        />
+                    <UserTable
+    users={role === 'maintainer' ? maintainers : role === 'inspector' ? inspectors : users || []}
+    currentPage={localCurrentPage}
+    searchTerm={searchTerm}
+    setSearchTerm={handleSearch}
+    handleEdit={handleEdit}
+    handleDelete={handleDelete}
+    handleEditPhoto={handleEditPhoto}
+    handleManageStatusClick={handleManageStatusClick} // ✅ Ensure this is passed
+    handlePageChange={handlePageChange}
+    loading={loading}
+    itemsPerPage={itemsPerPage}
+    activeTab={activeTab}
+    setActiveTab={setActiveTab}
+/>
+
+
                     </CCardBody>
                 </CCard>
             </CCol>
@@ -234,6 +288,15 @@ const ViewUser = () => {
                 admin={userToEdit}
                 onSavePhoto={handleSavePhoto}
             />
+  <ManageStatusModal
+    visible={manageStatusVisible}
+    setVisible={setManageStatusVisible}
+    user={userToManageStatus} // Ensure this is passed
+    fetchData={fetchData}
+/>
+
+
+
             <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
         </CRow>
     );

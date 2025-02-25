@@ -1,0 +1,56 @@
+/* AppBreadcrumb.css */
+
+.app-breadcrumb {
+    background-color: #f8f9fa;
+    padding: 0.75rem 1rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: all 0.3s ease-in-out; /* Animate background and shadow */
+  }
+  
+  .app-breadcrumb:hover {
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15); /* Enhance shadow on hover */
+    background-color: #f0f0f0; /* Slightly darker background on hover */
+  }
+  
+  .breadcrumb-item {
+    text-transform: capitalize;
+    transition: color 0.2s ease-in-out, transform 0.2s ease-in-out; /* Animate color and position */
+    transform: translateX(0); /* Start at the original position */
+  }
+  
+  /* Slightly move to right the breadcrumb*/
+  .breadcrumb-item:hover {
+    color: #0056b3;
+    transform: translateX(3px); /* Move it slightly to the right */
+  }
+  
+  /* Style for the links inside breadcrumb items */
+  .breadcrumb-item a {
+    color: #495057;
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+  }
+  
+  .breadcrumb-item a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+  }
+  
+  /* Style for active breadcrumb item (no link, just text) */
+  .breadcrumb-item.active {
+    color: #20a8d8;
+    font-weight: 500;
+  }
+  
+  /* Style for breadcrumb separator */
+  .breadcrumb-item + .breadcrumb-item::before {
+    color: #6c757d;
+    content: '/';
+    transition: color 0.2s ease-in-out; /* Also animate separator color */
+  }
+  
+  .breadcrumb-item:hover + .breadcrumb-item::before {
+    color: #495057; /* Darken separator on hover of previous item */
+  }

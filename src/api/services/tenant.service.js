@@ -78,7 +78,7 @@ class TenantService {
             if (user.role === 'Admin') {
                 registeredById = user._id;
             } else {
-                registeredById = user.registeredBy;
+                registeredById = user.registeredBy._id;
             }
 
             const response = await httpCommon.get(`tenants/registeredBy/${registeredById}`, { // Modified URL to filter by registeredBy
@@ -87,7 +87,6 @@ class TenantService {
                 },
                 params: { page, limit, search: searchTerm },
             });
-
             const { data } = response.data;
 
             const cacheData = {
@@ -123,27 +122,71 @@ class TenantService {
         }
     }
 
-
-    async addTenant(tenantData) {
+    async getTenantStatusCounts() {
         try {
-            console.log("Sending POST request with data:", tenantData);
-            const response = await httpCommon.post(this.baseURL, tenantData, {
-                headers: {
-                    ...this.getAuthHeader(),
-                    'Content-Type': 'multipart/form-data',
-                },
+            const user = this.getRegisteredBy();
+    
+            if (!user) {
+                console.warn("User data not available, cannot fetch tenant status counts.");
+                return { active: 0, inactive: 0, pending: 0 }; // ✅ Default empty object
+            }
+    
+            let registeredById = user.role === "Admin" ? user._id : user.registeredBy._id;
+    
+            if (!registeredById || typeof registeredById !== "string" || registeredById.length !== 24) {
+                console.error("Invalid registeredById:", registeredById);
+                throw new Error("Invalid registeredById format or missing information");
+            }
+    
+            console.log("Fetching tenant status counts for registeredById:", registeredById);
+    
+            const response = await httpCommon.get(`/tenants/statusCounts/${registeredById}`, {
+                headers: { ...this.defaultHeaders, ...this.getAuthHeader() },
             });
-            return response.data?.data;
+    
+            console.log("API Response for Tenant Status Counts:", response.data);
+    
+            return response.data.data || { active: 0, inactive: 0, pending: 0 }; // ✅ Ensure default values
         } catch (error) {
-            console.error("API call failed:", error);
-            throw this.handleError(error);
+            console.error("Failed to fetch tenant status counts:", error);
+            return { active: 0, inactive: 0, pending: 0 }; // ✅ Prevent errors
         }
     }
+    
+    
+
+   // tenant.service.js
+
+   async addTenant(tenantData) {
+    try {
+        console.log("Sending POST request with data:", tenantData);
+
+        if (tenantData.registeredByAdmin && typeof tenantData.registeredByAdmin === 'object' && tenantData.registeredByAdmin._id) {
+           tenantData = { ...tenantData, registeredByAdmin: tenantData.registeredByAdmin._id };
+        }
+
+        const formData = this.createFormData(tenantData);
+        const response = await httpCommon.post(this.baseURL, formData, {
+            headers: {
+                ...this.getAuthHeader(),
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data?.data;
+    } catch (error) {
+        console.error("API call failed:", error);
+        throw this.handleError(error);
+    }
+}
 
 
 
     async updateTenant(id, tenantData) {
         try {
+            // Convert registeredByAdmin to its _id
+            if (tenantData.registeredByAdmin && typeof tenantData.registeredByAdmin === 'object' && tenantData.registeredByAdmin._id) {
+                tenantData = { ...tenantData, registeredByAdmin: tenantData.registeredByAdmin._id };
+            }
              const formData = this.createFormData(tenantData);
             const response = await httpCommon.put(`${this.baseURL}/${id}`, formData, {
                 headers: {
@@ -208,32 +251,31 @@ class TenantService {
   createFormData(data) {
     const formData = new FormData();
     for (const key in data) {
-        if (data.hasOwnProperty(key)) {
-            const value = data[key];
-            if (Array.isArray(value)) {
-              value.forEach((file, index) => {
-                   if (file instanceof File) {
-                          formData.append(`${key}[${index}]`, file);
-                        } else {
-                          formData.append(`${key}`, file);
-                     }
-                });
-            } else if (value instanceof File) {
-                formData.append(key, value);
-            } else if (typeof value === 'object' && value !== null) {
-               for (const innerKey in value) {
-                   if(value.hasOwnProperty(innerKey)){
-                    formData.append(`${key}[${innerKey}]`, value[innerKey]);
-                   }
-                }
-            }else if (value !== null) {
-              formData.append(key, value);
-            }
+      if (data.hasOwnProperty(key)) {
+        const value = data[key];
 
+        if (value === null || value === undefined) {
+          continue; // Skip null or undefined values
         }
+
+        if (Array.isArray(value)) {
+          value.forEach((item, index) => {
+            formData.append(`${key}[${index}]`, item); // Appending array elements correctly
+          });
+        } else if (typeof value === 'object' && !(value instanceof File)) {
+          // Handle nested objects by iterating through their properties
+          for (const nestedKey in value) {
+            if (value.hasOwnProperty(nestedKey)) {
+              formData.append(`${key}[${nestedKey}]`, value[nestedKey]);
+            }
+          }
+        } else {
+          formData.append(key, value);
+        }
+      }
     }
     return formData;
-}
+  }
 
     handleError(error) {
          console.error('API Error:', error.response?.data || error.message);

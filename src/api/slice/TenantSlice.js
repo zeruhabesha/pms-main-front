@@ -7,13 +7,15 @@ import {
   deleteTenant,
   uploadTenantPhoto,
   fetchTenantById,
-    generateTenantReport
+    generateTenantReport,
+    fetchTenantStatusCounts 
 } from "../actions/TenantActions";
 
 const initialState = {
   tenants: [],
   loading: false,
   error: null,
+  statusCounts: null, // ✅ Add this state
   totalPages: 1,
   currentPage: 1,
   totalTenants: 0,
@@ -147,6 +149,25 @@ const tenantSlice = createSlice({
           state.reportLoading = false;
           state.error = action.payload?.message || "Failed to generate report";
         })
+        .addCase(fetchTenantStatusCounts.pending, (state) => {
+          state.loading = true;
+          state.error = null;
+      })
+      .addCase(fetchTenantStatusCounts.fulfilled, (state, action) => {
+          state.loading = false;
+          console.log("Fetched Tenant Status Counts:", action.payload);  // ✅ Confirm response
+
+          if (action.payload) {
+              state.statusCounts = action.payload;  // ✅ Store the fetched data
+          } else {
+              state.statusCounts = null;
+          }
+          state.error = null;
+      })
+      .addCase(fetchTenantStatusCounts.rejected, (state, action) => {
+          state.loading = false;
+          state.error = action.payload;
+      });
 
   },
 });

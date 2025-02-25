@@ -32,7 +32,7 @@ import { format } from 'date-fns';
 import httpCommon from '../../api/http-common'; // Import your httpCommon
 import { decryptData } from '../../api/utils/crypto';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchUserById } from '../../api/actions/userActions';
+import { fetchUserById } from '../../api/actions/UserActions';
 
 const MaintenanceDetailsModal = ({ visible, setVisible, maintenance }) => {
     const [assignedMaintainer, setAssignedMaintainer] = useState(null);
@@ -205,14 +205,14 @@ const MaintenanceDetailsModal = ({ visible, setVisible, maintenance }) => {
                                  <CTableDataCell><strong> <CIcon icon={cilDescription} className="me-1" />Notes:</strong></CTableDataCell>
                                  <CTableDataCell>{maintenance.notes || 'No notes available.'}</CTableDataCell>
                              </CTableRow>
-                             <CTableDataCell><strong><CIcon icon={cilUser} className="me-1" />Assigned Maintainer:</strong></CTableDataCell>
+                             {/* <CTableDataCell><strong><CIcon icon={cilUser} className="me-1" />Assigned Maintainer:</strong></CTableDataCell> */}
 
-                               {fetchedUser && (
+                               {/* {fetchedUser && ( */}
                                     <CTableRow>
                                         <CTableDataCell><strong><CIcon icon={cilUser} className="me-1" />Assigned Maintainer:</strong></CTableDataCell>
-                                        <CTableDataCell>{fetchedUser.name || 'N/A'}</CTableDataCell>
+                                        <CTableDataCell>{maintenance.assignedMaintainer.name || 'N/A'}</CTableDataCell>
                                     </CTableRow>
-                                )}
+                                {/* )} */}
                       </CTableBody>
                          <CTableHead>
                                  <CTableRow>

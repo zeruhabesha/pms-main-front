@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     CCard,
     CCardBody,
@@ -21,14 +21,32 @@ import MainChart from "./MainChart";
 import CIcon from '@coreui/icons-react';
 import { cilUser, cilBell, cilClock, cilTask, cilHome} from '@coreui/icons';
 import { AnimatedCard, colors } from "./styledComponents";
+import { decryptData } from '../../api/utils/crypto';
 
 const UserDashboard = () => {
-     const user = {
-        name: "John Doe",
-        email: "john.doe@example.com",
-         role: 'User',
-        lastLogin: '2024-08-15 10:30 AM',
-    };
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const fetchUserFromLocalStorage = () => {
+            const encryptedUser = localStorage.getItem('user');
+            if (encryptedUser) {
+                try {
+                    const decryptedUser = decryptData(encryptedUser);
+                    setUser(decryptedUser);
+                } catch (error) {
+                    console.error("Error decrypting user data:", error);
+                    // Handle decryption error appropriately
+                }
+            } else {
+                console.warn("No user found in local storage");
+                // Handle missing user data appropriately
+            }
+        };
+
+        fetchUserFromLocalStorage();
+    }, []);  // Run only once on mount
+
+
       const recentActivities = [
         {id: 1, action: 'Logged in', time: '2024-08-15 10:30 AM' },
         {id: 2, action: 'Viewed property details', time: '2024-08-15 10:45 AM' },
@@ -46,13 +64,16 @@ const UserDashboard = () => {
 
       ]
     const blurredText = {
-        filter: 'blur(02px)',
+        filter: 'blur(0px)',
         userSelect: 'none', // Optional: Prevents text selection
     };
      const getIcon = (icon) => {
         return <CIcon icon={icon} className="me-2" />;
     };
 
+    if (!user) {
+        return <div>Loading user data...</div>; // Or handle the loading state differently
+    }
 
     return (
          <>
@@ -62,17 +83,18 @@ const UserDashboard = () => {
                         <CCardHeader className="chart-header">
                             <CIcon icon={cilUser} className="me-2" /> User Profile</CCardHeader>
                         <CCardBody className="chart-body">
+                              {/* Integrate Profile Here */}
                             <div style={{ marginBottom: '10px' }}>
-                                <strong>Name:</strong>  <span style={blurredText}>{user.name}</span>
+                                <strong>Name:</strong>  <span >{user.name}</span>
                             </div>
                             <div style={{ marginBottom: '10px' }}>
-                                <strong>Email:</strong> <span style={blurredText}>{user.email}</span>
+                                <strong>Email:</strong> <span >{user.email}</span>
                             </div>
                                    <div style={{ marginBottom: '10px' }}>
-                                 <strong>Role:</strong>  <span style={blurredText}>{user.role}</span>
+                                 <strong>Role:</strong>  <span >{user.role}</span>
                                </div>
                                  <div>
-                                    <strong>Last Login:</strong><span style={blurredText}>{user.lastLogin}</span>
+                                    <strong>Last Login:</strong><span >Last Login</span>
                                </div>
 
                         </CCardBody>

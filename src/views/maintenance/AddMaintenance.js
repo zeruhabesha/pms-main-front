@@ -20,15 +20,12 @@ import {
 } from '@coreui/react'
 import { addTenant, updateTenant } from '../../api/actions/TenantActions'
 import { getProperty } from '../../api/actions/PropertyAction' // Add this import
+import PropertySelect from "../guest/PropertySelect";
 
-const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
+const AddMaintenance = ({ visible, setVisible, editingTenant = null }) => {
   const dispatch = useDispatch()
   const { loading, error } = useSelector((state) => state.tenant)
-  const {
-    properties,
-    loading: propertiesLoading,
-    error: propertiesError,
-  } = useSelector((state) => state.property)
+  const { properties } = useSelector((state) => state.property);
 
   const [tenantData, setTenantData] = useState({
     tenantName: '',
@@ -54,11 +51,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
     moveInDate: '',
     emergencyContacts: [],
   })
-
-  // Fetch properties when component mounts
-  useEffect(() => {
-    dispatch(getProperty())
-  }, [dispatch])
+  const [localError, setLocalError] = useState(null);
 
   useEffect(() => {
     if (editingTenant) {
@@ -134,7 +127,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
   const handleSubmit = () => {
     const validationError = validateForm()
     if (validationError) {
-      setErrorMessage(validationError)
+      setLocalError(validationError)
       return
     }
 
@@ -146,6 +139,17 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
 
     handleClose()
   }
+
+    const handlePropertyChange = (e) => {
+        setTenantData((prev) => ({
+            ...prev,
+            propertyInformation: {
+                ...prev.propertyInformation,
+                propertyId: e.target.value,
+            },
+        }));
+    };
+
 
   const handleClose = () => {
     resetForm()
@@ -160,11 +164,16 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
       <CModalBody>
         <CCard className="border-0 shadow-sm">
           <CCardBody>
-            {(error || propertiesError) && (
+            {(error) && (
               <CAlert color="danger" className="mb-4">
-                {error || propertiesError}
+                {error}
               </CAlert>
             )}
+               {localError && (
+                                <CAlert color="danger" className="mb-3">
+                                    {localError}
+                                </CAlert>
+                            )}
             <CRow className="g-4">
               <CCol xs={12}>
                 <CFormLabel htmlFor="tenantName">Tenant Name</CFormLabel>
@@ -179,26 +188,14 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
                 />
               </CCol>
               <CCol xs={12} md={6}>
-                <CFormLabel htmlFor="propertyId">Property</CFormLabel>
-                {propertiesLoading ? (
-                  <CSpinner size="sm" />
-                ) : (
-                  <CFormSelect
-                    id="propertyId"
-                    value={tenantData.propertyInformation.propertyId}
-                    onChange={(e) =>
-                      handleNestedChange('propertyInformation', 'propertyId', e.target.value)
-                    }
-                    disabled={propertiesLoading}
-                  >
-                    <option value="">Select Property</option>
-                    {properties?.map((property) => (
-                      <option key={property._id} value={property._id}>
-                        {property.name}
-                      </option>
-                    ))}
-                  </CFormSelect>
-                )}
+                  <CFormLabel htmlFor="propertyId">Property</CFormLabel>
+                  <PropertySelect
+                      id="propertyId"
+                      name="propertyId"
+                      value={tenantData.propertyInformation.propertyId}
+                      onChange={handlePropertyChange}
+                      required
+                  />
               </CCol>
               <CCol xs={12} md={6}>
                 <CFormLabel htmlFor="unit">Unit Number</CFormLabel>
@@ -272,7 +269,7 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
         <CButton color="secondary" variant="ghost" onClick={handleClose} disabled={loading}>
           Cancel
         </CButton>
-        <CButton color="dark" onClick={handleSubmit} disabled={loading || propertiesLoading}>
+        <CButton color="dark" onClick={handleSubmit} disabled={loading}>
           {loading ? (
             <>
               <CSpinner size="sm" className="me-2" />
@@ -289,4 +286,4 @@ const AddTenant = ({ visible, setVisible, editingTenant = null }) => {
   )
 }
 
-export default AddTenant
+export default AddMaintenance

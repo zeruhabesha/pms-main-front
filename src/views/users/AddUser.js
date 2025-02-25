@@ -18,7 +18,6 @@ import {
 } from '@coreui/react';
 import { useDispatch } from 'react-redux';
 import { addUser, updateUser } from '../../api/actions/userActions';
-import CustomSwitch from './CustomSwitch';
 
 const AddUser = ({ visible, setVisible, editingUser }) => {
     const dispatch = useDispatch();
@@ -26,14 +25,10 @@ const AddUser = ({ visible, setVisible, editingUser }) => {
     const [userData, setUserData] = useState({
         name: '',
         email: '',
-        password: '',
-        role: 'user', // Set a valid default role according to your schema
+        role: 'user',
         phoneNumber: '',
         address: '',
-        status: true,
         photo: '',
-        activeStart: '',
-        activeEnd: '',
     });
 
     const [errorMessage, setErrorMessage] = useState('');
@@ -43,27 +38,19 @@ const AddUser = ({ visible, setVisible, editingUser }) => {
             setUserData({
                 name: editingUser.name || '',
                 email: editingUser.email || '',
-                password: '', // Clear password field for editing
-                role: editingUser.role || 'user',
+                role: editingUser.role || 'User',
                 phoneNumber: editingUser.phoneNumber || '',
                 address: editingUser.address || '',
-                status: editingUser.status === 'active',
                 photo: editingUser.photo || '',
-                activeStart: editingUser.activeStart ? editingUser.activeStart.split('T')[0] : '',
-                activeEnd: editingUser.activeEnd ? editingUser.activeEnd.split('T')[0] : '',
             });
         } else {
             setUserData({
                 name: '',
                 email: '',
-                password: '',
                 role: 'user',
                 phoneNumber: '',
                 address: '',
-                status: true,
                 photo: '',
-                activeStart: '',
-                activeEnd: '',
             });
         }
         setErrorMessage('');
@@ -74,22 +61,18 @@ const AddUser = ({ visible, setVisible, editingUser }) => {
         setUserData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleStatusChange = (checked) => {
-        setUserData((prev) => ({ ...prev, status: checked }));
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrorMessage('');
 
-        if (!userData.name || !userData.email || (!editingUser && !userData.password) || !userData.phoneNumber) {
+        if (!userData.name || !userData.email || !userData.phoneNumber) {
             setErrorMessage('Please fill in all required fields.');
             return;
         }
 
         const submissionData = {
             ...userData,
-            status: userData.status ? 'active' : 'inactive',
+            status: 'pending', // Set initial status to "pending"
         };
 
         try {
@@ -108,14 +91,10 @@ const AddUser = ({ visible, setVisible, editingUser }) => {
         setUserData({
             name: '',
             email: '',
-            password: '',
             role: 'user',
             phoneNumber: '',
             address: '',
-            status: true,
             photo: '',
-            activeStart: '',
-            activeEnd: '',
         });
         setErrorMessage('');
         setVisible(false);
@@ -160,20 +139,6 @@ const AddUser = ({ visible, setVisible, editingUser }) => {
                                         />
                                     </CInputGroup>
                                 </CCol>
-                                {!editingUser && (
-                                    <CCol xs={12}>
-                                        <CInputGroup>
-                                            <CFormInput
-                                                type="password"
-                                                name="password"
-                                                value={userData.password}
-                                                onChange={handleChange}
-                                                placeholder="Enter Password"
-                                                required
-                                            />
-                                        </CInputGroup>
-                                    </CCol>
-                                )}
                                 <CCol xs={12}>
                                     <CInputGroup>
                                         <CFormInput
@@ -201,16 +166,7 @@ const AddUser = ({ visible, setVisible, editingUser }) => {
                                         <option value="user">Employee</option>
                                         <option value="maintainer">Maintainer</option>
                                         <option value="inspector">Inspector</option>
-
                                     </CFormSelect>
-                                </CCol>
-                                <CCol xs={12}>
-                                    <CustomSwitch
-                                        label="Active Status"
-                                        name="status"
-                                        checked={userData.status}
-                                        onChange={handleStatusChange}
-                                    />
                                 </CCol>
                             </CRow>
 

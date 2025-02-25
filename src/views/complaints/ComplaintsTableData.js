@@ -13,7 +13,7 @@ import {
     CBadge
 } from '@coreui/react';
 import { CIcon } from '@coreui/icons-react';
-import { cilPencil, cilTrash, cilUser, cilOptions, cilDescription, cilCalendar, cilInfo, cilHome, cilList } from '@coreui/icons';
+import { cilPencil, cilTrash, cilUser, cilOptions, cilZoom, cilDescription, cilCalendar, cilInfo, cilHome, cilList } from '@coreui/icons';
 import { toast } from 'react-toastify';
 const ComplaintsTableData = ({
     complaints = [],
@@ -115,15 +115,16 @@ const ComplaintsTableData = ({
                                     <CDropdownMenu>
                                     {role === 'Tenant' && (
                                         <CDropdownItem onClick={() => handleEdit(complaint)}>
-                                            <CIcon icon={cilPencil} className="me-2" /> Edit
+                                            <CIcon icon={cilPencil} className="me-2" />Edit
                                         </CDropdownItem>
                                     )}
                                     {role === 'Tenant' && (
-                                        <CDropdownItem onClick={() => handleDelete(complaint)}>
+                                        <CDropdownItem onClick={() => handleDelete(complaint)} style={{color: 'red'}}>
                                             <CIcon icon={cilTrash} className="me-2" /> Delete
                                         </CDropdownItem>
                                     )}
                                         <CDropdownItem onClick={() => handleModalOpen(complaint)}>
+                                          <CIcon icon={cilZoom} className="me-2" />
                                             Details
                                         </CDropdownItem>
                                         {role === 'Admin' && (

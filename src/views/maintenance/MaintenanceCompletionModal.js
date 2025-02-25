@@ -52,38 +52,45 @@ const MaintenanceCompletionModal = ({
       return;
     }
     setError(null);
-
+  
+    if (!maintenanceToComplete || !maintenanceToComplete._id) {
+      console.error("Error: Maintenance ID is undefined");
+      setError("Maintenance ID is missing. Unable to update request.");
+      return;
+    }
+  
+    // Use FormData to send files
     const formData = new FormData();
-    formData.append('status', status);
-    formData.append('notes', notes); // Backend expects notes as "feedback"
-
+    formData.append("status", status);
+    formData.append("notes", notes);
+  
     // Append each selected file to FormData
-    // inspectedFiles.forEach(file => {
-    //   formData.append('inspectedFiles', file);
-    // });
-
+    if (inspectedFiles.length > 0) {
+      inspectedFiles.forEach((file) => {
+        formData.append("inspectedFiles", file);
+      });
+    }
+  
+    console.log("Submitting update with ID:", maintenanceToComplete._id);
+    console.log("Files attached:", inspectedFiles);
+  
     try {
-      await dispatch(
-        updateMaintenance({
-          id: maintenanceToComplete._id,
-          maintenanceData: formData,
-        }),
-      ).unwrap()
-
-      // Refresh the maintenance list after successful update
-      dispatch(
-        fetchMaintenances({
-          page: currentPage,
-          search: searchTerm,
-        }),
-      )
+      await dispatch(updateMaintenance({
+        id: maintenanceToComplete._id,
+        maintenanceData: formData, // Sending FormData
+      })).unwrap();
+  
+      dispatch(fetchMaintenances({ page: currentPage, search: searchTerm }));
       handleClose();
-
+  
     } catch (apiError) {
       setError(`Failed to submit: ${apiError.message || 'An error occurred'}`);
       console.error("Submit error:", apiError);
     }
   };
+  
+  
+    
 
   const handleClose = () => {
     setCompletionModalVisible(false); // Call the prop function

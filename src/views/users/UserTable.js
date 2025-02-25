@@ -24,7 +24,8 @@ const UserTable = ({
      handlePageChange,
     itemsPerPage = 10,
     activeTab,
-    setActiveTab
+    setActiveTab,
+    handleManageStatusClick
 }) => {
     const [selectedUser, setSelectedUser] = useState(null);
      const [userDetailsModalVisible, setUserDetailsModalVisible] = useState(false);
@@ -84,21 +85,24 @@ const UserTable = ({
             <br/>
             <CTabContent>
                 <CTabPane role="tabpanel" aria-labelledby="home-tab" visible={activeTab === 0}>
-                    <UserTableView
-                        users={filteredUsers}
-                        currentPage={currentPage}
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        handleEdit={handleEdit}
-                        handleDelete={handleDelete}
-                        handleEditPhoto={handleEditPhoto}
-                        handlePageChange={handlePageChange}
-                        itemsPerPage={itemsPerPage}
-                        activeTab={activeTab}
-                        sortConfig={sortConfig}
-                        handleSort={handleSort}
-                        handleUserDetailsClick={handleUserDetailsClick}
-                    />
+                <UserTableView
+    users={filteredUsers}
+    currentPage={currentPage}
+    searchTerm={searchTerm}
+    setSearchTerm={setSearchTerm}
+    handleEdit={handleEdit}
+    handleDelete={handleDelete}
+    handleEditPhoto={handleEditPhoto}
+    handlePageChange={handlePageChange}
+    itemsPerPage={itemsPerPage}
+    activeTab={activeTab}
+    sortConfig={sortConfig}
+    handleSort={handleSort}
+    handleUserDetailsClick={handleUserDetailsClick}
+    handleManageStatusClick={handleManageStatusClick} // ✅ Ensure this is passed
+/>
+
+
                 </CTabPane>
                 <CTabPane role="tabpanel" aria-labelledby="profile-tab" visible={activeTab === 1}>
                     <UserTableView

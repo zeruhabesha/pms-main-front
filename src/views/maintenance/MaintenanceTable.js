@@ -177,12 +177,13 @@ const MaintenanceTable = ({
           ).unwrap();
   
           // Refresh the maintenance list after successful update
-          dispatch(fetchMaintenances({
-            page: currentPage,
-            limit: ITEMS_PER_PAGE,
-            search: searchTerm,
-          }));
-  
+          // dispatch(fetchMaintenances({
+          //   page: currentPage,
+          //   limit: ITEMS_PER_PAGE,
+          //   search: searchTerm,
+          // }));
+          await dispatch(fetchMaintenances({ page: currentPage, limit: ITEMS_PER_PAGE, search: searchTerm }));
+
           setInspectionModalVisible(false);
         } catch (error) {
           console.error('Failed to update and set to inspected:', error);

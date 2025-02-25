@@ -37,6 +37,9 @@ const ClearanceTableData = ({
     closeDropdown,
     dropdownRefs,
     handleViewDetails, // Add this prop
+    handleApprove,
+    handlePass,
+    getStatusStyle,
 }) => {
     return (
         <CTable align="middle" className="mb-0 border" hover responsive>
@@ -45,7 +48,7 @@ const ClearanceTableData = ({
                     <CTableHeaderCell className="bg-body-tertiary text-center">
                         #
                     </CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('tenant')} style={{ cursor: 'pointer' }}>
+                     <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('tenant')} style={{ cursor: 'pointer' }}>
                         Tenant Name
                         {sortConfig.key === 'tenant' && (
                             <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
@@ -63,8 +66,15 @@ const ClearanceTableData = ({
                             <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
                         )}
                     </CTableHeaderCell>
+                     {/* NEW COLUMN HERE */}
+                     <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('inspectionStatus')} style={{ cursor: 'pointer' }}>
+                        Inspected
+                        {sortConfig.key === 'inspectionStatus' && (
+                            <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
+                        )}
+                    </CTableHeaderCell>
                     <CTableHeaderCell className="bg-body-tertiary" onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
-                        Status
+                        Admin
                         {sortConfig.key === 'status' && (
                             <CIcon icon={sortConfig.direction === 'ascending' ? cilArrowTop : cilArrowBottom} />
                         )}
@@ -79,7 +89,7 @@ const ClearanceTableData = ({
                             {(currentPage - 1) * 10 + index + 1}
                         </CTableDataCell>
                         <CTableDataCell>
-                            {clearance?.tenant?.tenantName || 'N/A'}
+                           {clearance?.tenant?.name || 'N/A'}
                         </CTableDataCell>
                         <CTableDataCell>
                             {clearance?.notes || 'N/A'}
@@ -87,17 +97,28 @@ const ClearanceTableData = ({
                          <CTableDataCell>
                             {formatDate(clearance?.moveOutDate) || 'N/A'}
                         </CTableDataCell>
-                        <CTableDataCell>
-                            {clearance.status === 'pending' ? (
+                         {/* NEW COLUMN HERE */}
+                         <CTableDataCell>
+                            {clearance.inspectionStatus === 'Pending' ? (
                                 <CBadge color="warning">Pending</CBadge>
-                            ) : clearance.status === 'approved' ? (
-                                <CBadge color="success">Approved</CBadge>
-                            ) : clearance.status === 'rejected' ? (
-                                <CBadge color="danger">Rejected</CBadge>
-                            ) : clearance.status === 'inspected' ? (
+                            ) : clearance.inspectionStatus === 'Passed' ? (
+                                <CBadge color="success">Passed</CBadge>
+                            ) : clearance.inspectionStatus === 'Failed' ? (
+                                <CBadge color="danger">Failed</CBadge>
+                            ) : (
                                 <CBadge color="info">Inspected</CBadge>
-                            ) : null
-                            }
+                            )}
+                        </CTableDataCell>
+                        <CTableDataCell>
+                            {clearance.status === 'Pending' ? (
+                                <CBadge color="warning">Pending</CBadge>
+                            ) : clearance.status === 'Approved' ? (
+                                <CBadge color="success">Approved</CBadge>
+                            ) : clearance.status === 'Rejected' ? (
+                                <CBadge color="danger">Rejected</CBadge>
+                            ) : (
+                                <CBadge color="info">Inspected</CBadge>
+                            )}
                         </CTableDataCell>
                          <CTableDataCell>
                             <CDropdown
@@ -118,29 +139,37 @@ const ClearanceTableData = ({
                                     </CDropdownItem>
                                     )}
                                      {role === 'Tenant' && (
-                                    <CDropdownItem onClick={() => handleDelete(clearance?._id)} title="Delete" style={{ color: 'red' }}>
-                                        <CIcon icon={cilTrash} className="me-2" />
-                                        Delete
-                                    </CDropdownItem>
-                                    )}
-                                    <CDropdownItem onClick={() => handleViewDetails(clearance?.tenant?._id)} title="View Details">
-                                        <CIcon icon={cilFullscreen} className="me-2" />
-                                        Details
-                                    </CDropdownItem>
-                                    {role === 'Admin' && (
-                                    <CDropdownItem onClick={() => handleApprove(clearance?.tenant?._id)} title="View Details">
-                                        <CIcon icon={cilFullscreen} className="me-2" />
-                                        Approve
-                                    </CDropdownItem>
-                                    )}
-                                </CDropdownMenu>
-                            </CDropdown>
-                        </CTableDataCell>
-                    </CTableRow>
-                ))}
-            </CTableBody>
-        </CTable>
-    );
-};
+                                       <CDropdownItem onClick={() => handleDelete(clearance)} title="Delete" style={{ color: 'red' }}>
+                                       <CIcon icon={cilTrash} className="me-2" />
+                                       Delete
+                                   </CDropdownItem>
 
-export default ClearanceTableData;
+                                    )}
+                                   
+                                    <CDropdownItem onClick={() => handleViewDetails(clearance)} title="View Details">
+                    <CIcon icon={cilFullscreen} className="me-2" />
+                    Details
+                </CDropdownItem>
+                {role === 'Admin' && (
+                <CDropdownItem onClick={() => handleApprove(clearance)} title="Approve">
+                <CIcon icon={cilFullscreen} className="me-2" />
+                Approve/Reject
+                </CDropdownItem>
+                )}
+                {role === 'Inspector' && (
+                <CDropdownItem onClick={() => handlePass(clearance)} title="Pass">
+                <CIcon icon={cilFullscreen} className="me-2" />
+                Passed / Failed
+                </CDropdownItem>
+                )}
+                </CDropdownMenu>
+                </CDropdown>
+                </CTableDataCell>
+                </CTableRow>
+                ))}
+                </CTableBody>
+                </CTable>
+                );
+                };
+
+                export default ClearanceTableData;
